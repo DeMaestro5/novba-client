@@ -441,15 +441,15 @@ export default function SignupPage() {
       >
         {/* Geometric shapes - visible on desktop */}
         <div
-          className='absolute top-10 right-10 hidden h-[400px] w-[400px] rotate-12 rounded-[40px] bg-white/10 blur-2xl lg:block'
+          className='absolute -top-24 -right-24 hidden h-[500px] w-[500px] rotate-12 rounded-[60px] bg-white/8 lg:block'
           aria-hidden
         />
         <div
-          className='absolute bottom-20 left-10 hidden h-[350px] w-[350px] rounded-full bg-white/5 blur-3xl lg:block'
+          className='absolute -bottom-32 -left-16 hidden h-[450px] w-[450px] rounded-full bg-white/6 lg:block'
           aria-hidden
         />
         <div
-          className='absolute top-1/3 left-1/4 hidden h-[300px] w-[300px] -rotate-6 rounded-[30px] bg-white/10 blur-xl lg:block'
+          className='absolute top-1/2 left-1/3 hidden h-[350px] w-[350px] -translate-y-1/2 -rotate-12 rounded-[40px] bg-white/5 lg:block'
           aria-hidden
         />
 
