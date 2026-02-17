@@ -19,3 +19,16 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   fullWidth?: boolean;
   containerClassName?: string;
 }
+export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label?: string;
+  error?: string;
+  helperText?: string;
+  fullWidth?: boolean;
+  showCharCount?: boolean;
+  maxLength?: number;
+  autoResize?: boolean;
+  minRows?: number;
+  maxRows?: number;
+  containerClassName?: string;
+  resize?: 'none' | 'vertical' | 'horizontal' | 'both';
+}
