@@ -19,7 +19,7 @@ export default function Input({
   const baseInputStyles = `
    w-full
     px-4
-    py-2.5
+    py-2
     text-base
     text-gray-900
     bg-white
@@ -85,7 +85,11 @@ text-gray-500
   return (
     <div className={containerStyles}>
       {/* Label */}
-      {label && <label className={labelStyles}>{label}</label>}
+      {label && (
+        <label htmlFor={rest.id} className={labelStyles}>
+          {label}
+        </label>
+      )}
 
       {/* Input wrapper - RELATIVE positioning (creates context) */}
       <div className='relative'>
