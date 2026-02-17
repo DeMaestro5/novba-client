@@ -32,3 +32,104 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   containerClassName?: string;
   resize?: 'none' | 'vertical' | 'horizontal' | 'both';
 }
+
+export interface SelectOption {
+  value?: string;
+  label: string;
+  icon?: React.ReactNode;
+  description?: string;
+  disabled?: boolean;
+}
+
+export interface SelectProps {
+  label?: string;
+  options: SelectOption[];
+  value?: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  error?: string;
+  helperText?: string;
+  disabled?: boolean;
+  searchable?: boolean;
+  fullWidth?: boolean;
+  containerClassName?: string;
+}
+
+// Card
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+  hover?: boolean;
+}
+
+export interface CardHeaderProps {
+  title: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+  className?: string;
+}
+
+export interface CardBodyProps {
+  children: React.ReactNode;
+  className?: string;
+  padding?: 'sm' | 'md' | 'lg';
+}
+
+export interface CardFooterProps {
+  children: React.ReactNode;
+  className?: string;
+  divider?: boolean;
+}
+
+// Badge
+export type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info';
+export type BadgeSize = 'sm' | 'md' | 'lg';
+
+export interface BadgeProps {
+  children: React.ReactNode;
+  variant?: BadgeVariant;
+  size?: BadgeSize;
+  rounded?: boolean;
+  className?: string;
+}
+
+// Modal
+export type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
+
+export interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  size?: ModalSize;
+  children: React.ReactNode;
+  closeOnOverlayClick?: boolean;
+}
+
+export interface ModalHeaderProps {
+  title: string;
+  subtitle?: string;
+  onClose?: () => void;
+  className?: string;
+}
+
+export interface ModalBodyProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface ModalFooterProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+// Spinner
+export type SpinnerSize = 'sm' | 'md' | 'lg' | 'xl';
+export type SpinnerColor = 'orange' | 'white' | 'gray';
+
+export interface SpinnerProps {
+  size?: SpinnerSize;
+  color?: SpinnerColor;
+  className?: string;
+  fullScreen?: boolean;
+  label?: string;
+}
