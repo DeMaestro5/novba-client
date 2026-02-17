@@ -87,7 +87,7 @@ export default function LoginPage() {
               Don&apos;t have an account?{' '}
               <Link
                 href='/signup'
-                className='font-medium text-orange-600 transition-colors duration-200 hover:text-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded'
+                className='font-medium text-orange-600 transition-colors duration-200 hover:text-orange-700 rounded'
               >
                 Sign up
               </Link>
@@ -98,7 +98,7 @@ export default function LoginPage() {
           <div className='mb-6 space-y-3'>
             <button
               type='button'
-              className='flex w-full items-center justify-center gap-3 rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2'
+              className='flex w-full items-center cursor-pointer justify-center gap-3 rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md focus:outline-none'
             >
               <svg className='h-5 w-5' viewBox='0 0 24 24' aria-hidden>
                 <path
@@ -122,7 +122,7 @@ export default function LoginPage() {
             </button>
             <button
               type='button'
-              className='flex w-full items-center justify-center gap-3 rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2'
+              className='flex w-full items-center cursor-pointer justify-center gap-3 rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md focus:outline-none'
             >
               <svg
                 className='h-5 w-5'
@@ -201,7 +201,7 @@ export default function LoginPage() {
                   type='checkbox'
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className='h-4 w-4 rounded border-2 border-gray-300 text-orange-600 transition-colors duration-200 focus:ring-2 focus:ring-orange-500 focus:ring-offset-0'
+                  className='h-4 w-4 rounded border-2 border-gray-300 accent-orange-600 transition-colors duration-200'
                   aria-describedby='remember-me-description'
                 />
                 <span
@@ -226,7 +226,7 @@ export default function LoginPage() {
               fullWidth
               isLoading={isLoading}
               disabled={isLoading}
-              className='mb-5'
+              className='mb-5 cursor-pointer'
             >
               Log in
             </Button>
@@ -336,7 +336,9 @@ export default function LoginPage() {
                   d='M5 13l4 4L19 7'
                 />
               </svg>
-              <span className='text-lg font-medium'>Locked-forever pricing</span>
+              <span className='text-lg font-medium'>
+                Locked-forever pricing
+              </span>
             </div>
           </div>
 
