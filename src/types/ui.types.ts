@@ -133,3 +133,51 @@ export interface SpinnerProps {
   fullScreen?: boolean;
   label?: string;
 }
+
+// Table
+export interface TableProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface TableHeaderProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface TableBodyProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface TableRowProps {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+}
+
+export interface TableHeadProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface TableCellProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+// Dropdown Menu
+export interface DropdownMenuProps {
+  trigger: React.ReactNode;
+  children: React.ReactNode;
+  align?: 'left' | 'right';
+  className?: string;
+}
+
+export interface DropdownMenuItemProps {
+  children: React.ReactNode;
+  onClick?: () => void;
+  icon?: React.ReactNode;
+  variant?: 'default' | 'danger';
+  className?: string;
+}
