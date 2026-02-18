@@ -202,3 +202,42 @@ export interface ToggleProps {
   disabled?: boolean;
   className?: string;
 }
+
+// Tabs
+export interface TabsProps {
+  defaultValue?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface TabsListProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface TabsTriggerProps {
+  value: string;
+  children: React.ReactNode;
+  badge?: string | number;
+  disabled?: boolean;
+  className?: string;
+}
+
+export interface TabsContentProps {
+  value: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+// Alert
+export interface AlertProps {
+  variant?: 'success' | 'error' | 'warning' | 'info';
+  title?: string;
+  description?: string;
+  children?: React.ReactNode;
+  onClose?: () => void;
+  icon?: React.ReactNode;
+  className?: string;
+}
