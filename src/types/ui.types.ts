@@ -241,3 +241,27 @@ export interface AlertProps {
   icon?: React.ReactNode;
   className?: string;
 }
+
+// EmptyState
+export interface EmptyStateAction {
+  label: string;
+  onClick: () => void;
+}
+
+export interface EmptyStateProps {
+  icon?: React.ReactNode;
+  title: string;
+  description: string;
+  primaryAction?: EmptyStateAction;
+  secondaryAction?: EmptyStateAction;
+  className?: string;
+}
+
+// Pagination
+export interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  showPageNumbers?: boolean;
+  className?: string;
+}
