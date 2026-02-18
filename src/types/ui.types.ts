@@ -181,3 +181,24 @@ export interface DropdownMenuItemProps {
   variant?: 'default' | 'danger';
   className?: string;
 }
+
+// DatePicker
+export interface DatePickerProps {
+  label?: string;
+  value: Date | null;
+  onChange: (date: Date | null) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  error?: string;
+  className?: string;
+}
+
+// Toggle (Switch)
+export interface ToggleProps {
+  label?: string;
+  description?: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+  className?: string;
+}

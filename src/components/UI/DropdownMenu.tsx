@@ -1,10 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, createContext, useContext } from 'react';
-import {
-  DropdownMenuProps,
-  DropdownMenuItemProps,
-} from '@/types/ui.types';
+import { DropdownMenuProps, DropdownMenuItemProps } from '@/types/ui.types';
 
 const DropdownMenuContext = createContext<{ close: () => void } | null>(null);
 
@@ -26,7 +23,10 @@ export default function DropdownMenu({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -41,7 +41,8 @@ export default function DropdownMenu({
   }, [isOpen]);
 
   const alignStyles = align === 'right' ? 'right-0' : 'left-0';
-  const originStyles = align === 'right' ? 'origin-top-right' : 'origin-top-left';
+  const originStyles =
+    align === 'right' ? 'origin-top-right' : 'origin-top-left';
 
   const menuClasses = `
     absolute
@@ -67,11 +68,11 @@ export default function DropdownMenu({
 
   return (
     <DropdownMenuContext.Provider value={{ close }}>
-      <div ref={containerRef} className="relative inline-block">
-        <div onClick={toggleOpen} className="cursor-pointer">
+      <div ref={containerRef} className='relative inline-block'>
+        <div onClick={toggleOpen} className='cursor-pointer'>
           {trigger}
         </div>
-        <div className={menuClasses} role="menu">
+        <div className={menuClasses} role='menu'>
           {children}
         </div>
       </div>
@@ -120,12 +121,12 @@ export function DropdownMenuItem({
   };
 
   return (
-    <div
-      className={itemClasses}
-      onClick={handleClick}
-      role="menuitem"
-    >
-      {icon && <span className="shrink-0 text-current [&>svg]:w-4 [&>svg]:h-4">{icon}</span>}
+    <div className={itemClasses} onClick={handleClick} role='menuitem'>
+      {icon && (
+        <span className='shrink-0 text-current [&>svg]:w-4 [&>svg]:h-4'>
+          {icon}
+        </span>
+      )}
       <span>{children}</span>
     </div>
   );
@@ -135,5 +136,5 @@ export function DropdownMenuItem({
  * DropdownMenuDivider – Visual separator between menu item groups.
  */
 export function DropdownMenuDivider() {
-  return <div className="my-1 border-t border-gray-100" role="separator" />;
+  return <div className='my-1 border-t border-gray-100' role='separator' />;
 }

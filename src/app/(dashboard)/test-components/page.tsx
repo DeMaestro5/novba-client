@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Table, {
   TableHeader,
   TableBody,
@@ -11,92 +12,223 @@ import DropdownMenu, {
   DropdownMenuItem,
   DropdownMenuDivider,
 } from '@/components/UI/DropdownMenu';
+import DatePicker from '@/components/UI/DatePicker';
+import Toggle from '@/components/UI/Toggle';
 import Button from '@/components/UI/Button';
 import Badge from '@/components/UI/Badge';
 import Card, { CardHeader, CardBody } from '@/components/UI/Card';
 
-// Mock invoice data
-const invoices = [
-  {
-    id: 'INV-001',
-    client: 'Acme Corp',
-    amount: 5000,
-    status: 'paid',
-    date: '2026-02-15',
-  },
-  {
-    id: 'INV-002',
-    client: 'TechStart Inc',
-    amount: 3500,
-    status: 'pending',
-    date: '2026-02-14',
-  },
-  {
-    id: 'INV-003',
-    client: 'Design Co',
-    amount: 7200,
-    status: 'overdue',
-    date: '2026-02-10',
-  },
-  {
-    id: 'INV-004',
-    client: 'Dev Studios',
-    amount: 4800,
-    status: 'paid',
-    date: '2026-02-12',
-  },
-  {
-    id: 'INV-005',
-    client: 'Marketing Plus',
-    amount: 6100,
-    status: 'draft',
-    date: '2026-02-16',
-  },
-];
-
 export default function TestComponentsPage() {
-  const handleView = (id: string) => {
-    alert(`View invoice: ${id}`);
-  };
+  // DatePicker states
+  const [invoiceDate, setInvoiceDate] = useState<Date | null>(null);
+  const [dueDate, setDueDate] = useState<Date | null>(new Date());
+  const [startDate, setStartDate] = useState<Date | null>(null);
 
-  const handleEdit = (id: string) => {
-    alert(`Edit invoice: ${id}`);
-  };
-
-  const handleDelete = (id: string) => {
-    alert(`Delete invoice: ${id}`);
-  };
-
-  const handleDownload = (id: string) => {
-    alert(`Download invoice: ${id}`);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants: {
-      [key: string]: 'success' | 'warning' | 'error' | 'default';
-    } = {
-      paid: 'success',
-      pending: 'warning',
-      overdue: 'error',
-      draft: 'default',
-    };
-    return <Badge variant={variants[status]}>{status}</Badge>;
-  };
+  // Toggle states
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [autoReminders, setAutoReminders] = useState(false);
+  const [premiumFeatures, setPremiumFeatures] = useState(false);
+  const [simpleToggle, setSimpleToggle] = useState(false);
 
   return (
     <div className='mx-auto max-w-[1400px] p-6 lg:p-8'>
       <div className='mb-6'>
         <h1 className='text-2xl font-bold text-gray-900'>Component Testing</h1>
         <p className='text-sm text-gray-500'>
-          Testing Table and DropdownMenu components
+          Testing DatePicker and Toggle components
         </p>
       </div>
 
-      {/* TABLE TEST */}
+      {/* DATEPICKER TESTS */}
       <Card className='mb-6'>
         <CardHeader
-          title='Invoice List'
-          subtitle='Recent invoices with actions'
+          title='DatePicker Component'
+          subtitle='Various states and configurations'
+        />
+        <CardBody padding='lg'>
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+            {/* Empty DatePicker */}
+            <div>
+              <DatePicker
+                label='Invoice Date'
+                value={invoiceDate}
+                onChange={setInvoiceDate}
+                placeholder='Select invoice date'
+              />
+              <p className='mt-2 text-xs text-gray-500'>
+                Selected:{' '}
+                {invoiceDate ? invoiceDate.toLocaleDateString() : 'None'}
+              </p>
+            </div>
+
+            {/* Pre-filled DatePicker */}
+            <div>
+              <DatePicker
+                label='Due Date (Pre-filled)'
+                value={dueDate}
+                onChange={setDueDate}
+                placeholder='Select due date'
+              />
+              <p className='mt-2 text-xs text-gray-500'>
+                Selected: {dueDate ? dueDate.toLocaleDateString() : 'None'}
+              </p>
+            </div>
+
+            {/* DatePicker with Error */}
+            <div>
+              <DatePicker
+                label='Start Date (With Error)'
+                value={startDate}
+                onChange={setStartDate}
+                placeholder='Select start date'
+                error='Start date is required'
+              />
+            </div>
+
+            {/* Disabled DatePicker */}
+            <div>
+              <DatePicker
+                label='Disabled DatePicker'
+                value={new Date('2026-01-15')}
+                onChange={() => {}}
+                placeholder='Disabled'
+                disabled
+              />
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* TOGGLE TESTS */}
+      <Card className='mb-6'>
+        <CardHeader
+          title='Toggle Component'
+          subtitle='Various states and configurations'
+        />
+        <CardBody padding='lg'>
+          <div className='space-y-6'>
+            {/* Toggle with Label and Description */}
+            <Toggle
+              label='Email notifications'
+              description='Receive email updates for new invoices and payments'
+              checked={emailNotifications}
+              onChange={setEmailNotifications}
+            />
+
+            {/* Toggle with Label Only */}
+            <Toggle
+              label='Automatic payment reminders'
+              checked={autoReminders}
+              onChange={setAutoReminders}
+            />
+
+            {/* Disabled Toggle */}
+            <Toggle
+              label='Premium features'
+              description='Upgrade to Pro to enable this feature'
+              checked={premiumFeatures}
+              onChange={setPremiumFeatures}
+              disabled
+            />
+
+            {/* Simple Toggle (No Label) */}
+            <div className='flex items-center gap-3'>
+              <span className='text-sm text-gray-700'>Simple toggle:</span>
+              <Toggle checked={simpleToggle} onChange={setSimpleToggle} />
+            </div>
+
+            {/* Toggle States Display */}
+            <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
+              <p className='text-xs font-semibold uppercase tracking-wide text-gray-600 mb-3'>
+                Current States
+              </p>
+              <div className='space-y-1.5 text-sm'>
+                <p className='text-gray-900'>
+                  Email notifications:{' '}
+                  <Badge variant={emailNotifications ? 'success' : 'default'}>
+                    {emailNotifications ? 'ON' : 'OFF'}
+                  </Badge>
+                </p>
+                <p className='text-gray-900'>
+                  Auto reminders:{' '}
+                  <Badge variant={autoReminders ? 'success' : 'default'}>
+                    {autoReminders ? 'ON' : 'OFF'}
+                  </Badge>
+                </p>
+                <p className='text-gray-900'>
+                  Premium features:{' '}
+                  <Badge variant={premiumFeatures ? 'success' : 'default'}>
+                    {premiumFeatures ? 'ON' : 'OFF'}
+                  </Badge>
+                </p>
+                <p className='text-gray-900'>
+                  Simple toggle:{' '}
+                  <Badge variant={simpleToggle ? 'success' : 'default'}>
+                    {simpleToggle ? 'ON' : 'OFF'}
+                  </Badge>
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* COMBINED FORM EXAMPLE */}
+      <Card className='mb-6'>
+        <CardHeader
+          title='Invoice Form Example'
+          subtitle='DatePicker + Toggle in realistic context'
+        />
+        <CardBody padding='lg'>
+          <div className='space-y-6'>
+            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+              <DatePicker
+                label='Invoice Date *'
+                value={invoiceDate}
+                onChange={setInvoiceDate}
+                placeholder='Select date'
+              />
+              <DatePicker
+                label='Due Date *'
+                value={dueDate}
+                onChange={setDueDate}
+                placeholder='Select date'
+              />
+            </div>
+
+            <div className='space-y-4'>
+              <p className='text-sm font-semibold text-gray-900'>
+                Invoice Settings
+              </p>
+              <Toggle
+                label='Send email notification to client'
+                description='Client will receive an email when invoice is created'
+                checked={emailNotifications}
+                onChange={setEmailNotifications}
+              />
+              <Toggle
+                label='Enable automatic payment reminders'
+                description='Send reminders 7 days before and on due date'
+                checked={autoReminders}
+                onChange={setAutoReminders}
+              />
+            </div>
+
+            <div className='flex gap-3'>
+              <Button size='lg'>Create Invoice</Button>
+              <Button variant='outline' size='lg'>
+                Save as Draft
+              </Button>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* TABLE WITH DATEPICKER & TOGGLE (Previous Test) */}
+      <Card>
+        <CardHeader
+          title='Invoice List (Previous Test)'
+          subtitle='Table + Dropdown components'
         />
         <CardBody padding='sm'>
           <Table>
@@ -105,169 +237,50 @@ export default function TestComponentsPage() {
                 <TableHead>Invoice #</TableHead>
                 <TableHead>Client</TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead>Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell>
-                    <span className='font-semibold text-gray-900'>
-                      {invoice.id}
-                    </span>
-                  </TableCell>
-                  <TableCell>{invoice.client}</TableCell>
-                  <TableCell>
-                    <span className='font-semibold'>
-                      ${invoice.amount.toLocaleString()}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className='text-gray-600'>{invoice.date}</span>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                  <TableCell>
-                    <DropdownMenu
-                      trigger={
-                        <button className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900'>
-                          <svg
-                            className='h-5 w-5'
-                            fill='currentColor'
-                            viewBox='0 0 20 20'
-                          >
-                            <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
-                          </svg>
-                        </button>
-                      }
-                      align='right'
-                    >
-                      <DropdownMenuItem
-                        icon={
-                          <svg
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                          >
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={2}
-                              d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
-                            />
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={2}
-                              d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
-                            />
-                          </svg>
-                        }
-                        onClick={() => handleView(invoice.id)}
-                      >
-                        View Invoice
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        icon={
-                          <svg
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                          >
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={2}
-                              d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
-                            />
-                          </svg>
-                        }
-                        onClick={() => handleEdit(invoice.id)}
-                      >
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        icon={
-                          <svg
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                          >
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={2}
-                              d='M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4'
-                            />
-                          </svg>
-                        }
-                        onClick={() => handleDownload(invoice.id)}
-                      >
-                        Download PDF
-                      </DropdownMenuItem>
-                      <DropdownMenuDivider />
-                      <DropdownMenuItem
-                        variant='danger'
-                        icon={
-                          <svg
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                          >
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={2}
-                              d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
-                            />
-                          </svg>
-                        }
-                        onClick={() => handleDelete(invoice.id)}
-                      >
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardBody>
-      </Card>
-
-      {/* CLICKABLE ROWS TEST */}
-      <Card>
-        <CardHeader title='Clickable Rows' subtitle='Click any row to select' />
-        <CardBody padding='sm'>
-          <Table>
-            <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow onClick={() => alert('Clicked Sarah!')}>
-                <TableCell>Sarah Johnson</TableCell>
-                <TableCell>sarah@acme.com</TableCell>
                 <TableCell>
-                  <Badge variant='success'>Admin</Badge>
+                  <span className='font-semibold'>INV-001</span>
                 </TableCell>
-              </TableRow>
-              <TableRow onClick={() => alert('Clicked Mike!')}>
-                <TableCell>Mike Chen</TableCell>
-                <TableCell>mike@techstart.io</TableCell>
+                <TableCell>Acme Corp</TableCell>
                 <TableCell>
-                  <Badge variant='warning'>User</Badge>
+                  <span className='font-semibold'>$5,000</span>
                 </TableCell>
-              </TableRow>
-              <TableRow onClick={() => alert('Clicked Jessica!')}>
-                <TableCell>Jessica Lee</TableCell>
-                <TableCell>jessica@design.co</TableCell>
                 <TableCell>
-                  <Badge variant='default'>Guest</Badge>
+                  <Badge variant='success'>paid</Badge>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu
+                    trigger={
+                      <button className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900'>
+                        <svg
+                          className='h-5 w-5'
+                          fill='currentColor'
+                          viewBox='0 0 20 20'
+                        >
+                          <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
+                        </svg>
+                      </button>
+                    }
+                  >
+                    <DropdownMenuItem onClick={() => alert('View')}>
+                      View Invoice
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => alert('Edit')}>
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuDivider />
+                    <DropdownMenuItem
+                      variant='danger'
+                      onClick={() => alert('Delete')}
+                    >
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             </TableBody>

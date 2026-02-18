@@ -26,7 +26,7 @@ export default function Table({ children, className = '' }: TableProps) {
     .replace(/\s+/g, ' ');
 
   return (
-    <div className="overflow-x-auto">
+    <div className='overflow-x-auto'>
       <table className={tableClasses}>{children}</table>
     </div>
   );
@@ -75,7 +75,11 @@ export function TableRow({ children, className = '', onClick }: TableRowProps) {
     .replace(/\s+/g, ' ');
 
   return (
-    <tr className={rowClasses} onClick={onClick} role={onClick ? 'button' : undefined}>
+    <tr
+      className={rowClasses}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+    >
       {children}
     </tr>
   );
