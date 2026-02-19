@@ -350,14 +350,20 @@ export default function InvoicesPage() {
                 </TableHeader>
                 <TableBody>
                   {displayInvoices.map((inv) => (
-                    <TableRow key={inv.id}>
+                    <TableRow
+                      key={inv.id}
+                      className="cursor-pointer transition-colors hover:bg-gray-50"
+                      onClick={() => router.push(`/invoices/${inv.id}`)}
+                    >
                       <TableCell>
-                        <Link
-                          href={`/invoices/${inv.id}`}
-                          className="font-medium text-orange-600 hover:underline"
-                        >
-                          {inv.invoiceNumber}
-                        </Link>
+                        <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                          <Link
+                            href={`/invoices/${inv.id}`}
+                            className="font-medium text-orange-600 hover:underline"
+                          >
+                            {inv.invoiceNumber}
+                          </Link>
+                        </div>
                       </TableCell>
                       <TableCell>{inv.client.companyName}</TableCell>
                       <TableCell>{formatDate(inv.issueDate)}</TableCell>
@@ -371,6 +377,7 @@ export default function InvoicesPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
+                        <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                         <DropdownMenu
                           align="right"
                           trigger={
@@ -389,11 +396,6 @@ export default function InvoicesPage() {
                             </button>
                           }
                         >
-                          <DropdownMenuItem
-                            onClick={() => router.push(`/invoices/${inv.id}`)}
-                          >
-                            View
-                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() =>
                               router.push(`/invoices/${inv.id}/edit`)
@@ -434,6 +436,7 @@ export default function InvoicesPage() {
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
