@@ -155,12 +155,15 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          <button className="flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-md focus:outline-none">
+          <Link
+            href="/invoices/new"
+            className="flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-md focus:outline-none"
+          >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             New Invoice
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -510,7 +513,11 @@ export default function DashboardPage() {
 
           <div className="space-y-3">
             {mockRecentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-center gap-3">
+              <Link
+                key={activity.id}
+                href={`/invoices/${activity.id}`}
+                className="flex items-center gap-3 rounded-lg transition-colors hover:bg-gray-50 -mx-2 px-2 py-1.5"
+              >
                 <div
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
                     activity.type === 'payment' ? 'bg-green-50' : 'bg-orange-50'
@@ -553,7 +560,7 @@ export default function DashboardPage() {
                     {activity.status}
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
