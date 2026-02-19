@@ -17,7 +17,15 @@ export default function Select({
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [focusedIndex, setFocusedIndex] = useState(0);
   const selectRef = useRef<HTMLDivElement>(null);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+  const filteredOptions = searchable
+    ? options.filter((opt) =>
+        opt.label.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+    : options;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -37,16 +45,17 @@ export default function Select({
     }
   }, [isOpen]);
 
-  const selectedOption = options.find((opt) => opt.value === value);
-  const filteredOptions = searchable
-    ? options.filter((opt) =>
-        opt.label.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    : options;
+  // Reset focused index when opening or when filtered options change
+  useEffect(() => {
+    if (isOpen && filteredOptions.length > 0) {
+      const currentIndex = filteredOptions.findIndex((opt) => opt.value === value);
+      setFocusedIndex(currentIndex >= 0 ? currentIndex : 0);
+    }
+  }, [isOpen, value, filteredOptions.length]);
 
   const handleSelect = (option: SelectOption) => {
     if (option.disabled) return;
-    onChange?.(option.value || '');
+    onChange?.(option.value ?? '');
     setIsOpen(false);
     setSearchQuery('');
   };
@@ -57,17 +66,23 @@ export default function Select({
     }
   };
 
-  // Keyboard navigation
+  // Keyboard navigation: ArrowDown, ArrowUp, Enter to select, Escape to close
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (disabled) return;
 
     switch (event.key) {
       case 'Enter':
-      case ' ': // Space key
+      case ' ':
         event.preventDefault();
-        toggleDropdown();
+        if (isOpen && filteredOptions.length > 0) {
+          const opt = filteredOptions[focusedIndex];
+          if (opt && !opt.disabled) handleSelect(opt);
+        } else {
+          toggleDropdown();
+        }
         break;
       case 'Escape':
+        event.preventDefault();
         setIsOpen(false);
         setSearchQuery('');
         break;
@@ -75,12 +90,19 @@ export default function Select({
         event.preventDefault();
         if (!isOpen) {
           setIsOpen(true);
+        } else {
+          setFocusedIndex((prev) =>
+            prev < filteredOptions.length - 1 ? prev + 1 : 0
+          );
         }
-        // TODO: Navigate to next option (we'll keep it simple for now)
         break;
       case 'ArrowUp':
         event.preventDefault();
-        // TODO: Navigate to previous option
+        if (isOpen) {
+          setFocusedIndex((prev) =>
+            prev > 0 ? prev - 1 : filteredOptions.length - 1
+          );
+        }
         break;
     }
   };
@@ -232,13 +254,13 @@ export default function Select({
                   No options found
                 </div>
               ) : (
-                filteredOptions.map((option) => (
+                filteredOptions.map((option, index) => (
                   <div
-                    key={option.value}
-                    className={optionStyles(
+                    key={option.value ?? `opt-${option.label}-${index}`}
+                    className={`${optionStyles(
                       option.value === value,
                       option.disabled,
-                    )}
+                    )} ${index === focusedIndex ? 'bg-orange-50' : ''}`}
                     onClick={() => handleSelect(option)}
                   >
                     {/* Option icon */}

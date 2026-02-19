@@ -16,10 +16,38 @@ export default function DropdownMenu({
   className = '',
 }: DropdownMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({
+    top: 0,
+    left: 0,
+    openUp: false,
+  });
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
 
-  const toggleOpen = () => setIsOpen((prev) => !prev);
+  const handleOpen = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const estimatedMenuHeight = 200;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const openUp =
+        spaceBelow < estimatedMenuHeight && rect.top > estimatedMenuHeight;
+
+      setMenuPosition({
+        top: openUp ? rect.top - 8 : rect.bottom + 4,
+        left: align === 'right' ? rect.right : rect.left,
+        openUp,
+      });
+    }
+    setIsOpen(true);
+  };
+
   const close = () => setIsOpen(false);
+
+  const toggleOpen = () => {
+    if (isOpen) close();
+    else handleOpen();
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -40,41 +68,39 @@ export default function DropdownMenu({
     };
   }, [isOpen]);
 
-  const alignStyles = align === 'right' ? 'right-0' : 'left-0';
-  const originStyles =
-    align === 'right' ? 'origin-top-right' : 'origin-top-left';
-
-  const menuClasses = `
-    absolute
-    ${alignStyles}
-    top-full
-    mt-2
-    z-50
-    min-w-[180px]
-    rounded-lg
-    border
-    border-gray-200
-    bg-white
-    shadow-lg
-    py-1
-    transition-all
-    duration-150
-    ${originStyles}
-    ${isOpen ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible pointer-events-none'}
-    ${className}
-  `
-    .trim()
-    .replace(/\s+/g, ' ');
-
   return (
     <DropdownMenuContext.Provider value={{ close }}>
-      <div ref={containerRef} className='relative inline-block'>
-        <div onClick={toggleOpen} className='cursor-pointer'>
+      <div ref={containerRef} className="relative inline-block">
+        <div
+          ref={triggerRef}
+          onClick={toggleOpen}
+          className="cursor-pointer relative inline-block"
+        >
           {trigger}
         </div>
-        <div className={menuClasses} role='menu'>
-          {children}
-        </div>
+        {isOpen && (
+          <div
+            role="menu"
+            className={`rounded-lg border border-gray-200 bg-white py-1 shadow-lg min-w-[180px] ${className}`}
+            style={{
+              position: 'fixed',
+              top: menuPosition.openUp ? 'auto' : menuPosition.top,
+              bottom: menuPosition.openUp
+                ? typeof window !== 'undefined'
+                  ? `${window.innerHeight - menuPosition.top}px`
+                  : 'auto'
+                : 'auto',
+              left: align === 'right' ? 'auto' : menuPosition.left,
+              right:
+                align === 'right' && typeof window !== 'undefined'
+                  ? `${window.innerWidth - menuPosition.left}px`
+                  : 'auto',
+              zIndex: 9999,
+            }}
+          >
+            {children}
+          </div>
+        )}
       </div>
     </DropdownMenuContext.Provider>
   );

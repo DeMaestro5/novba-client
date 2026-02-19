@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
+import { ToastProvider } from '@/components/UI/Toast';
 
 export default function DashboardLayout({
   children,
@@ -52,7 +53,9 @@ export default function DashboardLayout({
               : 'opacity 150ms ease-in-out',
         }}
       >
-        <main className='min-h-screen bg-gray-50'>{children}</main>
+        <main className='min-h-screen bg-gray-50'>
+        <ToastProvider>{children}</ToastProvider>
+      </main>
       </div>
     </div>
   );
