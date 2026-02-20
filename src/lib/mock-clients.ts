@@ -2,7 +2,7 @@ import { MockClient } from '@/types/client.types';
 
 export const mockClients: MockClient[] = [
   {
-    id: 'c1',
+    id: 'client1',
     companyName: 'Acme Corp',
     contactName: 'John Doe',
     email: 'billing@acme.com',
@@ -19,7 +19,7 @@ export const mockClients: MockClient[] = [
     overdueCount: 0,
   },
   {
-    id: 'c2',
+    id: 'client2',
     companyName: 'TechStart Inc',
     contactName: 'Sarah Chen',
     email: 'finance@techstart.com',
@@ -36,7 +36,7 @@ export const mockClients: MockClient[] = [
     overdueCount: 0,
   },
   {
-    id: 'c3',
+    id: 'client3',
     companyName: 'Design Studio',
     contactName: 'Marcus Williams',
     email: 'accounts@designstudio.com',
@@ -53,7 +53,7 @@ export const mockClients: MockClient[] = [
     overdueCount: 1,
   },
   {
-    id: 'c4',
+    id: 'client4',
     companyName: 'Growth Labs',
     contactName: 'Priya Patel',
     email: 'billing@growthlabs.com',
@@ -70,7 +70,7 @@ export const mockClients: MockClient[] = [
     overdueCount: 0,
   },
   {
-    id: 'c5',
+    id: 'client5',
     companyName: 'Solo Ventures',
     contactName: 'Alex Rivera',
     email: 'pay@soloventures.com',
@@ -87,7 +87,7 @@ export const mockClients: MockClient[] = [
     overdueCount: 0,
   },
   {
-    id: 'c6',
+    id: 'client6',
     companyName: 'Legacy Co',
     contactName: 'Robert Thompson',
     email: 'billing@legacy.com',
