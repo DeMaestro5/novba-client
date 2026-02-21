@@ -318,7 +318,7 @@ export default function DashboardPage() {
                   key={g}
                   onClick={() => setChartGroupBy(g)}
                   className={`rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-all duration-200 ${
-                    chartGroupBy === g ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900'
+                    chartGroupBy === g ? 'bg-orange-600 text-white' : 'text-gray-500 hover:text-gray-900'
                   }`}
                 >
                   {g}
@@ -343,8 +343,21 @@ export default function DashboardPage() {
               <XAxis dataKey="period" tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v) => '$' + (v / 1000).toFixed(0) + 'k'} />
               <Tooltip
-                contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                formatter={(value: number | undefined) => ['$' + (value ?? 0).toLocaleString(), undefined]}
+                contentStyle={{
+                  borderRadius: '12px',
+                  border: '1px solid #e5e7eb',
+                  boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.15)',
+                  backgroundColor: '#ffffff',
+                  padding: '10px 14px',
+                }}
+                labelStyle={{ color: '#6b7280', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}
+                itemStyle={{ color: '#111827', fontSize: '13px', fontWeight: 600 }}
+                formatter={(value: number | undefined, name: string | undefined) => [
+                  <span key={name ?? ''} style={{ color: name === 'Income' ? '#ea580c' : '#9ca3af', fontWeight: 600 }}>
+                    {'$' + (value ?? 0).toLocaleString()}
+                  </span>,
+                  name ?? '',
+                ]}
               />
               <Legend iconType="circle" iconSize={8} />
               <Area
@@ -490,7 +503,16 @@ export default function DashboardPage() {
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v) => '$' + (v / 1000).toFixed(0) + 'k'} />
               <Tooltip
-                contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '12px' }}
+                contentStyle={{
+                  borderRadius: '12px',
+                  border: '1px solid #e5e7eb',
+                  boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.15)',
+                  backgroundColor: '#ffffff',
+                  padding: '10px 14px',
+                  fontSize: '12px',
+                }}
+                labelStyle={{ color: '#6b7280', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}
+                itemStyle={{ color: '#111827', fontSize: '13px', fontWeight: 600 }}
                 formatter={(value: number | undefined) => ['$' + (value ?? 0).toLocaleString(), undefined]}
               />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
