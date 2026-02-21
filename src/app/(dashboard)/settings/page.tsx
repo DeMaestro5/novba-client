@@ -7,12 +7,13 @@ import Card, { CardHeader, CardBody } from '@/components/UI/Card';
 import Select from '@/components/UI/Select';
 import TextArea from '@/components/UI/TextArea';
 import Badge from '@/components/UI/Badge';
+import Toggle from '@/components/UI/Toggle';
 import Modal, { ModalHeader, ModalBody, ModalFooter } from '@/components/UI/Modal';
 import { useToast } from '@/components/UI/Toast';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Tab = 'profile' | 'business' | 'invoice' | 'payments';
+type Tab = 'profile' | 'portfolio-profile' | 'business' | 'invoice' | 'payments';
 
 // ─── Mock initial data ─────────────────────────────────────────────────────────
 
@@ -666,7 +667,18 @@ export default function SettingsPage() {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [settings, setSettings] = useState({ ...mockSettings });
+  const [portfolioForm, setPortfolioForm] = useState({
+    portfolioSlug: 'stephen-okafor',
+    portfolioTitle: 'UI/UX Designer & Full-Stack Developer',
+    portfolioBio: 'I help startups and scale-ups turn complex problems into products people actually use. 6 years building digital products across fintech, e-commerce, and SaaS.',
+    portfolioLocation: 'Lagos, Nigeria',
+    isAvailable: true,
+    linkedinUrl: 'https://linkedin.com/in/stephen-okafor',
+    twitterUrl: 'https://twitter.com/stephenokafor',
+    githubUrl: 'https://github.com/stephenokafor',
+  });
   const [disconnectModal, setDisconnectModal] = useState(false);
+  const [isSavingPortfolio, setIsSavingPortfolio] = useState(false);
 
   const update = (patch: Partial<typeof mockSettings>) => {
     setSettings((prev) => ({ ...prev, ...patch }));
@@ -704,6 +716,16 @@ export default function SettingsPage() {
     console.log('=== PUT /api/v1/settings/business ===');
     console.log(JSON.stringify(payload, null, 2));
     showToast('Business settings saved', 'success');
+  };
+
+  // ── Portfolio profile save ───────────────────────────────────────────────────
+  const savePortfolioProfile = () => {
+    setIsSavingPortfolio(true);
+    setTimeout(() => {
+      console.log('Portfolio profile save:', portfolioForm);
+      showToast('Portfolio profile saved successfully', 'success');
+      setIsSavingPortfolio(false);
+    }, 1000);
   };
 
   // ── Invoice defaults save ───────────────────────────────────────────────────
@@ -748,6 +770,15 @@ export default function SettingsPage() {
       icon: (
         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      ),
+    },
+    {
+      id: 'portfolio-profile',
+      label: 'Portfolio Profile',
+      icon: (
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
         </svg>
       ),
     },
@@ -826,6 +857,201 @@ export default function SettingsPage() {
         <main className="min-w-0 flex-1">
           {activeTab === 'profile' && (
             <ProfileSection settings={settings} update={update} showToast={showToast} saveProfile={saveProfile} />
+          )}
+          {activeTab === 'portfolio-profile' && (
+            <div className="space-y-6">
+              {/* Portfolio Identity */}
+              <section className="rounded-2xl border border-gray-200 bg-white p-6">
+                <div className="mb-6 border-b border-gray-100 pb-4">
+                  <h2 className="text-base font-semibold text-gray-900">Portfolio Identity</h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    This is how you appear on your public portfolio page
+                  </p>
+                </div>
+
+                <div className="space-y-5">
+                  {/* Portfolio URL / Slug */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Portfolio URL
+                    </label>
+                    <div className="flex items-center rounded-xl border-2 border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
+                      <span className="ml-3 text-sm text-gray-400 whitespace-nowrap">novba.app/p/</span>
+                      <input
+                        type="text"
+                        value={portfolioForm.portfolioSlug}
+                        onChange={(e) => setPortfolioForm((p) => ({ ...p, portfolioSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
+                        placeholder="your-name"
+                        className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 text-sm"
+                      />
+                    </div>
+                    <p className="mt-1.5 text-xs text-gray-400">
+                      Lowercase letters, numbers, and hyphens only. Min 3 characters.
+                    </p>
+                  </div>
+
+                  {/* Display Title */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Display Title
+                    </label>
+                    <input
+                      type="text"
+                      value={portfolioForm.portfolioTitle}
+                      onChange={(e) => setPortfolioForm((p) => ({ ...p, portfolioTitle: e.target.value }))}
+                      placeholder="UI/UX Designer & Full-Stack Developer"
+                      maxLength={100}
+                      className="w-full rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all"
+                    />
+                    <p className="mt-1.5 text-xs text-gray-400">
+                      Shown below your name on your portfolio. Max 100 characters.
+                    </p>
+                  </div>
+
+                  {/* Bio */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Bio
+                    </label>
+                    <textarea
+                      value={portfolioForm.portfolioBio}
+                      onChange={(e) => setPortfolioForm((p) => ({ ...p, portfolioBio: e.target.value }))}
+                      placeholder="I help startups and scale-ups turn complex problems into products people actually use..."
+                      rows={4}
+                      maxLength={500}
+                      className="w-full rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all resize-none"
+                    />
+                    <div className="mt-1.5 flex items-center justify-between">
+                      <p className="text-xs text-gray-400">Appears in your profile section. Max 500 characters.</p>
+                      <p className="text-xs text-gray-400">{portfolioForm.portfolioBio.length}/500</p>
+                    </div>
+                  </div>
+
+                  {/* Location */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      value={portfolioForm.portfolioLocation}
+                      onChange={(e) => setPortfolioForm((p) => ({ ...p, portfolioLocation: e.target.value }))}
+                      placeholder="Lagos, Nigeria"
+                      maxLength={100}
+                      className="w-full rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all"
+                    />
+                  </div>
+
+                  {/* Availability Toggle */}
+                  <div className="flex items-center justify-between rounded-xl border-2 border-gray-200 p-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Available for work</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Shows a green &quot;Available for work&quot; badge on your portfolio
+                      </p>
+                    </div>
+                    <Toggle
+                      checked={portfolioForm.isAvailable}
+                      onChange={(checked) => setPortfolioForm((p) => ({ ...p, isAvailable: checked }))}
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* Social Links */}
+              <section className="rounded-2xl border border-gray-200 bg-white p-6">
+                <div className="mb-6 border-b border-gray-100 pb-4">
+                  <h2 className="text-base font-semibold text-gray-900">Social Links</h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Displayed as icon buttons on your public portfolio
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {/* LinkedIn */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">LinkedIn</label>
+                    <div className="flex items-center rounded-xl border-2 border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
+                      <span className="ml-3">
+                        <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                        </svg>
+                      </span>
+                      <input
+                        type="url"
+                        value={portfolioForm.linkedinUrl}
+                        onChange={(e) => setPortfolioForm((p) => ({ ...p, linkedinUrl: e.target.value }))}
+                        placeholder="https://linkedin.com/in/your-name"
+                        className="flex-1 border-0 bg-transparent py-2.5 px-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Twitter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Twitter / X</label>
+                    <div className="flex items-center rounded-xl border-2 border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
+                      <span className="ml-3">
+                        <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                        </svg>
+                      </span>
+                      <input
+                        type="url"
+                        value={portfolioForm.twitterUrl}
+                        onChange={(e) => setPortfolioForm((p) => ({ ...p, twitterUrl: e.target.value }))}
+                        placeholder="https://twitter.com/your-handle"
+                        className="flex-1 border-0 bg-transparent py-2.5 px-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0"
+                      />
+                    </div>
+                  </div>
+
+                  {/* GitHub */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">GitHub</label>
+                    <div className="flex items-center rounded-xl border-2 border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
+                      <span className="ml-3">
+                        <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                          <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+                        </svg>
+                      </span>
+                      <input
+                        type="url"
+                        value={portfolioForm.githubUrl}
+                        onChange={(e) => setPortfolioForm((p) => ({ ...p, githubUrl: e.target.value }))}
+                        placeholder="https://github.com/your-username"
+                        className="flex-1 border-0 bg-transparent py-2.5 px-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Public URL preview banner */}
+              {portfolioForm.portfolioSlug && portfolioForm.portfolioSlug.length >= 3 && (
+                <div className="flex items-center justify-between rounded-xl bg-orange-50 border border-orange-100 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-sm text-gray-700">
+                      Your portfolio will be live at{' '}
+                      <span className="font-semibold text-gray-900">
+                        novba.app/p/{portfolioForm.portfolioSlug}
+                      </span>
+                    </span>
+                  </div>
+                  <a
+                    href={`/p/${portfolioForm.portfolioSlug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-orange-600 hover:text-orange-700"
+                  >
+                    Preview →
+                  </a>
+                </div>
+              )}
+
+              <SaveRow onSave={savePortfolioProfile} loading={isSavingPortfolio} />
+            </div>
           )}
           {activeTab === 'business' && (
             <BusinessSection settings={settings} update={update} showToast={showToast} saveBusiness={saveBusiness} />
