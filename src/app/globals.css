@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   --background: #ffffff;
@@ -12,58 +12,64 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* 
+  DO NOT add background-color to html/body here.
+  Theme (light/dark) is controlled by the ThemeProvider via a
+  class on <html>: "light" or "dark". Adding a hardcoded background
+  here overrides everything and breaks both modes.
+  
+  When dark mode is implemented:
+    html.dark  → bg-gray-950
+    html.light → bg-gray-50
+  Those will be applied via Tailwind's darkMode: 'class' strategy.
+*/
 
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  overscroll-behavior: none;
+  background-color: #f9fafb; /* gray-50 — light mode default until theme toggle is built */
 }
 
 /* ── Global cursor rules ─────────────────────────────── */
 button,
 a,
-[role="button"],
-[role="tab"],
-[role="menuitem"],
-[role="option"],
-[role="checkbox"],
-[role="switch"],
-[role="radio"],
+[role='button'],
+[role='tab'],
+[role='menuitem'],
+[role='option'],
+[role='checkbox'],
+[role='switch'],
+[role='radio'],
 select,
 label,
-input[type="checkbox"],
-input[type="radio"],
-input[type="submit"],
-input[type="button"],
-input[type="file"],
+input[type='checkbox'],
+input[type='radio'],
+input[type='submit'],
+input[type='button'],
+input[type='file'],
 .cursor-pointer {
   cursor: pointer;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-input[type="date"],
-input[type="search"],
-input[type="url"],
-input[type="tel"],
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='number'],
+input[type='date'],
+input[type='search'],
+input[type='url'],
+input[type='tel'],
 textarea {
   cursor: text;
 }
 
-input[type="range"] {
+input[type='range'] {
   cursor: grab;
 }
 
 input[disabled],
 button[disabled],
-[aria-disabled="true"] {
+[aria-disabled='true'] {
   cursor: not-allowed;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useLayoutEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { ToastProvider } from '@/components/UI/Toast';
 
@@ -9,6 +10,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -30,6 +32,15 @@ export default function DashboardLayout({
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Redirect new users to onboarding
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const completed = localStorage.getItem('novba_onboarding_completed');
+    if (completed !== 'true') {
+      router.replace('/onboarding');
+    }
+  }, [router]);
 
   const handleCollapseChange = (collapsed: boolean) => {
     setIsCollapsed(collapsed);
