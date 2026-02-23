@@ -18,6 +18,8 @@ export default function Table({ children, className = '' }: TableProps) {
     w-full
     border
     border-gray-200
+    dark:bg-gray-900
+    dark:border-gray-700
     rounded-lg
     overflow-hidden
     ${className}
@@ -37,6 +39,8 @@ export default function Table({ children, className = '' }: TableProps) {
  */
 export function TableHeader({ children, className = '' }: TableHeaderProps) {
   const headerClasses = `
+    dark:bg-gray-800/50
+    dark:border-gray-700
     ${className}
   `
     .trim()
@@ -51,7 +55,10 @@ export function TableHeader({ children, className = '' }: TableHeaderProps) {
 export function TableBody({ children, className = '' }: TableBodyProps) {
   const bodyClasses = `
     [&>tr:nth-child(odd)]:bg-white
+    dark:[&>tr:nth-child(odd)]:bg-gray-900
     [&>tr:nth-child(even)]:bg-gray-50/50
+    dark:[&>tr:nth-child(even)]:bg-gray-800/30
+    dark:divide-gray-700
     ${className}
   `
     .trim()
@@ -68,7 +75,9 @@ export function TableRow({ children, className = '', onClick }: TableRowProps) {
     transition-colors
     duration-150
     ${onClick ? 'cursor-pointer' : ''}
-    hover:!bg-gray-50
+    hover:bg-gray-50
+    dark:border-gray-700
+    dark:hover:bg-gray-800/50
     ${className}
   `
     .trim()
@@ -90,15 +99,11 @@ export function TableRow({ children, className = '', onClick }: TableRowProps) {
  */
 export function TableHead({ children, className = '' }: TableHeadProps) {
   const headClasses = `
-    px-4
-    py-3
-    text-left
-    text-xs
-    font-semibold
-    text-gray-600
-    uppercase
-    tracking-wide
-    bg-gray-50
+    px-4 py-3 text-left text-xs font-semibold
+    text-gray-600 dark:text-gray-400
+    uppercase tracking-wide
+    bg-gray-50 dark:bg-gray-800/50
+    dark:border-gray-700
     ${className}
   `
     .trim()
@@ -116,6 +121,7 @@ export function TableCell({ children, className = '' }: TableCellProps) {
     py-3
     text-sm
     text-gray-900
+    dark:text-gray-300
     ${className}
   `
     .trim()

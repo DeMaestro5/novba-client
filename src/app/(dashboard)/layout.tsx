@@ -15,25 +15,20 @@ export default function DashboardLayout({
   const [isMounted, setIsMounted] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Read from localStorage on mount (before paint)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('sidebarCollapsed');
       if (saved === 'true') {
         setIsCollapsed(true);
       }
-      // Mark as hydrated immediately after reading
       setIsHydrated(true);
     }
   }, []);
 
-  // Enable transitions after mount
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Redirect new users to onboarding
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const completed = localStorage.getItem('novba_onboarding_completed');
@@ -50,7 +45,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className='bg-gray-50 min-h-screen'>
+    <div className='bg-gray-50 dark:bg-gray-950 min-h-screen'>
       <Sidebar onCollapseChange={handleCollapseChange} />
 
       <div
@@ -64,9 +59,9 @@ export default function DashboardLayout({
               : 'opacity 150ms ease-in-out',
         }}
       >
-        <main className='min-h-screen bg-gray-50'>
-        <ToastProvider>{children}</ToastProvider>
-      </main>
+        <main className='min-h-screen bg-gray-50 dark:bg-gray-950'>
+          <ToastProvider>{children}</ToastProvider>
+        </main>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTheme } from '@/components/ThemeProvider';
 
 // GET /dashboard/overview?startDate=X&endDate=Y
 const mockOverview = {
@@ -126,20 +127,32 @@ function getHealthColor(status: string): string {
 export default function DashboardPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [chartGroupBy, setChartGroupBy] = useState<'day' | 'week' | 'month'>('month');
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  const chartColors = {
+    grid: isDark ? '#1f2937' : '#f3f4f6',
+    axis: isDark ? '#6b7280' : '#9ca3af',
+    tooltip: {
+      bg: isDark ? '#111827' : '#ffffff',
+      border: isDark ? '#374151' : '#e5e7eb',
+      label: isDark ? '#9ca3af' : '#6b7280',
+      text: isDark ? '#f9fafb' : '#111827',
+    },
+  };
 
   return (
     <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
       {/* ===== HEADER ===== */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Good morning, Stephen 👋</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Good morning, Stephen 👋</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Tuesday, February 17, 2026 · Here&apos;s your business overview
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+          <div className="flex rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 bg-white p-1 shadow-sm">
             {periods.map((p) => (
               <button
                 key={p.value}
@@ -147,7 +160,7 @@ export default function DashboardPage() {
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
                   selectedPeriod === p.value
                     ? 'bg-orange-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
                 }`}
               >
                 {p.label}
@@ -206,9 +219,9 @@ export default function DashboardPage() {
 
       {/* ===== STAT CARDS ROW ===== */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-700 dark:bg-gray-900 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Total Revenue
             </span>
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50">
@@ -218,7 +231,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mb-2">
-            <span className="text-3xl font-bold text-gray-900">
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">
               {formatCurrency(mockOverview.revenue.current)}
             </span>
           </div>
@@ -227,13 +240,13 @@ export default function DashboardPage() {
               {mockOverview.revenue.percentChange > 0 ? '↑' : '↓'}
               {Math.abs(mockOverview.revenue.percentChange)}%
             </span>
-            <span className="text-xs text-gray-500">vs last period</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">vs last period</span>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-700 dark:bg-gray-900 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Pending Invoices
             </span>
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-50">
@@ -243,7 +256,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mb-2">
-            <span className="text-3xl font-bold text-gray-900">
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">
               {formatCurrency(mockOverview.pendingInvoices.amount)}
             </span>
           </div>
@@ -251,13 +264,13 @@ export default function DashboardPage() {
             <span className="rounded-full bg-yellow-50 px-2 py-0.5 text-xs font-semibold text-yellow-700">
               {mockOverview.pendingInvoices.count} invoices
             </span>
-            <span className="text-xs text-gray-500">awaiting payment</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">awaiting payment</span>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-700 dark:bg-gray-900 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Outstanding
             </span>
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50">
@@ -267,7 +280,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mb-2">
-            <span className="text-3xl font-bold text-gray-900">
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">
               {formatCurrency(mockOverview.outstandingPayments.amount)}
             </span>
           </div>
@@ -275,13 +288,13 @@ export default function DashboardPage() {
             <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">
               {mockOverview.outstandingPayments.overdueCount} overdue
             </span>
-            <span className="text-xs text-gray-500">needs attention</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">needs attention</span>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-700 dark:bg-gray-900 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Active Clients
             </span>
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50">
@@ -291,7 +304,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mb-2">
-            <span className="text-3xl font-bold text-gray-900">
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">
               {mockOverview.activeClients.current}
             </span>
           </div>
@@ -299,26 +312,26 @@ export default function DashboardPage() {
             <span className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold ${getChangeBg(mockOverview.activeClients.percentChange)} ${getChangeColor(mockOverview.activeClients.percentChange)}`}>
               ↑ {mockOverview.activeClients.percentChange}%
             </span>
-            <span className="text-xs text-gray-500">vs last period</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">vs last period</span>
           </div>
         </div>
       </div>
 
       {/* ===== CHARTS ROW ===== */}
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm lg:col-span-2">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-700 dark:bg-gray-900 bg-white p-5 shadow-sm lg:col-span-2">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h3 className="text-base font-semibold text-gray-900">Revenue Overview</h3>
-              <p className="mt-0.5 text-xs text-gray-500">Income vs Expenses</p>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Revenue Overview</h3>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Income vs Expenses</p>
             </div>
-            <div className="flex rounded-lg border border-gray-200 p-0.5">
+            <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5">
               {(['day', 'week', 'month'] as const).map((g) => (
                 <button
                   key={g}
                   onClick={() => setChartGroupBy(g)}
                   className={`rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-all duration-200 ${
-                    chartGroupBy === g ? 'bg-orange-600 text-white' : 'text-gray-500 hover:text-gray-900'
+                    chartGroupBy === g ? 'bg-orange-600 text-white' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
                   }`}
                 >
                   {g}
@@ -339,19 +352,19 @@ export default function DashboardPage() {
                   <stop offset="95%" stopColor="#6b7280" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis dataKey="period" tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v) => '$' + (v / 1000).toFixed(0) + 'k'} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+              <XAxis dataKey="period" tick={{ fontSize: 12, fill: chartColors.axis }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 12, fill: chartColors.axis }} axisLine={false} tickLine={false} tickFormatter={(v) => '$' + (v / 1000).toFixed(0) + 'k'} />
               <Tooltip
                 contentStyle={{
                   borderRadius: '12px',
-                  border: '1px solid #e5e7eb',
+                  border: `1px solid ${chartColors.tooltip.border}`,
                   boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.15)',
-                  backgroundColor: '#ffffff',
+                  backgroundColor: chartColors.tooltip.bg,
                   padding: '10px 14px',
                 }}
-                labelStyle={{ color: '#6b7280', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}
-                itemStyle={{ color: '#111827', fontSize: '13px', fontWeight: 600 }}
+                labelStyle={{ color: chartColors.tooltip.label, fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}
+                itemStyle={{ color: chartColors.tooltip.text, fontSize: '13px', fontWeight: 600 }}
                 formatter={(value: number | undefined, name: string | undefined) => [
                   <span key={name ?? ''} style={{ color: name === 'Income' ? '#ea580c' : '#9ca3af', fontWeight: 600 }}>
                     {'$' + (value ?? 0).toLocaleString()}
@@ -384,16 +397,16 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-700 dark:bg-gray-900 bg-white p-5 shadow-sm">
           <div className="mb-5">
-            <h3 className="text-base font-semibold text-gray-900">Business Health</h3>
-            <p className="mt-0.5 text-xs text-gray-500">Based on your activity</p>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Business Health</h3>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Based on your activity</p>
           </div>
 
           <div className="mb-6 flex flex-col items-center">
             <div className="relative flex h-32 w-32 items-center justify-center">
               <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="50" fill="none" stroke="#f3f4f6" strokeWidth="10" />
+                <circle cx="60" cy="60" r="50" fill="none" stroke={isDark ? '#1f2937' : '#f3f4f6'} strokeWidth="10" />
                 <circle
                   cx="60"
                   cy="60"
@@ -408,7 +421,7 @@ export default function DashboardPage() {
                 />
               </svg>
               <div className="text-center">
-                <span className="text-3xl font-black text-gray-900">{mockHealth.healthScore}</span>
+                <span className="text-3xl font-black text-gray-900 dark:text-white">{mockHealth.healthScore}</span>
                 <p className={`text-xs font-bold uppercase tracking-wider ${getHealthColor(mockHealth.healthStatus)}`}>
                   {mockHealth.healthStatus}
                 </p>
@@ -424,7 +437,7 @@ export default function DashboardPage() {
               { label: 'Revenue Growth', value: mockHealth.revenueGrowthRate, unit: '%', threshold: 0 },
             ].map((metric) => (
               <div key={metric.label} className="flex items-center justify-between">
-                <span className="text-xs text-gray-600">{metric.label}</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400">{metric.label}</span>
                 <span
                   className={`text-xs font-semibold ${
                     metric.lower
@@ -451,11 +464,11 @@ export default function DashboardPage() {
 
       {/* ===== BOTTOM ROW ===== */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-700 dark:bg-gray-900 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h3 className="text-base font-semibold text-gray-900">Top Clients</h3>
-              <p className="mt-0.5 text-xs text-gray-500">By revenue this period</p>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Top Clients</h3>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">By revenue this period</p>
             </div>
             <Link href="/clients" className="text-xs font-medium text-orange-600 hover:text-orange-700 focus:outline-none">
               View all →
@@ -470,16 +483,16 @@ export default function DashboardPage() {
                 <div key={client.name}>
                   <div className="mb-1.5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-600">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-300">
                         {index + 1}
                       </span>
-                      <span className="text-sm font-medium text-gray-900">{client.name}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{client.name}</span>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
                       {formatCurrency(client.revenue)}
                     </span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-gray-100">
+                  <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700">
                     <div
                       className="h-1.5 rounded-full bg-orange-500 transition-all duration-500"
                       style={{ width: `${percentage}%` }}
@@ -491,28 +504,28 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-700 dark:bg-gray-900 bg-white p-5 shadow-sm">
           <div className="mb-5">
-            <h3 className="text-base font-semibold text-gray-900">Cash Flow Forecast</h3>
-            <p className="mt-0.5 text-xs text-gray-500">Next 6 months projection</p>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Cash Flow Forecast</h3>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Next 6 months projection</p>
           </div>
 
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={mockForecast} margin={{ top: 5, right: 5, left: -20, bottom: 0 }} barGap={2}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v) => '$' + (v / 1000).toFixed(0) + 'k'} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: chartColors.axis }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: chartColors.axis }} axisLine={false} tickLine={false} tickFormatter={(v) => '$' + (v / 1000).toFixed(0) + 'k'} />
               <Tooltip
                 contentStyle={{
                   borderRadius: '12px',
-                  border: '1px solid #e5e7eb',
+                  border: `1px solid ${chartColors.tooltip.border}`,
                   boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.15)',
-                  backgroundColor: '#ffffff',
+                  backgroundColor: chartColors.tooltip.bg,
                   padding: '10px 14px',
                   fontSize: '12px',
                 }}
-                labelStyle={{ color: '#6b7280', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}
-                itemStyle={{ color: '#111827', fontSize: '13px', fontWeight: 600 }}
+                labelStyle={{ color: chartColors.tooltip.label, fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}
+                itemStyle={{ color: chartColors.tooltip.text, fontSize: '13px', fontWeight: 600 }}
                 formatter={(value: number | undefined) => ['$' + (value ?? 0).toLocaleString(), undefined]}
               />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
@@ -522,11 +535,11 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-700 dark:bg-gray-900 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h3 className="text-base font-semibold text-gray-900">Recent Activity</h3>
-              <p className="mt-0.5 text-xs text-gray-500">Latest transactions</p>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Recent Activity</h3>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Latest transactions</p>
             </div>
             <Link href="/invoices" className="text-xs font-medium text-orange-600 hover:text-orange-700 focus:outline-none">
               View all →
@@ -538,7 +551,7 @@ export default function DashboardPage() {
               <Link
                 key={activity.id}
                 href={`/invoices/${activity.id}`}
-                className="flex items-center gap-3 rounded-lg transition-colors hover:bg-gray-50 -mx-2 px-2 py-1.5"
+                className="flex items-center gap-3 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5"
               >
                 <div
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
@@ -557,14 +570,14 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-gray-900">{activity.client}</p>
-                  <p className="text-xs text-gray-500">{activity.time}</p>
+                  <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{activity.client}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</p>
                 </div>
 
                 <div className="shrink-0 text-right">
                   <p
                     className={`text-sm font-semibold ${
-                      activity.type === 'payment' ? 'text-green-600' : 'text-gray-900'
+                      activity.type === 'payment' ? 'text-green-600' : 'text-gray-900 dark:text-white'
                     }`}
                   >
                     {activity.type === 'payment' ? '+' : ''}

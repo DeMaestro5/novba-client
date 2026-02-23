@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -12,23 +14,25 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* 
-  DO NOT add background-color to html/body here.
-  Theme (light/dark) is controlled by the ThemeProvider via a
-  class on <html>: "light" or "dark". Adding a hardcoded background
-  here overrides everything and breaks both modes.
-  
-  When dark mode is implemented:
-    html.dark  → bg-gray-950
-    html.light → bg-gray-50
-  Those will be applied via Tailwind's darkMode: 'class' strategy.
-*/
-
 body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   overscroll-behavior: none;
-  background-color: #f9fafb; /* gray-50 — light mode default until theme toggle is built */
+  background-color: #f9fafb;
+}
+
+/* Block system dark mode — Novba theme is user-controlled only */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #f9fafb;
+    color: #171717;
+  }
+}
+
+/* Only go dark when ThemeProvider explicitly sets the class */
+html.dark body {
+  background-color: #030712;
+  color: #f9fafb;
 }
 
 /* ── Global cursor rules ─────────────────────────────── */

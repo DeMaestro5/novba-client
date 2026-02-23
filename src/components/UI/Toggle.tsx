@@ -61,7 +61,7 @@ export default function Toggle({
     focus-visible:ring-offset-2
     cursor-pointer
     ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-    ${checked ? 'bg-orange-600 hover:bg-orange-700' : 'bg-gray-200 hover:bg-gray-300'}
+    ${checked ? 'bg-orange-600 hover:bg-orange-700' : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700'}
   `
     .trim()
     .replace(/\s+/g, ' ');
@@ -106,14 +106,14 @@ export default function Toggle({
         <div className='flex-1 min-w-0'>
           {label && (
             <label
-              className='text-sm font-medium text-gray-900 cursor-pointer'
+              className='text-sm font-medium text-gray-900 dark:text-gray-300 cursor-pointer'
               onClick={() => !disabled && inputRef.current?.click()}
             >
               {label}
             </label>
           )}
           {description && (
-            <p id='toggle-description' className='text-xs text-gray-500 mt-0.5'>
+            <p id='toggle-description' className='text-xs text-gray-500 dark:text-gray-400 mt-0.5'>
               {description}
             </p>
           )}

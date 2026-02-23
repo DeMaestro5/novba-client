@@ -52,7 +52,9 @@ export default function TextArea({
     py-2.5
     text-base
     text-gray-900
+    dark:text-white
     bg-white
+    dark:bg-gray-800
     border-2
     rounded-lg
     transition-all
@@ -61,11 +63,12 @@ export default function TextArea({
     disabled:bg-gray-50
     disabled:text-gray-500
     disabled:cursor-not-allowed
+    dark:placeholder:text-gray-500
   `;
 
   const borderStyles = error
     ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-    : 'border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-200';
+    : 'border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-gray-700 dark:focus:border-orange-500';
 
   // Resize styles
   // Map resize prop to correct Tailwind classes
@@ -91,6 +94,7 @@ export default function TextArea({
     text-sm
     font-medium
     text-gray-700
+    dark:text-gray-300
     mb-1.5
   `;
 
@@ -107,6 +111,7 @@ export default function TextArea({
     mt-1.5
     text-sm
     text-gray-500
+    dark:text-gray-400
   `;
 
   // Character counter styles

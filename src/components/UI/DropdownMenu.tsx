@@ -91,7 +91,7 @@ export default function DropdownMenu({
         {isOpen && (
           <div
             role="menu"
-            className={`rounded-lg border border-gray-200 bg-white py-1 shadow-lg min-w-[180px] ${className}`}
+            className={`rounded-lg border border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-700 dark:shadow-2xl py-1 shadow-lg min-w-[180px] ${className}`}
             style={{
               position: 'fixed',
               top: menuPosition.openUp ? 'auto' : menuPosition.top,
@@ -129,7 +129,7 @@ export function DropdownMenuItem({
   const context = useContext(DropdownMenuContext);
 
   const variantStyles = {
-    default: 'text-gray-700 hover:bg-gray-50',
+    default: 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white',
     danger: 'text-red-600 hover:bg-red-50',
   };
 
@@ -172,5 +172,5 @@ export function DropdownMenuItem({
  * DropdownMenuDivider – Visual separator between menu item groups.
  */
 export function DropdownMenuDivider() {
-  return <div className='my-1 border-t border-gray-100' role='separator' />;
+  return <div className='my-1 border-t border-gray-100 dark:border-gray-700' role='separator' />;
 }

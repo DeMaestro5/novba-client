@@ -73,6 +73,7 @@ export default function Pagination({
     gap-4
     border-t
     border-gray-200
+    dark:border-gray-700
     pt-4
     transition-opacity
     duration-200
@@ -87,7 +88,7 @@ export default function Pagination({
       className={containerClasses}
       aria-label="Pagination"
     >
-      <div className="text-sm text-gray-600 order-2 sm:order-1">
+      <div className="text-sm text-gray-600 dark:text-gray-400 order-2 sm:order-1">
         Page {currentPage} of {Math.max(1, totalPages)}
       </div>
 
@@ -122,7 +123,7 @@ export default function Pagination({
               item === 'ellipsis' ? (
                 <span
                   key={`ellipsis-${index}`}
-                  className="px-2 text-gray-400"
+                  className="px-2 text-gray-400 dark:text-gray-500"
                   aria-hidden
                 >
                   …

@@ -22,7 +22,9 @@ export default function Input({
     py-2
     text-base
     text-gray-900
+    dark:text-white
     bg-white
+    dark:bg-gray-800
     border-2
     rounded-lg
     transition-all
@@ -30,10 +32,11 @@ export default function Input({
     focus:outline-none
     disabled:bg-gray-50
     disabled:text-gray-500
-    disabled:cursor-not-allowed`;
+    disabled:cursor-not-allowed
+    dark:placeholder:text-gray-500`;
   const borderStyles = error
     ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-    : 'border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-200';
+    : 'border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-gray-700 dark:focus:border-orange-500';
   const iconPaddingStyles = `
     ${leftIcon ? 'pl-10' : ''}
     ${rightIcon ? 'pr-10' : ''}
@@ -43,6 +46,7 @@ export default function Input({
   text-sm
   font-medium
   text-gray-700
+  dark:text-gray-300
   mb-1.5
 `;
   const errorStyles = `
@@ -57,6 +61,7 @@ gap-1
 mt-1.5
 text-sm
 text-gray-500
+dark:text-gray-400
 `;
   const iconStyles = `
     absolute

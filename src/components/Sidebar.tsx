@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTheme } from '@/components/ThemeProvider';
 
 const navItems = [
   {
@@ -222,6 +223,7 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const pathname = usePathname();
+  const { mode, setMode } = useTheme();
 
   // Read from localStorage on mount; defer setState to avoid synchronous setState in effect
   useEffect(() => {
@@ -254,10 +256,10 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
   return (
     <>
       {/* MOBILE HEADER */}
-      <header className='fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-gray-100 bg-white px-4 lg:hidden'>
+      <header className='fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-gray-100 dark:border-gray-800 dark:bg-gray-900 bg-white px-4 lg:hidden'>
         <button
           onClick={() => setMobileOpen(true)}
-          className='flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none'
+          className='flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 focus:outline-none'
         >
           <svg
             className='h-5 w-5'
@@ -292,7 +294,7 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
 
       {/* SIDEBAR - Hidden until hydrated to prevent flash */}
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-gray-100 bg-white overflow-hidden transition-all duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-gray-100 dark:border-gray-800 dark:bg-gray-900 bg-white overflow-hidden transition-all duration-300 ease-in-out ${
           mobileOpen ? 'w-[240px] translate-x-0' : 'w-[240px] -translate-x-full'
         } lg:translate-x-0 ${isCollapsed ? 'lg:w-[72px]' : 'lg:w-[240px]'} ${
           isHydrated ? 'opacity-100' : 'opacity-0'
@@ -305,7 +307,7 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
       >
         {/* HEADER */}
         <div
-          className={`flex h-14 shrink-0 items-center border-b border-gray-100 px-4 ${isCollapsed ? 'lg:justify-center' : 'justify-between'}`}
+          className={`flex h-14 shrink-0 items-center border-b border-gray-100 dark:border-gray-800 px-4 ${isCollapsed ? 'lg:justify-center' : 'justify-between'}`}
         >
           {/* Logo - hide when collapsed */}
           {!isCollapsed && (
@@ -320,7 +322,7 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
           {/* Mobile close button */}
           <button
             onClick={() => setMobileOpen(false)}
-            className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none lg:hidden'
+            className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300 focus:outline-none lg:hidden'
           >
             <svg
               className='h-4 w-4'
@@ -340,7 +342,7 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
           {/* Desktop collapse toggle */}
           <button
             onClick={() => handleCollapse(!isCollapsed)}
-            className='hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:outline-none lg:flex'
+            className='hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300 focus:outline-none lg:flex'
           >
             {isCollapsed ? (
               <svg
@@ -389,9 +391,9 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
                 } ${
                   isActive
                     ? item.isSpecial
-                      ? 'bg-orange-600 text-white shadow-sm shadow-orange-200'
-                      : 'bg-orange-50 text-orange-600'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-orange-600 text-white shadow-sm shadow-orange-200 dark:shadow-orange-900'
+                      : 'bg-orange-50 text-orange-600 dark:bg-orange-600/20 dark:text-orange-400'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white'
                 }`}
               >
                 {/* Icon - ALWAYS VISIBLE */}
@@ -402,7 +404,7 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
                   <>
                     <span className='ml-3 whitespace-nowrap'>{item.label}</span>
                     {item.isSpecial && !isActive && (
-                      <span className='ml-auto shrink-0 rounded-full bg-orange-100 px-1.5 py-0.5 text-xs font-bold text-orange-600'>
+                      <span className='ml-auto shrink-0 rounded-full bg-orange-100 px-1.5 py-0.5 text-xs font-bold text-orange-600 dark:bg-orange-900/50 dark:text-orange-400'>
                         NEW
                       </span>
                     )}
@@ -413,10 +415,93 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
           })}
         </nav>
 
+        {/* THEME TOGGLE */}
+        {!isCollapsed && (
+          <div className='px-3 pb-2'>
+            <div className='flex items-center rounded-xl bg-gray-100 dark:bg-gray-800 p-1 gap-0.5'>
+              {(
+                [
+                  {
+                    value: 'light' as const,
+                    label: 'Light',
+                    icon: (
+                      <svg className='h-3.5 w-3.5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2}
+                          d='M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z' />
+                      </svg>
+                    ),
+                  },
+                  {
+                    value: 'dark' as const,
+                    label: 'Dark',
+                    icon: (
+                      <svg className='h-3.5 w-3.5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2}
+                          d='M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z' />
+                      </svg>
+                    ),
+                  },
+                  {
+                    value: 'system' as const,
+                    label: 'System',
+                    icon: (
+                      <svg className='h-3.5 w-3.5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2}
+                          d='M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' />
+                      </svg>
+                    ),
+                  },
+                ] as const
+              ).map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setMode(option.value)}
+                  title={option.label}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium transition-all ${
+                    mode === option.value
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  }`}
+                >
+                  {option.icon}
+                  <span>{option.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {isCollapsed && (
+          <div className='px-3 pb-2 hidden lg:block'>
+            <button
+              onClick={() => setMode(mode === 'dark' ? 'light' : mode === 'light' ? 'system' : 'dark')}
+              title={`Theme: ${mode}`}
+              className='flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors mx-auto'
+            >
+              {mode === 'dark' ? (
+                <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2}
+                    d='M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z' />
+                </svg>
+              ) : mode === 'system' ? (
+                <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2}
+                    d='M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' />
+                </svg>
+              ) : (
+                <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2}
+                    d='M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z' />
+                </svg>
+              )}
+            </button>
+          </div>
+        )}
+
         {/* USER PROFILE */}
-        <div className='shrink-0 border-t border-gray-100 p-3'>
+        <div className='shrink-0 border-t border-gray-100 dark:border-gray-800 p-3'>
           <div
-            className={`flex cursor-pointer items-center rounded-xl p-2 transition-colors hover:bg-gray-50 ${isCollapsed ? 'lg:justify-center' : 'gap-3'}`}
+            className={`flex cursor-pointer items-center rounded-xl p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${isCollapsed ? 'lg:justify-center' : 'gap-3'}`}
           >
             {/* Avatar - always visible */}
             <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-600 text-sm font-bold text-white'>
@@ -425,10 +510,10 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
             {/* Name/Plan - hidden when collapsed */}
             {!isCollapsed && (
               <div className='min-w-0 flex-1'>
-                <p className='truncate text-sm font-semibold text-gray-900'>
+                <p className='truncate text-sm font-semibold text-gray-900 dark:text-white'>
                   Stephen O.
                 </p>
-                <p className='truncate text-xs text-gray-500'>Free Plan</p>
+                <p className='truncate text-xs text-gray-500 dark:text-gray-500'>Free Plan</p>
               </div>
             )}
           </div>
