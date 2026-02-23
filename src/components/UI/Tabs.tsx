@@ -75,6 +75,7 @@ export function TabsList({ children, className = '' }: TabsListProps) {
     gap-1
     border-b
     border-gray-200
+    dark:border-gray-700
     ${className}
   `
     .trim()
@@ -125,7 +126,7 @@ export function TabsTrigger({
     ? 'text-gray-400 cursor-not-allowed opacity-50'
     : isActive
       ? 'text-orange-600 border-orange-600'
-      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50';
+      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200';
 
   const triggerClasses = `
     ${baseClasses}

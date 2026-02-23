@@ -119,6 +119,7 @@ export default function Select({
     text-sm
     font-medium
     text-gray-700
+    dark:text-gray-300
     mb-1.5
   `;
 
@@ -129,6 +130,9 @@ export default function Select({
     py-2.5
     text-left
     bg-white
+    dark:bg-gray-800
+    dark:border-gray-700
+    dark:text-white
     border-2
     rounded-lg
     transition-all
@@ -150,8 +154,10 @@ export default function Select({
     right-0
     mt-1
     bg-white
+    dark:bg-gray-800
     border-2
     border-gray-200
+    dark:border-gray-700
     rounded-lg
     shadow-lg
     max-h-60
@@ -188,6 +194,7 @@ export default function Select({
     mt-1.5
     text-sm
     text-gray-500
+    dark:text-gray-400
   `;
   return (
     <div className={containerStyles}>
@@ -206,7 +213,7 @@ export default function Select({
         >
           {/* Selected option or placeholder */}
           <span
-            className={`flex items-center gap-2 ${!selectedOption ? 'text-gray-600' : 'text-gray-900'}`}
+            className={`flex items-center gap-2 ${!selectedOption ? 'text-gray-600 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}
           >
             {selectedOption?.icon && (
               <span className='shrink-0'>{selectedOption.icon}</span>
@@ -216,7 +223,7 @@ export default function Select({
 
           {/* Chevron icon (arrow) */}
           <svg
-            className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
             fill='none'
             stroke='currentColor'
             viewBox='0 0 24 24'
@@ -235,10 +242,10 @@ export default function Select({
           <div className={dropdownStyles}>
             {/* Search Input (if searchable) */}
             {searchable && (
-              <div className='p-2 border-b border-gray-200'>
+              <div className='p-2 border-b border-gray-200 dark:border-gray-700'>
                 <input
                   type='text'
-                  className='w-full px-3 py-2 text-sm text-gray-900 placeholder-gray-600 border border-gray-300 rounded focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-200'
+                  className='w-full px-3 py-2 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700 dark:placeholder:text-gray-500 placeholder-gray-600 border border-gray-300 rounded focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-200'
                   placeholder='Search...'
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -250,7 +257,7 @@ export default function Select({
             {/* Options List */}
             <div>
               {filteredOptions.length === 0 ? (
-                <div className='px-4 py-3 text-sm text-gray-600 text-center'>
+                <div className='px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-center'>
                   No options found
                 </div>
               ) : (
@@ -272,7 +279,7 @@ export default function Select({
                     <div className='flex-1'>
                       <div className='text-sm font-medium'>{option.label}</div>
                       {option.description && (
-                        <div className='text-xs text-gray-600'>
+                        <div className='text-xs text-gray-600 dark:text-gray-400'>
                           {option.description}
                         </div>
                       )}

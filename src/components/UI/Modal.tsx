@@ -81,6 +81,9 @@ export default function Modal({
           relative
           w-full
           bg-white
+          dark:bg-gray-900
+          dark:border
+          dark:border-gray-700
           rounded-lg
           shadow-xl
           max-h-[90vh]
@@ -111,6 +114,7 @@ export function ModalHeader({
   const headerStyles = `
     border-b
     border-gray-200
+    dark:border-gray-700
     flex
     justify-between
     items-start
@@ -123,16 +127,16 @@ export function ModalHeader({
   return (
     <div className={headerStyles}>
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
         {subtitle && (
-          <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>
         )}
       </div>
       {onClose && (
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-200"
+          className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-200"
           aria-label="Close"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,6 +163,7 @@ export function ModalFooter({ children, className = '' }: ModalFooterProps) {
   const footerStyles = `
     border-t
     border-gray-100
+    dark:border-gray-700
     flex
     justify-end
     gap-2

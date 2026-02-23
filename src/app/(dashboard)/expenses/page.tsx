@@ -95,17 +95,17 @@ function CategoryBreakdownBar({ expenses }: { expenses: MockExpense[] }) {
       <CardBody padding='lg'>
         <div className='mb-4 flex items-center justify-between'>
           <div>
-            <h3 className='text-sm font-bold text-gray-900'>
+            <h3 className='text-sm font-bold text-gray-900 dark:text-white'>
               Spending by Category
             </h3>
-            <p className='mt-0.5 text-xs text-gray-400'>
+            <p className='mt-0.5 text-xs text-gray-400 dark:text-gray-400'>
               Where your money is going
             </p>
           </div>
         </div>
 
         {/* Stacked bar */}
-        <div className='mb-4 flex h-3 w-full overflow-hidden rounded-full bg-gray-100'>
+        <div className='mb-4 flex h-3 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700'>
           {totals.map((item, i) => (
             <div
               key={item.category}
@@ -123,13 +123,13 @@ function CategoryBreakdownBar({ expenses }: { expenses: MockExpense[] }) {
               <div
                 className={`h-2 w-2 rounded-full ${CATEGORY_CONFIG[item.category].color}`}
               />
-              <span className='text-xs text-gray-500'>
+              <span className='text-xs text-gray-500 dark:text-gray-400'>
                 {CATEGORY_CONFIG[item.category].label}
               </span>
-              <span className='text-xs font-semibold text-gray-700'>
+              <span className='text-xs font-semibold text-gray-700 dark:text-gray-300'>
                 {formatCurrency(item.total)}
               </span>
-              <span className='text-xs text-gray-400'>
+              <span className='text-xs text-gray-400 dark:text-gray-500'>
                 ({item.percentage.toFixed(0)}%)
               </span>
             </div>
@@ -224,20 +224,20 @@ function AddExpensePanel({ isOpen, onClose, onAdd }: AddExpensePanelProps) {
 
       {/* Panel */}
       <div
-        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-white dark:bg-gray-900 dark:border-l dark:border-gray-700 shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Header */}
-        <div className='flex items-center justify-between border-b border-gray-100 px-6 py-5'>
+        <div className='flex items-center justify-between border-b border-gray-100 dark:border-gray-700 px-6 py-5'>
           <div>
-            <h2 className='text-lg font-bold text-gray-900'>Add Expense</h2>
-            <p className='mt-0.5 text-sm text-gray-400'>
+            <h2 className='text-lg font-bold text-gray-900 dark:text-white'>Add Expense</h2>
+            <p className='mt-0.5 text-sm text-gray-400 dark:text-gray-400'>
               Record a new business expense
             </p>
           </div>
           <button
             type='button'
             onClick={handleClose}
-            className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors'
+            className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-white transition-colors'
           >
             <svg
               className='h-5 w-5'
@@ -290,7 +290,7 @@ function AddExpensePanel({ isOpen, onClose, onAdd }: AddExpensePanelProps) {
 
             {/* Category */}
             <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300'>
                 Category *
               </label>
               <div className='grid grid-cols-2 gap-2'>
@@ -305,7 +305,7 @@ function AddExpensePanel({ isOpen, onClose, onAdd }: AddExpensePanelProps) {
                       className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-left text-xs font-semibold transition-all duration-150 ${
                         selected
                           ? `${config.lightBg} ${config.textColor} border-current`
-                          : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-gray-800'
                       }`}
                     >
                       <span className='text-base leading-none'>
@@ -323,7 +323,7 @@ function AddExpensePanel({ isOpen, onClose, onAdd }: AddExpensePanelProps) {
 
             {/* Description */}
             <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300'>
                 Description
               </label>
               <textarea
@@ -331,22 +331,22 @@ function AddExpensePanel({ isOpen, onClose, onAdd }: AddExpensePanelProps) {
                 onChange={(e) => update({ description: e.target.value })}
                 placeholder='What was this for?'
                 rows={2}
-                className='w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 resize-none transition-colors'
+                className='w-full rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-orange-500 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 resize-none transition-colors'
               />
             </div>
 
             {/* Tax Deductible toggle */}
             <div
-              className={`flex items-center justify-between rounded-xl border-2 p-4 transition-colors ${form.taxDeductible ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}
+              className={`flex items-center justify-between rounded-xl border-2 p-4 transition-colors ${form.taxDeductible ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'}`}
             >
               <div>
                 <p
-                  className={`text-sm font-semibold ${form.taxDeductible ? 'text-green-800' : 'text-gray-700'}`}
+                  className={`text-sm font-semibold ${form.taxDeductible ? 'text-green-800' : 'text-gray-700 dark:text-gray-300'}`}
                 >
                   Tax Deductible
                 </p>
                 <p
-                  className={`mt-0.5 text-xs ${form.taxDeductible ? 'text-green-600' : 'text-gray-400'}`}
+                  className={`mt-0.5 text-xs ${form.taxDeductible ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}
                 >
                   {form.taxDeductible
                     ? 'This expense is claimable at tax time'
@@ -358,7 +358,7 @@ function AddExpensePanel({ isOpen, onClose, onAdd }: AddExpensePanelProps) {
                 role='switch'
                 aria-checked={form.taxDeductible}
                 onClick={() => update({ taxDeductible: !form.taxDeductible })}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${form.taxDeductible ? 'bg-green-500' : 'bg-gray-300'}`}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${form.taxDeductible ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}
               >
                 <span
                   className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.taxDeductible ? 'translate-x-5' : 'translate-x-0'}`}
@@ -369,7 +369,7 @@ function AddExpensePanel({ isOpen, onClose, onAdd }: AddExpensePanelProps) {
         </div>
 
         {/* Footer */}
-        <div className='border-t border-gray-100 px-6 py-4'>
+        <div className='border-t border-gray-100 dark:border-gray-700 px-6 py-4'>
           <div className='flex gap-3'>
             <Button variant='outline' onClick={handleClose} className='flex-1'>
               Cancel
@@ -483,8 +483,8 @@ export default function ExpensesPage() {
         {/* Header */}
         <div className='mb-6 flex items-start justify-between'>
           <div>
-            <h1 className='text-2xl font-bold text-gray-900'>Expenses</h1>
-            <p className='mt-1 text-sm text-gray-500'>
+            <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>Expenses</h1>
+            <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
               Track spending and maximize tax deductions
             </p>
           </div>
@@ -492,7 +492,7 @@ export default function ExpensesPage() {
             <button
               type='button'
               onClick={() => showToast('CSV export coming soon', 'info')}
-              className='inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors'
+              className='inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white px-3.5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors'
             >
               <svg
                 className='h-4 w-4'
@@ -726,10 +726,10 @@ export default function ExpensesPage() {
             {/* Toolbar */}
             <div className='flex items-center justify-between px-4 py-3'>
               <div className='flex items-center gap-3'>
-                <p className='text-sm text-gray-500'>
+                <p className='text-sm text-gray-500 dark:text-gray-400'>
                   {filtered.length} expense{filtered.length !== 1 ? 's' : ''}
                   {filtered.length > 0 && (
-                    <span className='ml-1 font-semibold text-gray-700'>
+                    <span className='ml-1 font-semibold text-gray-700 dark:text-gray-300'>
                       ·{' '}
                       {formatCurrency(
                         filtered.reduce((s, e) => s + e.amount, 0),
@@ -744,7 +744,7 @@ export default function ExpensesPage() {
                   className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${
                     showTaxOnly
                       ? 'border-green-300 bg-green-50 text-green-700'
-                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 dark:hover:border-gray-600'
                   }`}
                 >
                   <svg
@@ -782,7 +782,7 @@ export default function ExpensesPage() {
                   placeholder='Search expenses...'
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className='w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20'
+                  className='w-full rounded-lg border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-orange-500 py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20'
                 />
               </div>
             </div>
@@ -790,7 +790,7 @@ export default function ExpensesPage() {
             {/* Empty state */}
             {filtered.length === 0 ? (
               <div className='flex flex-col items-center justify-center py-16 text-center'>
-                <div className='mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100'>
+                <div className='mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800'>
                   <svg
                     className='h-7 w-7 text-gray-400'
                     fill='none'
@@ -805,8 +805,8 @@ export default function ExpensesPage() {
                     />
                   </svg>
                 </div>
-                <p className='font-semibold text-gray-900'>No expenses found</p>
-                <p className='mt-1 text-sm text-gray-500'>
+                <p className='font-semibold text-gray-900 dark:text-white'>No expenses found</p>
+                <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
                   {search
                     ? 'Try a different search term'
                     : 'Add your first expense to get started'}
@@ -842,14 +842,14 @@ export default function ExpensesPage() {
                     >
                       {/* Date */}
                       <TableCell className='w-24 py-4 pl-6'>
-                        <span className='text-xs font-medium text-gray-400 whitespace-nowrap'>
+                        <span className='text-xs font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap'>
                           {formatDateShort(expense.date)}
                         </span>
                       </TableCell>
 
                       {/* Vendor */}
                       <TableCell className='py-4 min-w-[140px]'>
-                        <p className='text-sm font-semibold text-gray-900'>
+                        <p className='text-sm font-semibold text-gray-900 dark:text-white'>
                           {expense.vendor}
                         </p>
                       </TableCell>
@@ -862,7 +862,7 @@ export default function ExpensesPage() {
                       {/* Description */}
                       <TableCell className='hidden lg:table-cell py-4 max-w-[200px]'>
                         {expense.description && (
-                          <p className='truncate text-xs text-gray-400 italic'>
+                          <p className='truncate text-xs text-gray-400 dark:text-gray-500 italic'>
                             {expense.description}
                           </p>
                         )}
@@ -875,7 +875,7 @@ export default function ExpensesPage() {
 
                       {/* Amount */}
                       <TableCell className='py-4 text-right'>
-                        <span className='text-base font-black text-gray-900'>
+                        <span className='text-base font-black text-gray-900 dark:text-white'>
                           {formatCurrency(expense.amount, expense.currency)}
                         </span>
                       </TableCell>
@@ -884,7 +884,7 @@ export default function ExpensesPage() {
                       <TableCell className='py-4 pr-4 text-right'>
                         <DropdownMenu
                           trigger={
-                            <button className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-900 hover:bg-gray-100 hover:text-gray-600 transition-all'>
+                            <button className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-900 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-all'>
                               <svg
                                 className='h-4 w-4'
                                 fill='currentColor'

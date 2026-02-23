@@ -20,8 +20,10 @@ export default function Card({
 }: CardProps) {
   const baseStyles = `
     bg-white
+    dark:bg-gray-900
     border-2
     border-gray-200
+    dark:border-gray-700
     rounded-lg
     shadow-sm
     transition-all
@@ -48,6 +50,7 @@ export function CardHeader({ title, subtitle, action, className = '' }: CardHead
   const headerStyles = `
     border-b
     border-gray-200
+    dark:border-gray-700
     flex
     justify-between
     items-center
@@ -59,9 +62,9 @@ export function CardHeader({ title, subtitle, action, className = '' }: CardHead
   return (
     <div className={headerStyles}>
       <div>
-        <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h3>
         {subtitle && (
-          <p className="mt-0.5 text-sm text-gray-500">{subtitle}</p>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>
         )}
       </div>
       {action && <div className="shrink-0">{action}</div>}
@@ -97,7 +100,7 @@ export function CardFooter({
   divider = false,
 }: CardFooterProps) {
   const footerStyles = `
-    ${divider ? 'border-t border-gray-100' : ''}
+    ${divider ? 'border-t border-gray-100 dark:border-gray-700' : ''}
     p-4
     flex
     items-center

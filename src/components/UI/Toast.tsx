@@ -32,12 +32,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg ${
+            className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium shadow-lg dark:bg-gray-800 dark:border-gray-700 dark:shadow-2xl dark:border ${
               toast.type === 'success'
-                ? 'bg-gray-900'
+                ? 'bg-gray-900 text-white dark:border-green-800'
                 : toast.type === 'error'
-                  ? 'bg-red-600'
-                  : 'bg-blue-600'
+                  ? 'bg-red-600 text-white dark:border-red-800'
+                  : 'bg-blue-600 text-white dark:border-blue-800'
             }`}
           >
             {toast.type === 'success' && (
@@ -55,7 +55,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             )}
-            <span>{toast.message}</span>
+            <span className="dark:text-gray-300">{toast.message}</span>
           </div>
         ))}
       </div>
