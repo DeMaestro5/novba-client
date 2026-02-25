@@ -331,13 +331,13 @@ function AddExpensePanel({ isOpen, onClose, onAdd }: AddExpensePanelProps) {
                 onChange={(e) => update({ description: e.target.value })}
                 placeholder='What was this for?'
                 rows={2}
-                className='w-full rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-orange-500 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 resize-none transition-colors'
+                className='w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 resize-none transition-colors dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-orange-500'
               />
             </div>
 
             {/* Tax Deductible toggle */}
             <div
-              className={`flex items-center justify-between rounded-xl border-2 p-4 transition-colors ${form.taxDeductible ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'}`}
+              className={`flex items-center justify-between rounded-xl border-2 p-4 transition-colors ${form.taxDeductible ? 'border-green-200 bg-green-50 dark:border-green-800/50 dark:bg-green-950/30' : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'}`}
             >
               <div>
                 <p
@@ -545,11 +545,11 @@ export default function ExpensesPage() {
                   <p className='mt-2 text-3xl font-black text-gray-900 dark:text-white'>
                     {formatCurrency(stats.totalSpent)}
                   </p>
-                  <p className='mt-1.5 text-sm text-gray-400'>all time</p>
+                  <p className='mt-1.5 text-sm text-gray-400 dark:text-gray-500'>all time</p>
                 </div>
-                <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50'>
+                <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-700'>
                   <svg
-                    className='h-5 w-5 text-gray-400'
+                    className='h-5 w-5 text-gray-400 dark:text-gray-500'
                     fill='none'
                     stroke='currentColor'
                     viewBox='0 0 24 24'
@@ -611,13 +611,13 @@ export default function ExpensesPage() {
                   <p className='mt-2 text-3xl font-black text-gray-900 dark:text-white'>
                     {formatCurrency(stats.thisMonth)}
                   </p>
-                  <p className='mt-1.5 text-sm text-gray-400'>
+                  <p className='mt-1.5 text-sm text-gray-400 dark:text-gray-500'>
                     {currentMonthLabel}
                   </p>
                 </div>
-                <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50'>
+                <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-700'>
                   <svg
-                    className='h-5 w-5 text-gray-400'
+                    className='h-5 w-5 text-gray-400 dark:text-gray-500'
                     fill='none'
                     stroke='currentColor'
                     viewBox='0 0 24 24'
@@ -639,7 +639,7 @@ export default function ExpensesPage() {
             <CardBody padding='lg'>
               <div className='flex items-start justify-between'>
                 <div className='min-w-0 flex-1'>
-                  <p className='text-xs font-bold uppercase tracking-wider text-gray-500'>
+                  <p className='text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
                     Top Category
                   </p>
                   {stats.topCategory ? (
@@ -687,7 +687,7 @@ export default function ExpensesPage() {
         <Card>
           <CardBody className='p-0'>
             {/* Category filter tabs */}
-            <div className='flex items-center gap-1 overflow-x-auto border-b border-gray-200 px-4 pt-4 pb-0 scrollbar-hide'>
+            <div className='flex items-center gap-1 overflow-x-auto border-b border-gray-200 dark:border-gray-700 px-4 pt-4 pb-0 scrollbar-hide'>
               {(['ALL', ...USED_CATEGORIES] as (ExpenseCategory | 'ALL')[]).map(
                 (cat) => {
                   const count =
@@ -704,7 +704,7 @@ export default function ExpensesPage() {
                       className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 pb-3 text-sm font-medium transition-colors ${
                         activeCategory === cat
                           ? 'border-orange-600 text-orange-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                       }`}
                     >
                       {label}
@@ -712,7 +712,7 @@ export default function ExpensesPage() {
                         className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${
                           activeCategory === cat
                             ? 'bg-orange-100 text-orange-700'
-                            : 'bg-gray-100 text-gray-500'
+                            : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300'
                         }`}
                       >
                         {count}
@@ -955,14 +955,14 @@ export default function ExpensesPage() {
                 />
               </svg>
             </div>
-            <p className='font-semibold text-gray-900'>
+            <p className='font-semibold text-gray-900 dark:text-white'>
               {deleteTarget?.vendor}
             </p>
-            <p className='mt-1 text-2xl font-bold text-gray-900'>
+            <p className='mt-1 text-2xl font-bold text-gray-900 dark:text-white'>
               {deleteTarget &&
                 formatCurrency(deleteTarget.amount, deleteTarget.currency)}
             </p>
-            <p className='mt-2 text-sm text-gray-500'>
+            <p className='mt-2 text-sm text-gray-500 dark:text-gray-400'>
               Permanently delete this expense? This cannot be undone.
             </p>
           </div>
