@@ -106,8 +106,8 @@ export default function ContractTemplateCard({ template, isSelected, onSelect }:
       onClick={() => onSelect(template.key)}
       className={`group relative w-full rounded-xl border-2 bg-white p-6 text-left transition-all duration-150 ${
         isSelected
-          ? `${template.borderColor} shadow-md`
-          : 'border-gray-200 hover:border-gray-300 hover:shadow-sm hover:bg-gray-50/30'
+          ? `${template.borderColor} shadow-md dark:bg-orange-900/20`
+          : 'border-gray-200 hover:border-gray-300 hover:shadow-sm hover:bg-gray-50/30 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:border-gray-500'
       }`}
     >
       {/* Selected checkmark */}
@@ -120,15 +120,15 @@ export default function ContractTemplateCard({ template, isSelected, onSelect }:
       )}
 
       {/* Icon */}
-      <div className={`mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl transition-all duration-150 group-hover:scale-105 ${template.bgColor} ${template.color}`}>
+      <div className={`mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl transition-all duration-150 group-hover:scale-105 dark:bg-gray-700 ${template.bgColor} ${template.color}`}>
         {template.icon}
       </div>
 
       {/* Text */}
-      <h3 className={`font-semibold transition-colors duration-150 ${isSelected ? 'text-gray-900' : 'text-gray-800 group-hover:text-gray-900'}`}>
+      <h3 className={`font-semibold transition-colors duration-150 ${isSelected ? 'text-gray-900 dark:text-white' : 'text-gray-800 group-hover:text-gray-900 dark:text-white'}`}>
         {template.name}
       </h3>
-      <p className="mt-1 text-sm text-gray-500 leading-relaxed">{template.description}</p>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{template.description}</p>
     </button>
   );
 }
