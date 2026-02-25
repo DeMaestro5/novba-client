@@ -36,7 +36,7 @@ export default function Input({
     dark:placeholder:text-gray-500`;
   const borderStyles = error
     ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-    : 'border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-gray-700 dark:focus:border-orange-500';
+    : 'border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-gray-600 dark:focus:border-orange-500';
   const iconPaddingStyles = `
     ${leftIcon ? 'pl-10' : ''}
     ${rightIcon ? 'pr-10' : ''}

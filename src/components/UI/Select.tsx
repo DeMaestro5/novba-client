@@ -131,7 +131,7 @@ export default function Select({
     text-left
     bg-white
     dark:bg-gray-800
-    dark:border-gray-700
+    dark:border-gray-600
     dark:text-white
     border-2
     rounded-lg
@@ -175,7 +175,7 @@ export default function Select({
     flex
     items-center
     gap-2
-    ${selected ? 'bg-orange-50 text-orange-900' : 'text-gray-900'}
+    ${selected ? 'bg-orange-50 text-orange-900' : 'text-gray-900 dark:text-gray-200 dark:hover:bg-gray-700'}
     ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}
   `;
 
@@ -213,7 +213,7 @@ export default function Select({
         >
           {/* Selected option or placeholder */}
           <span
-            className={`flex items-center gap-2 ${!selectedOption ? 'text-gray-600 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}
+            className={`flex items-center gap-2 ${!selectedOption ? 'text-gray-600 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}
           >
             {selectedOption?.icon && (
               <span className='shrink-0'>{selectedOption.icon}</span>

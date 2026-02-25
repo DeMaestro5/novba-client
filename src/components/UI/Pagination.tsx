@@ -96,6 +96,7 @@ export default function Pagination({
         <Button
           variant="outline"
           size="sm"
+          className="dark:disabled:border-gray-700 dark:disabled:text-gray-600"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={isFirstPage}
           type="button"
@@ -148,6 +149,7 @@ export default function Pagination({
         <Button
           variant="outline"
           size="sm"
+          className="dark:disabled:border-gray-700 dark:disabled:text-gray-600"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={isLastPage}
           type="button"

@@ -275,8 +275,8 @@ export default function InvoicesPage() {
     <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Invoices</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Manage and track all your invoices
           </p>
         </div>
@@ -383,7 +383,7 @@ export default function InvoicesPage() {
                           trigger={
                             <button
                               type="button"
-                              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              className="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                               aria-label="Actions"
                             >
                               <svg
