@@ -390,11 +390,11 @@ export default function InvoiceForm({
                     <div className='col-span-3 sm:col-span-2 flex items-start pt-0.5'>
                       <div className='w-full'>
                         {index === 0 && (
-                          <label className='mb-1.5 block text-sm font-medium text-gray-700'>
+                          <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300'>
                             Amount
                           </label>
                         )}
-                        <div className='rounded-lg border-2 border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-700'>
+                        <div className='rounded-lg border-2 border-gray-200 bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 px-4 py-2.5 text-sm text-gray-700'>
                           {(
                             formData.lineItems[index].quantity *
                             formData.lineItems[index].rate
@@ -458,7 +458,7 @@ export default function InvoiceForm({
                   )}
                 </div>
               ))}
-              <Button type='button' variant='outline' onClick={addLineItem}>
+              <Button type='button' variant='outline' className="dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700" onClick={addLineItem}>
                 Add Item
               </Button>
             </div>
@@ -494,9 +494,9 @@ export default function InvoiceForm({
             <CardHeader title='Summary' />
             <CardBody>
               <div className='space-y-3 text-sm'>
-                <div className='flex justify-between text-gray-700'>
+                <div className='flex justify-between text-gray-500 dark:text-gray-400'>
                   <span>Subtotal</span>
-                  <span>
+                  <span className='font-medium text-gray-900 dark:text-gray-200'>
                     {formData.currency}{' '}
                     {subtotal.toLocaleString('en-US', {
                       minimumFractionDigits: 2,
@@ -504,9 +504,9 @@ export default function InvoiceForm({
                     })}
                   </span>
                 </div>
-                <div className='flex justify-between text-gray-700'>
+                <div className='flex justify-between text-gray-500 dark:text-gray-400'>
                   <span>Tax ({formData.taxRate}%)</span>
-                  <span>
+                  <span className='font-medium text-gray-900 dark:text-gray-200'>
                     {formData.currency}{' '}
                     {taxAmount.toLocaleString('en-US', {
                       minimumFractionDigits: 2,
@@ -514,9 +514,9 @@ export default function InvoiceForm({
                     })}
                   </span>
                 </div>
-                <div className='flex justify-between border-t border-gray-200 pt-3 text-base font-semibold text-gray-900'>
+                <div className='flex justify-between border-t border-gray-200 dark:border-gray-700 pt-3 text-base font-semibold text-gray-900 dark:text-white'>
                   <span>Total</span>
-                  <span>
+                  <span className='dark:text-white'>
                     {formData.currency}{' '}
                     {total.toLocaleString('en-US', {
                       minimumFractionDigits: 2,
@@ -536,10 +536,10 @@ export default function InvoiceForm({
             >
               Save & Send
             </Button>
-            <Button variant='outline' onClick={handleSaveDraft}>
+            <Button variant='outline' className="dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700" onClick={handleSaveDraft}>
               Save as Draft
             </Button>
-            <Button variant='secondary' onClick={onCancel}>
+            <Button variant='secondary' className="dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700" onClick={onCancel}>
               Cancel
             </Button>
           </div>

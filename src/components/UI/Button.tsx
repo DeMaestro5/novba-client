@@ -14,7 +14,7 @@ export default function Button({
   const variantStyles = {
     primary: `bg-orange-600 text-white hover:bg-orange-700 hover:shadow-md hover:-translate-y-0.5 focus-visible:ring-orange-500 active:translate-y-0 disabled:bg-orange-300 disabled:shadow-none disabled:translate-y-0`,
     secondary: `bg-gray-100 text-gray-900 hover:bg-gray-200 hover:shadow-md hover:-translate-y-0.5 focus-visible:ring-gray-400 active:translate-y-0 disabled:bg-gray-50 disabled:shadow-none disabled:translate-y-0 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:bg-gray-900`,
-    outline: `bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md hover:-translate-y-0.5 focus-visible:ring-gray-400 active:translate-y-0 disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-200 disabled:shadow-none disabled:translate-y dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white dark:disabled:bg-gray-900 dark:disabled:text-gray-600`,
+    outline: `bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md hover:-translate-y-0.5 focus-visible:ring-gray-400 active:translate-y-0 disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-200 disabled:shadow-none disabled:translate-y dark:bg-gray-900 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white dark:disabled:bg-gray-900 dark:disabled:text-gray-600`,
     danger: `
     bg-red-600
     text-white

@@ -184,8 +184,8 @@ export default function DatePicker({
     py-2.5
     transition-colors
     duration-200
-    ${error ? 'border-red-500 focus-within:ring-2 focus-within:ring-red-500 focus-within:border-red-500' : 'border-gray-300 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500'}
-    ${disabled ? 'bg-gray-50 cursor-not-allowed opacity-50' : 'bg-white cursor-text'}
+    ${error ? 'border-red-500 focus-within:ring-2 focus-within:ring-red-500 focus-within:border-red-500' : 'border-gray-300 dark:border-gray-600 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500'}
+    ${disabled ? 'bg-gray-50 cursor-not-allowed opacity-50' : 'bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white cursor-text'}
     ${className}
   `
     .trim()
@@ -199,6 +199,8 @@ export default function DatePicker({
     mt-2
     z-50
     bg-white
+    dark:bg-gray-800
+    dark:border-gray-700
     rounded-lg
     border
     border-gray-200
@@ -215,7 +217,7 @@ export default function DatePicker({
   return (
     <div ref={containerRef} className='relative'>
       {label && (
-        <label className='mb-1.5 block text-xs font-medium text-gray-700'>
+        <label className='mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300'>
           {label}
         </label>
       )}
@@ -240,7 +242,7 @@ export default function DatePicker({
           value={displayValue}
           placeholder={placeholder}
           disabled={disabled}
-          className='flex-1 min-w-0 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 outline-none cursor-pointer'
+          className='flex-1 min-w-0 bg-transparent text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none cursor-pointer'
           aria-label={label || 'Date'}
         />
         <div className='flex items-center gap-1 shrink-0'>
@@ -248,7 +250,7 @@ export default function DatePicker({
             <button
               type='button'
               onClick={handleClear}
-              className='p-0.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1'
+              className='p-0.5 rounded text-gray-400 dark:text-gray-500 dark:hover:text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1'
               aria-label='Clear date'
             >
               <svg className='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
@@ -256,7 +258,7 @@ export default function DatePicker({
               </svg>
             </button>
           )}
-          <span className='text-gray-400' aria-hidden>
+          <span className='text-gray-400 dark:text-gray-500' aria-hidden>
             <svg className='w-5 h-5' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={1.5}>
               <path strokeLinecap='round' strokeLinejoin='round' d='M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5' />
             </svg>
@@ -269,20 +271,20 @@ export default function DatePicker({
           <button
             type='button'
             onClick={goPrevMonth}
-            className='p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500'
+            className='p-1.5 rounded-lg text-gray-500 dark:text-gray-400 dark:hover:bg-gray-700 hover:bg-gray-100 hover:text-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500'
             aria-label='Previous month'
           >
             <svg className='w-5 h-5' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
               <path strokeLinecap='round' strokeLinejoin='round' d='M15.75 19.5L8.25 12l7.5-7.5' />
             </svg>
           </button>
-          <span className='text-sm font-medium text-gray-900'>
+          <span className='text-sm font-medium text-gray-900 dark:text-white'>
             {MONTH_NAMES[viewMonth]} {viewYear}
           </span>
           <button
             type='button'
             onClick={goNextMonth}
-            className='p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500'
+            className='p-1.5 rounded-lg text-gray-500 dark:text-gray-400 dark:hover:bg-gray-700 hover:bg-gray-100 hover:text-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500'
             aria-label='Next month'
           >
             <svg className='w-5 h-5' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
@@ -318,8 +320,8 @@ export default function DatePicker({
               duration-200
               ${selected ? 'bg-orange-600 text-white hover:bg-orange-700' : ''}
               ${!selected && today ? 'border border-orange-300 text-gray-900' : ''}
-              ${!selected && !today && isCurrentMonth ? 'text-gray-900 hover:bg-gray-100' : ''}
-              ${!selected && !isCurrentMonth ? 'text-gray-400 hover:bg-gray-50' : ''}
+              ${!selected && !today && isCurrentMonth ? 'text-gray-900 dark:text-gray-200 dark:hover:bg-gray-700 hover:bg-gray-100' : ''}
+              ${!selected && !isCurrentMonth ? 'text-gray-400 dark:text-gray-600 hover:bg-gray-50' : ''}
             `
               .trim()
               .replace(/\s+/g, ' ');

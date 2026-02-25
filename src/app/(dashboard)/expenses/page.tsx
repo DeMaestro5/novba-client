@@ -542,7 +542,7 @@ export default function ExpensesPage() {
                   <p className='text-xs font-bold uppercase tracking-wider text-gray-500'>
                     Total Spent
                   </p>
-                  <p className='mt-2 text-3xl font-black text-gray-900'>
+                  <p className='mt-2 text-3xl font-black text-gray-900 dark:text-white'>
                     {formatCurrency(stats.totalSpent)}
                   </p>
                   <p className='mt-1.5 text-sm text-gray-400'>all time</p>
@@ -608,7 +608,7 @@ export default function ExpensesPage() {
                   <p className='text-xs font-bold uppercase tracking-wider text-gray-500'>
                     This Month
                   </p>
-                  <p className='mt-2 text-3xl font-black text-gray-900'>
+                  <p className='mt-2 text-3xl font-black text-gray-900 dark:text-white'>
                     {formatCurrency(stats.thisMonth)}
                   </p>
                   <p className='mt-1.5 text-sm text-gray-400'>
@@ -644,14 +644,14 @@ export default function ExpensesPage() {
                   </p>
                   {stats.topCategory ? (
                     <>
-                      <p className='mt-2 text-3xl font-black text-gray-900'>
+                      <p className='mt-2 text-3xl font-black text-gray-900 dark:text-white'>
                         {formatCurrency(stats.topCategory.total)}
                       </p>
                       <div className='mt-1.5 flex items-center gap-1.5'>
                         <div
                           className={`h-2 w-2 rounded-full ${CATEGORY_CONFIG[stats.topCategory.category].color}`}
                         />
-                        <p className='text-sm text-gray-500 truncate'>
+                        <p className='text-sm text-gray-500 dark:text-gray-400 truncate'>
                           {CATEGORY_CONFIG[stats.topCategory.category].label}
                         </p>
                       </div>
