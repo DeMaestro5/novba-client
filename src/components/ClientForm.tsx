@@ -267,7 +267,7 @@ export default function ClientForm({ initialData, onSave, onCancel, isEdit = fal
             >
               {isEdit ? 'Save Changes' : 'Add Client'}
             </Button>
-            <Button variant="outline" onClick={onCancel}>
+            <Button variant="outline" onClick={onCancel} className="dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
               Cancel
             </Button>
           </div>
