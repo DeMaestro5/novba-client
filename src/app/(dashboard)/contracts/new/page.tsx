@@ -309,15 +309,15 @@ export default function NewContractPage() {
     return (
       <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
         {/* Breadcrumb */}
-        <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
-          <Link href="/contracts" className="flex items-center gap-1.5 hover:text-gray-700 transition-colors">
+        <div className="mb-6 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <Link href="/contracts" className="flex items-center gap-1.5 hover:text-orange-600 transition-colors">
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Contracts
           </Link>
           <span>/</span>
-          <span className="text-gray-900 font-medium">New Contract</span>
+          <span className="text-gray-900 dark:text-gray-200 font-medium">New Contract</span>
         </div>
 
         {/* Step header */}
@@ -328,14 +328,14 @@ export default function NewContractPage() {
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-600 text-xs font-bold text-white">1</div>
               <span className="text-sm font-semibold text-orange-600">Choose Template</span>
             </div>
-            <div className="h-px w-8 bg-gray-200" />
+            <div className="h-px w-8 bg-gray-200 dark:bg-gray-700" />
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-400">2</div>
-              <span className="text-sm font-medium text-gray-400">Contract Details</span>
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-xs font-bold text-gray-400 dark:text-gray-500">2</div>
+              <span className="text-sm font-medium text-gray-400 dark:text-gray-600">Contract Details</span>
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">What type of contract do you need?</h1>
-          <p className="mt-1 text-sm text-gray-500">Choose a template to get started. You can customize the content in the next step.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">What type of contract do you need?</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Choose a template to get started. You can customize the content in the next step.</p>
         </div>
 
         {/* Template grid */}
@@ -377,15 +377,15 @@ export default function NewContractPage() {
   return (
     <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
       {/* Breadcrumb */}
-      <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/contracts" className="flex items-center gap-1.5 hover:text-gray-700 transition-colors">
+      <div className="mb-6 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+        <Link href="/contracts" className="flex items-center gap-1.5 hover:text-orange-600 transition-colors">
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Contracts
         </Link>
         <span>/</span>
-        <span className="text-gray-900 font-medium">New Contract</span>
+        <span className="text-gray-900 dark:text-gray-200 font-medium">New Contract</span>
       </div>
 
       {/* Step header */}
@@ -394,7 +394,7 @@ export default function NewContractPage() {
           <button
             type="button"
             onClick={() => setStep(1)}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
           >
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-green-500 text-xs font-bold text-white">
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -403,21 +403,21 @@ export default function NewContractPage() {
             </div>
             <span className="text-sm font-medium text-green-600">Template</span>
           </button>
-          <div className="h-px w-8 bg-gray-200" />
+          <div className="h-px w-8 bg-gray-200 dark:bg-gray-700" />
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-600 text-xs font-bold text-white">2</div>
             <span className="text-sm font-semibold text-orange-600">Contract Details</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">New Contract</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">New Contract</h1>
           {selectedTemplateMeta && (
             <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${selectedTemplateMeta.bgColor} ${selectedTemplateMeta.color}`}>
               {selectedTemplateMeta.name}
             </span>
           )}
         </div>
-        <p className="mt-1 text-sm text-gray-500">Fill in the details and customize the contract content</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Fill in the details and customize the contract content</p>
       </div>
 
       {/* Split layout: 40% form / 60% editor */}
@@ -507,13 +507,13 @@ export default function NewContractPage() {
                 value={content}
                 onChange={e => setContent(e.target.value)}
                 rows={32}
-                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 font-mono text-[13px] leading-7 text-gray-800 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-colors resize-none"
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 font-mono text-[13px] leading-7 text-gray-800 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-colors resize-none dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:placeholder:text-gray-500 dark:focus:border-orange-500"
                 style={{ fontFamily: "'Courier New', Courier, monospace" }}
                 placeholder="Your contract content will appear here..."
               />
               <div className="mt-2 flex items-center justify-between">
-                <p className="text-xs text-gray-400">Replace all [PLACEHOLDERS] with actual values before sending</p>
-                <p className="text-xs text-gray-400">{content.length} characters</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Replace all [PLACEHOLDERS] with actual values before sending</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{content.length} characters</p>
               </div>
             </CardBody>
           </Card>
