@@ -190,7 +190,7 @@ const FILTER_TABS: { label: string; value: PaymentStatus | 'ALL' }[] = [
 function MethodBadge({ method }: { method: PaymentMethod }) {
   const config = METHOD_CONFIG[method];
   return (
-    <span className='inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600'>
+    <span className='inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300'>
       {config.icon}
       {config.label}
     </span>
@@ -301,8 +301,8 @@ export default function PaymentsPage() {
       {/* Header */}
       <div className='mb-6 flex items-start justify-between'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-900'>Payments</h1>
-          <p className='mt-1 text-sm text-gray-500'>
+          <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>Payments</h1>
+          <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
             Your complete financial history
           </p>
         </div>
@@ -311,7 +311,7 @@ export default function PaymentsPage() {
       {/* Stats row */}
       <div className='mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4'>
         {/* Total Collected — Hero card */}
-        <Card className='border-green-200 bg-gradient-to-br from-green-50 to-emerald-50'>
+        <Card className='border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 dark:border-green-900/50 dark:from-green-950/40 dark:to-emerald-950/40'>
           <CardBody padding='lg'>
             <div className='flex items-start justify-between'>
               <div>
@@ -325,7 +325,7 @@ export default function PaymentsPage() {
                   lifetime revenue
                 </p>
               </div>
-              <div className='flex h-12 w-12 items-center justify-center rounded-xl bg-green-100'>
+              <div className='flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40'>
                 <svg
                   className='h-6 w-6 text-green-600'
                   fill='none'
@@ -349,19 +349,19 @@ export default function PaymentsPage() {
           <CardBody padding='lg'>
             <div className='flex items-start justify-between'>
               <div>
-                <p className='text-xs font-bold uppercase tracking-wider text-gray-500'>
+                <p className='text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
                   This Month
                 </p>
-                <p className='mt-2 text-2xl font-bold text-gray-900'>
+                <p className='mt-2 text-2xl font-bold text-gray-900 dark:text-white'>
                   {formatCurrency(stats.thisMonthCollected)}
                 </p>
-                <p className='mt-1.5 text-sm text-gray-400'>
+                <p className='mt-1.5 text-sm text-gray-400 dark:text-gray-500'>
                   {currentMonthLabel}
                 </p>
               </div>
-              <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50'>
+              <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-700'>
                 <svg
-                  className='h-5 w-5 text-gray-400'
+                  className='h-5 w-5 text-gray-400 dark:text-gray-500'
                   fill='none'
                   stroke='currentColor'
                   viewBox='0 0 24 24'
@@ -382,12 +382,12 @@ export default function PaymentsPage() {
         <Card>
           <CardBody padding='lg'>
             <div className='flex items-start justify-between'>
-              <p className='text-sm font-semibold uppercase tracking-wide text-gray-500'>
+              <p className='text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400'>
                 Pending
               </p>
-              <div className='flex h-9 w-9 items-center justify-center rounded-lg bg-gray-50'>
+              <div className='flex h-9 w-9 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-700'>
                 <svg
-                  className='h-5 w-5 text-gray-400'
+                  className='h-5 w-5 text-gray-400 dark:text-gray-500'
                   fill='none'
                   stroke='currentColor'
                   viewBox='0 0 24 24'
@@ -401,11 +401,11 @@ export default function PaymentsPage() {
                 </svg>
               </div>
             </div>
-            <p className='mt-3 text-2xl font-bold text-gray-900'>
+            <p className='mt-3 text-2xl font-bold text-gray-900 dark:text-white'>
               {formatCurrency(stats.pendingAmount)}
             </p>
             <p
-              className={`mt-1 text-sm font-medium ${stats.pendingCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+              className={`mt-1 text-sm font-medium ${stats.pendingCount > 0 ? 'text-blue-600' : 'text-gray-400 dark:text-gray-600'}`}
             >
               {stats.pendingCount > 0
                 ? `${stats.pendingCount} awaiting payment`
@@ -418,12 +418,12 @@ export default function PaymentsPage() {
         <Card>
           <CardBody padding='lg'>
             <div className='flex items-start justify-between'>
-              <p className='text-sm font-semibold uppercase tracking-wide text-gray-500'>
+              <p className='text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400'>
                 Needs Attention
               </p>
-              <div className='flex h-9 w-9 items-center justify-center rounded-lg bg-gray-50'>
+              <div className='flex h-9 w-9 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-700'>
                 <svg
-                  className='h-5 w-5 text-gray-400'
+                  className='h-5 w-5 text-gray-400 dark:text-gray-500'
                   fill='none'
                   stroke='currentColor'
                   viewBox='0 0 24 24'
@@ -437,11 +437,11 @@ export default function PaymentsPage() {
                 </svg>
               </div>
             </div>
-            <p className='mt-3 text-2xl font-bold text-gray-900'>
+            <p className='mt-3 text-2xl font-bold text-gray-900 dark:text-white'>
               {formatCurrency(stats.problemAmount)}
             </p>
             <p
-              className={`mt-1 text-sm font-medium ${stats.problemCount > 0 ? 'text-red-600' : 'text-gray-400'}`}
+              className={`mt-1 text-sm font-medium ${stats.problemCount > 0 ? 'text-red-600' : 'text-gray-400 dark:text-gray-600'}`}
             >
               {stats.problemCount > 0
                 ? `${stats.problemCount} failed or refunded`
@@ -455,7 +455,7 @@ export default function PaymentsPage() {
       <Card>
         <CardBody className='p-0'>
           {/* Tabs */}
-          <div className='flex items-center gap-1 overflow-x-auto border-b border-gray-200 px-4 pt-4 pb-0 scrollbar-hide'>
+          <div className='flex items-center gap-1 overflow-x-auto border-b border-gray-200 dark:border-gray-700 px-4 pt-4 pb-0 scrollbar-hide'>
             {FILTER_TABS.map((tab) => {
               const count =
                 tab.value === 'ALL'
@@ -469,7 +469,7 @@ export default function PaymentsPage() {
                   className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 pb-3 text-sm font-medium transition-colors ${
                     activeFilter === tab.value
                       ? 'border-orange-600 text-orange-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                   }`}
                 >
                   {tab.label}
@@ -478,7 +478,7 @@ export default function PaymentsPage() {
                       className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${
                         activeFilter === tab.value
                           ? 'bg-orange-100 text-orange-700'
-                          : 'bg-gray-100 text-gray-500'
+                          : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300'
                       }`}
                     >
                       {count}
@@ -491,12 +491,12 @@ export default function PaymentsPage() {
 
           {/* Search + count */}
           <div className='flex items-center justify-between px-4 py-3'>
-            <p className='text-sm text-gray-500'>
+            <p className='text-sm text-gray-500 dark:text-gray-400'>
               {filtered.length} payment{filtered.length !== 1 ? 's' : ''}
             </p>
             <div className='relative w-64'>
               <svg
-                className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400'
+                className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500'
                 fill='none'
                 stroke='currentColor'
                 viewBox='0 0 24 24'
@@ -513,7 +513,7 @@ export default function PaymentsPage() {
                 placeholder='Search payments...'
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className='w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20'
+                className='w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500'
               />
             </div>
           </div>
@@ -521,9 +521,9 @@ export default function PaymentsPage() {
           {/* Empty state */}
           {filtered.length === 0 ? (
             <div className='flex flex-col items-center justify-center py-16 text-center'>
-              <div className='mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100'>
+              <div className='mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800'>
                 <svg
-                  className='h-7 w-7 text-gray-400'
+                  className='h-7 w-7 text-gray-400 dark:text-gray-600'
                   fill='none'
                   stroke='currentColor'
                   viewBox='0 0 24 24'
@@ -536,8 +536,8 @@ export default function PaymentsPage() {
                   />
                 </svg>
               </div>
-              <p className='font-semibold text-gray-900'>No payments found</p>
-              <p className='mt-1 text-sm text-gray-500'>
+              <p className='font-semibold text-gray-900 dark:text-white'>No payments found</p>
+              <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
                 {search
                   ? 'Try a different search term'
                   : 'Payments are recorded from invoice pages'}
@@ -550,22 +550,22 @@ export default function PaymentsPage() {
                 <div key={group.key}>
                   {/* Month header */}
                   <div
-                    className={`flex items-center justify-between px-6 py-3 ${groupIndex > 0 ? 'border-t-2 border-gray-100' : ''} bg-gray-50`}
+                    className={`flex items-center justify-between px-6 py-3 ${groupIndex > 0 ? 'border-t-2 border-gray-100 dark:border-gray-700' : ''} bg-gray-50 dark:bg-gray-800/50`}
                   >
                     <div className='flex items-center gap-2.5'>
-                      <span className='text-xs font-bold uppercase tracking-wider text-gray-500'>
+                      <span className='text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
                         {group.label}
                       </span>
-                      <span className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-xs font-medium text-gray-400'>
+                      <span className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-xs font-medium text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400'>
                         {group.payments.length}
                       </span>
                     </div>
                     {group.collectedTotal > 0 && (
                       <div className='flex items-center gap-1.5'>
-                        <span className='text-xs text-gray-400 uppercase tracking-wide'>
+                        <span className='text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide'>
                           collected
                         </span>
-                        <span className='text-sm font-semibold text-gray-700'>
+                        <span className='text-sm font-semibold text-gray-700 dark:text-gray-200'>
                           {formatCurrency(group.collectedTotal)}
                         </span>
                       </div>
@@ -592,23 +592,23 @@ export default function PaymentsPage() {
                       {group.payments.map((payment) => (
                         <TableRow
                           key={payment.id}
-                          className='group transition-colors cursor-default hover:bg-gray-50'
+                          className='group transition-colors cursor-default hover:bg-gray-50 dark:hover:bg-gray-800'
                         >
                           {/* Col 1: Date — narrow, muted */}
                           <TableCell className='w-20 py-4 pl-6'>
-                            <span className='text-xs font-medium text-gray-400 whitespace-nowrap'>
+                            <span className='text-xs font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap'>
                               {formatDateShort(payment.paidAt)}
                             </span>
                           </TableCell>
 
                           {/* Col 2: Client (primary) + Invoice (secondary reference) */}
                           <TableCell className='py-4 min-w-[160px]'>
-                            <p className='text-sm font-semibold text-gray-900'>
+                            <p className='text-sm font-semibold text-gray-900 dark:text-white'>
                               {payment.clientName}
                             </p>
                             <Link
                               href={`/invoices/${payment.invoiceId}`}
-                              className='mt-0.5 text-xs text-gray-400 hover:text-orange-600 transition-colors'
+                              className='mt-0.5 text-xs text-gray-400 dark:text-gray-500 hover:text-orange-600 transition-colors'
                               onClick={(e) => e.stopPropagation()}
                             >
                               {payment.invoiceNumber}
@@ -623,7 +623,7 @@ export default function PaymentsPage() {
                           {/* Col 4: Notes — hidden on smaller screens */}
                           <TableCell className='hidden xl:table-cell py-4 max-w-[220px]'>
                             {payment.notes && (
-                              <p className='truncate text-xs text-gray-400 italic'>
+                              <p className='truncate text-xs text-gray-400 dark:text-gray-500 italic'>
                                 {payment.notes}
                               </p>
                             )}
@@ -634,12 +634,12 @@ export default function PaymentsPage() {
                             <span
                               className={`text-lg font-black tracking-tight ${
                                 payment.status === 'COMPLETED'
-                                  ? 'text-gray-900'
+                                  ? 'text-gray-900 dark:text-white'
                                   : payment.status === 'PENDING'
-                                    ? 'text-gray-900'
+                                    ? 'text-gray-900 dark:text-white'
                                     : payment.status === 'FAILED'
                                       ? 'text-red-600'
-                                      : 'text-gray-400 line-through'
+                                      : 'text-gray-400 dark:text-gray-500 line-through'
                               }`}
                             >
                               {payment.status === 'REFUNDED' ? '−' : ''}
@@ -668,7 +668,7 @@ export default function PaymentsPage() {
                           <TableCell className='py-4 pr-4 text-right'>
                             <DropdownMenu
                               trigger={
-                                <button className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-900 opacity-0 group-hover:opacity-100 hover:bg-gray-100 hover:text-gray-600 transition-all'>
+                                <button className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-900 opacity-0 group-hover:opacity-100 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-all'>
                                   <svg
                                     className='h-4 w-4'
                                     fill='currentColor'
@@ -741,14 +741,14 @@ export default function PaymentsPage() {
                 />
               </svg>
             </div>
-            <p className='font-semibold text-gray-900'>
+            <p className='font-semibold text-gray-900 dark:text-white'>
               {deleteTarget?.invoiceNumber}
             </p>
-            <p className='mt-1 text-2xl font-bold text-gray-900'>
+            <p className='mt-1 text-2xl font-bold text-gray-900 dark:text-white'>
               {deleteTarget &&
                 formatCurrency(deleteTarget.amount, deleteTarget.currency)}
             </p>
-            <p className='mt-2 text-sm text-gray-500'>
+            <p className='mt-2 text-sm text-gray-500 dark:text-gray-400'>
               Permanently delete this payment record? This cannot be undone.
             </p>
           </div>
