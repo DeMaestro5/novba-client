@@ -87,27 +87,27 @@ export default function NewProposalPage() {
   return (
     <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
       {/* Breadcrumb */}
-      <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/proposals" className="flex items-center gap-1.5 hover:text-gray-700 transition-colors">
+      <div className="mb-6 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+        <Link href="/proposals" className="flex items-center gap-1.5 hover:text-orange-600 dark:hover:text-orange-600 transition-colors">
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Proposals
         </Link>
         <span>/</span>
-        <span className="text-gray-900 font-medium">New Proposal</span>
+        <span className="text-gray-900 dark:text-gray-200 font-medium">New Proposal</span>
       </div>
 
       {/* Page header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">New Proposal</h1>
-          <p className="mt-1 text-sm text-gray-500">Build your proposal and preview it in real time</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">New Proposal</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Build your proposal and preview it in real time</p>
         </div>
         <button
           type="button"
           onClick={() => setShowPreview(p => !p)}
-          className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />

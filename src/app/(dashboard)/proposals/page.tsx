@@ -89,8 +89,8 @@ export default function ProposalsPage() {
       {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Proposals</h1>
-          <p className="mt-1 text-sm text-gray-500">Create and track project proposals for clients</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Proposals</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Create and track project proposals for clients</p>
         </div>
         <Button
           variant="primary"
@@ -109,29 +109,29 @@ export default function ProposalsPage() {
         <Card>
           <CardBody padding="lg">
             <div className="flex items-start justify-between">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Total Proposals</p>
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Proposals</p>
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-900/30">
                 <svg className="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{stats.total}</p>
-            <p className="mt-1 text-sm text-gray-500">all time</p>
+            <p className="mt-3 text-3xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">all time</p>
           </CardBody>
         </Card>
 
         <Card>
           <CardBody padding="lg">
             <div className="flex items-start justify-between">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Total Value</p>
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Value</p>
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50 dark:bg-green-900/30">
                 <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{formatCurrency(stats.totalValue)}</p>
+            <p className="mt-3 text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalValue)}</p>
             <p className="mt-1 text-sm text-green-600 font-medium">pipeline value</p>
           </CardBody>
         </Card>
@@ -139,17 +139,17 @@ export default function ProposalsPage() {
         <Card>
           <CardBody padding="lg">
             <div className="flex items-start justify-between">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Awaiting Response</p>
-              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${stats.pendingResponse > 0 ? 'bg-amber-50' : 'bg-gray-50'}`}>
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Awaiting Response</p>
+              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${stats.pendingResponse > 0 ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-gray-50 dark:bg-gray-700'}`}>
                 <svg className={`h-5 w-5 ${stats.pendingResponse > 0 ? 'text-amber-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
-            <p className={`mt-3 text-3xl font-bold ${stats.pendingResponse > 0 ? 'text-amber-600' : 'text-gray-900'}`}>
+            <p className={`mt-3 text-3xl font-bold ${stats.pendingResponse > 0 ? 'text-amber-600' : 'text-gray-900 dark:text-white'}`}>
               {stats.pendingResponse}
             </p>
-            <p className={`mt-1 text-sm font-medium ${stats.pendingResponse > 0 ? 'text-amber-500' : 'text-gray-400'}`}>
+            <p className={`mt-1 text-sm font-medium ${stats.pendingResponse > 0 ? 'text-amber-500' : 'text-gray-400 dark:text-gray-600'}`}>
               {stats.pendingResponse > 0 ? 'needs follow-up' : 'all clear'}
             </p>
           </CardBody>
@@ -158,8 +158,8 @@ export default function ProposalsPage() {
         <Card>
           <CardBody padding="lg">
             <div className="flex items-start justify-between">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Approved</p>
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Approved</p>
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50 dark:bg-green-900/30">
                 <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -188,13 +188,13 @@ export default function ProposalsPage() {
                   className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 pb-3 text-sm font-medium transition-colors ${
                     activeFilter === tab.value
                       ? 'border-orange-600 text-orange-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                   }`}
                 >
                   {tab.label}
                   {count > 0 && (
                     <span className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${
-                      activeFilter === tab.value ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-500'
+                      activeFilter === tab.value ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300'
                     }`}>
                       {count}
                     </span>
@@ -206,9 +206,9 @@ export default function ProposalsPage() {
 
           {/* Search + count */}
           <div className="flex items-center justify-between px-4 py-3">
-            <p className="text-sm text-gray-500">{filtered.length} proposal{filtered.length !== 1 ? 's' : ''}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{filtered.length} proposal{filtered.length !== 1 ? 's' : ''}</p>
             <div className="relative w-64">
-              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -216,7 +216,7 @@ export default function ProposalsPage() {
                 placeholder="Search proposals..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
               />
             </div>
           </div>
@@ -224,13 +224,13 @@ export default function ProposalsPage() {
           {/* Table */}
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
-                <svg className="h-7 w-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                <svg className="h-7 w-7 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <p className="font-semibold text-gray-900">No proposals found</p>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="font-semibold text-gray-900 dark:text-white">No proposals found</p>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {search ? 'Try a different search term' : 'Create your first proposal to get started'}
               </p>
               {!search && (
@@ -265,7 +265,7 @@ export default function ProposalsPage() {
                   return (
                     <TableRow
                       key={proposal.id}
-                      className="cursor-pointer hover:bg-gray-50 transition-colors"
+                      className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       onClick={() => router.push(`/proposals/${proposal.id}`)}
                     >
                       <TableCell>
@@ -277,19 +277,19 @@ export default function ProposalsPage() {
                           >
                             {proposal.proposalNumber}
                           </Link>
-                          <p className="mt-0.5 text-sm text-gray-600 line-clamp-1">{proposal.title}</p>
+                          <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 line-clamp-1">{proposal.title}</p>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium text-gray-900">{proposal.clientName}</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{proposal.clientName}</p>
                           {proposal.clientContact && (
-                            <p className="text-xs text-gray-500">{proposal.clientContact}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{proposal.clientContact}</p>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-semibold text-gray-900">
+                        <span className="font-semibold text-gray-900 dark:text-white">
                           {formatCurrency(proposal.totalAmount, proposal.currency)}
                         </span>
                       </TableCell>
@@ -298,7 +298,7 @@ export default function ProposalsPage() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className={`text-sm ${isExpiringSoon ? 'font-semibold text-amber-600' : 'text-gray-600'}`}>
+                          <p className={`text-sm ${isExpiringSoon ? 'font-semibold text-amber-600' : 'text-gray-600 dark:text-gray-300'}`}>
                             {new Date(proposal.validUntil).toLocaleDateString()}
                           </p>
                           {isExpiringSoon && (
@@ -310,7 +310,7 @@ export default function ProposalsPage() {
                         <div onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu
                           trigger={
-                            <button className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+                            <button className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors">
                               <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                                 <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
                               </svg>
@@ -359,8 +359,8 @@ export default function ProposalsPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
-            <p className="font-semibold text-gray-900">{deleteTarget?.proposalNumber}</p>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="font-semibold text-gray-900 dark:text-white">{deleteTarget?.proposalNumber}</p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
               This will permanently delete &quot;{deleteTarget?.title}&quot;. This action cannot be undone.
             </p>
           </div>

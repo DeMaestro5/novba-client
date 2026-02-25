@@ -65,7 +65,7 @@ function StatusTimeline({ status, sentAt, viewedAt, respondedAt }: {
                   ? 'border-green-500 bg-green-500'
                   : isCurrent
                   ? 'border-orange-500 bg-orange-50'
-                  : 'border-gray-200 bg-white'
+                  : 'border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800'
               }`}>
                 {isBadOutcome ? (
                   <svg className="h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,19 +82,19 @@ function StatusTimeline({ status, sentAt, viewedAt, respondedAt }: {
                 )}
               </div>
               <p className={`mt-2 text-center text-xs font-medium ${
-                isBadOutcome ? 'text-red-500' : isCompleted ? 'text-gray-900' : isCurrent ? 'text-orange-600' : 'text-gray-400'
+                isBadOutcome ? 'text-red-500' : isCompleted ? 'text-gray-900 dark:text-white' : isCurrent ? 'text-orange-600' : 'text-gray-400 dark:text-gray-600'
               }`}>
                 {step.label}
               </p>
               {step.date && (
-                <p className="mt-0.5 text-center text-xs text-gray-400">
+                <p className="mt-0.5 text-center text-xs text-gray-400 dark:text-gray-500">
                   {new Date(step.date).toLocaleDateString()}
                 </p>
               )}
             </div>
             {!isLast && (
               <div className={`mt-4 flex-1 border-t-2 ${
-                idx < currentStepIndex ? 'border-green-400' : 'border-gray-200'
+                idx < currentStepIndex ? 'border-green-400' : 'border-gray-200 dark:border-gray-700'
               }`} />
             )}
           </div>
@@ -153,7 +153,7 @@ export default function ProposalDetailPage() {
   return (
     <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
       {/* Breadcrumb */}
-      <Link href="/proposals" className="mb-6 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors w-fit">
+      <Link href="/proposals" className="mb-6 flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-600 dark:text-gray-400 dark:hover:text-orange-600 transition-colors w-fit">
         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
@@ -166,15 +166,15 @@ export default function ProposalDetailPage() {
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold text-gray-900">{proposal.title}</h1>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">{proposal.title}</h1>
                 <Badge variant={sc.variant as 'default' | 'success' | 'warning' | 'danger' | 'info'}>{sc.label}</Badge>
               </div>
               <div className="mt-1 flex items-center gap-3">
-                <span className="text-sm text-gray-500">{proposal.proposalNumber}</span>
-                <span className="text-gray-300">·</span>
-                <span className="text-sm text-gray-500">{proposal.clientName}</span>
-                <span className="text-gray-300">·</span>
-                <span className="text-2xl font-bold text-gray-900">
+                <span className="text-sm text-gray-500 dark:text-gray-400">{proposal.proposalNumber}</span>
+                <span className="text-gray-300 dark:text-gray-600">·</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{proposal.clientName}</span>
+                <span className="text-gray-300 dark:text-gray-600">·</span>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">
                   {formatCurrency(proposal.totalAmount, proposal.currency)}
                 </span>
               </div>
@@ -209,7 +209,7 @@ export default function ProposalDetailPage() {
               </Button>
               <DropdownMenu
                 trigger={
-                  <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
+                  <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors">
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01" />
                     </svg>
@@ -277,7 +277,7 @@ export default function ProposalDetailPage() {
       {/* Status timeline */}
       <Card className="mb-6">
         <CardBody>
-          <p className="mb-4 text-sm font-semibold text-gray-500">Proposal Status</p>
+          <p className="mb-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Proposal Status</p>
           <StatusTimeline
             status={proposal.status}
             sentAt={proposal.sentAt}
@@ -296,7 +296,7 @@ export default function ProposalDetailPage() {
             <Card>
               <CardHeader title="Scope of work" />
               <CardBody>
-                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{proposal.scope}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{proposal.scope}</p>
               </CardBody>
             </Card>
           )}
@@ -318,25 +318,25 @@ export default function ProposalDetailPage() {
                   {proposal.lineItems.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
-                        <span className="font-medium text-gray-900">{item.description}</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{item.description}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-600">{item.quantity}</span>
+                        <span className="text-gray-600 dark:text-gray-400">{item.quantity}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-600">{formatCurrency(item.rate, proposal.currency)}</span>
+                        <span className="text-gray-600 dark:text-gray-400">{formatCurrency(item.rate, proposal.currency)}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="font-semibold text-gray-900">{formatCurrency(item.amount, proposal.currency)}</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(item.amount, proposal.currency)}</span>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
               {/* Total row */}
-              <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
-                <span className="font-semibold text-gray-700">Total</span>
-                <span className="text-2xl font-bold text-gray-900">
+              <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 px-6 py-4">
+                <span className="font-semibold text-gray-700 dark:text-gray-300">Total</span>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">
                   {formatCurrency(proposal.totalAmount, proposal.currency)}
                 </span>
               </div>
@@ -348,7 +348,7 @@ export default function ProposalDetailPage() {
             <Card>
               <CardHeader title="Terms & conditions" />
               <CardBody>
-                <p className="text-sm text-gray-600 leading-relaxed">{proposal.terms}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{proposal.terms}</p>
               </CardBody>
             </Card>
           )}
@@ -369,13 +369,13 @@ export default function ProposalDetailPage() {
                     {proposal.clientName}
                   </Link>
                   {proposal.clientContact && (
-                    <p className="text-sm text-gray-500">{proposal.clientContact}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{proposal.clientContact}</p>
                   )}
                 </div>
                 {proposal.clientEmail && (
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Email</p>
-                    <a href={`mailto:${proposal.clientEmail}`} className="text-sm text-gray-700 hover:text-orange-600 transition-colors">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Email</p>
+                    <a href={`mailto:${proposal.clientEmail}`} className="text-sm text-gray-700 hover:text-orange-600 dark:text-gray-300 transition-colors">
                       {proposal.clientEmail}
                     </a>
                   </div>
@@ -388,35 +388,35 @@ export default function ProposalDetailPage() {
           <Card>
             <CardHeader title="Details" />
             <CardBody>
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 <div className="py-3 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Status</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Status</span>
                   <Badge variant={sc.variant as 'default' | 'success' | 'warning' | 'danger' | 'info'} size="sm">{sc.label}</Badge>
                 </div>
                 <div className="py-3 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Total</span>
-                  <span className="font-bold text-gray-900">{formatCurrency(proposal.totalAmount, proposal.currency)}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Total</span>
+                  <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(proposal.totalAmount, proposal.currency)}</span>
                 </div>
                 <div className="py-3 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Currency</span>
-                  <span className="text-sm text-gray-700">{proposal.currency}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Currency</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{proposal.currency}</span>
                 </div>
                 <div className="py-3 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Valid Until</span>
-                  <span className={`text-sm font-medium ${isExpiringSoon ? 'text-amber-600' : 'text-gray-700'}`}>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Valid Until</span>
+                  <span className={`text-sm font-medium ${isExpiringSoon ? 'text-amber-600' : 'text-gray-700 dark:text-gray-300'}`}>
                     {new Date(proposal.validUntil).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="py-3 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Created</span>
-                  <span className="text-sm text-gray-700">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Created</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
                     {new Date(proposal.createdAt).toLocaleDateString()}
                   </span>
                 </div>
                 {proposal.sentAt && (
                   <div className="py-3 flex items-center justify-between">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Sent</span>
-                    <span className="text-sm text-gray-700">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Sent</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
                       {new Date(proposal.sentAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -434,7 +434,7 @@ export default function ProposalDetailPage() {
                   <button
                     type="button"
                     onClick={handleSend}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors text-left"
                   >
                     <svg className="h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -445,9 +445,9 @@ export default function ProposalDetailPage() {
                 <button
                   type="button"
                   onClick={() => router.push(`/proposals/${params.id}/edit`)}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors text-left"
                 >
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                   Edit Proposal
@@ -455,9 +455,9 @@ export default function ProposalDetailPage() {
                 <button
                   type="button"
                   onClick={handleDuplicate}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors text-left"
                 >
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                   Duplicate
@@ -468,14 +468,14 @@ export default function ProposalDetailPage() {
                     console.log(`=== GET /api/v1/proposals/${params.id}/pdf ===`);
                     showToast('PDF download coming soon', 'info');
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors text-left"
                 >
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                   Download PDF
                 </button>
-                <div className="h-px bg-gray-100" />
+                <div className="h-px bg-gray-100 dark:bg-gray-700" />
                 <button
                   type="button"
                   onClick={() => setDeleteModal(true)}
@@ -502,8 +502,8 @@ export default function ProposalDetailPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
-            <p className="font-semibold text-gray-900">{proposal.proposalNumber}</p>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="font-semibold text-gray-900 dark:text-white">{proposal.proposalNumber}</p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
               Permanently delete &quot;{proposal.title}&quot;? This cannot be undone.
             </p>
           </div>
