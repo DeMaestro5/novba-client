@@ -65,8 +65,8 @@ export default function ClientsPage() {
       {/* Page header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
-          <p className="mt-1 text-sm text-gray-500">Manage your client relationships</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Clients</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage your client relationships</p>
         </div>
         <Link href="/clients/new" className="shrink-0">
           <Button variant="primary" className="bg-orange-600 hover:bg-orange-700">
@@ -80,29 +80,29 @@ export default function ClientsPage() {
         <Card>
           <CardBody padding="lg">
             <div className="flex items-start justify-between">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Total Clients</p>
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Clients</p>
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-900/30">
                 <svg className="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{mockClients.length}</p>
-            <p className="mt-1 text-sm text-gray-500">active relationships</p>
+            <p className="mt-3 text-3xl font-bold text-gray-900 dark:text-white">{mockClients.length}</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">active relationships</p>
           </CardBody>
         </Card>
 
         <Card>
           <CardBody padding="lg">
             <div className="flex items-start justify-between">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Total Revenue</p>
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Revenue</p>
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50 dark:bg-green-900/30">
                 <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-gray-900 dark:text-white">
               {formatCurrency(mockClients.reduce((s, c) => s + c.totalRevenue, 0), 'USD')}
             </p>
             <p className="mt-1 text-sm font-medium text-green-600">collected to date</p>
@@ -112,14 +112,14 @@ export default function ClientsPage() {
         <Card>
           <CardBody padding="lg">
             <div className="flex items-start justify-between">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Outstanding</p>
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Outstanding</p>
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-900/30">
                 <svg className="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-gray-900 dark:text-white">
               {formatCurrency(mockClients.reduce((s, c) => s + c.outstandingBalance, 0), 'USD')}
             </p>
             <p className="mt-1 text-sm font-medium text-orange-600">awaiting payment</p>
@@ -129,17 +129,17 @@ export default function ClientsPage() {
         <Card>
           <CardBody padding="lg">
             <div className="flex items-start justify-between">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Overdue Invoices</p>
-              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${mockClients.reduce((s, c) => s + c.overdueCount, 0) > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Overdue Invoices</p>
+              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${mockClients.reduce((s, c) => s + c.overdueCount, 0) > 0 ? 'bg-red-50 dark:bg-red-900/30' : 'bg-gray-50 dark:bg-gray-700'}`}>
                 <svg className={`h-5 w-5 ${mockClients.reduce((s, c) => s + c.overdueCount, 0) > 0 ? 'text-red-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                 </svg>
               </div>
             </div>
-            <p className={`mt-3 text-3xl font-bold ${mockClients.reduce((s, c) => s + c.overdueCount, 0) > 0 ? 'text-red-600' : 'text-gray-900'}`}>
+            <p className={`mt-3 text-3xl font-bold ${mockClients.reduce((s, c) => s + c.overdueCount, 0) > 0 ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
               {mockClients.reduce((s, c) => s + c.overdueCount, 0)}
             </p>
-            <p className={`mt-1 text-sm font-medium ${mockClients.reduce((s, c) => s + c.overdueCount, 0) > 0 ? 'text-red-500' : 'text-gray-400'}`}>
+            <p className={`mt-1 text-sm font-medium ${mockClients.reduce((s, c) => s + c.overdueCount, 0) > 0 ? 'text-red-500' : 'text-gray-400 dark:text-gray-600'}`}>
               {mockClients.reduce((s, c) => s + c.overdueCount, 0) > 0 ? 'needs attention' : 'all clear'}
             </p>
           </CardBody>
@@ -186,7 +186,7 @@ export default function ClientsPage() {
                   {displayClients.map((client) => (
                     <TableRow
                       key={client.id}
-                      className="cursor-pointer transition-colors hover:bg-gray-50"
+                      className="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
                       onClick={() => router.push(`/clients/${client.id}`)}
                     >
                       <TableCell>
@@ -204,10 +204,10 @@ export default function ClientsPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-gray-700">
+                      <TableCell className="text-gray-700 dark:text-gray-300">
                         {client.contactName || <span className="text-gray-400">—</span>}
                       </TableCell>
-                      <TableCell className="text-gray-700">
+                      <TableCell className="text-gray-700 dark:text-gray-300">
                         {client.email ? (
                           <a href={`mailto:${client.email}`} className="hover:text-orange-600 hover:underline">
                             {client.email}
@@ -217,11 +217,11 @@ export default function ClientsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
                           {formatPaymentTerms(client.paymentTerms)}
                         </span>
                       </TableCell>
-                      <TableCell className="font-medium text-gray-900">
+                      <TableCell className="font-medium text-gray-900 dark:text-white">
                         {formatCurrency(client.totalRevenue, client.currency)}
                       </TableCell>
                       <TableCell>
@@ -236,7 +236,7 @@ export default function ClientsPage() {
                           trigger={
                             <button
                               type="button"
-                              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
                               aria-label="Actions"
                             >
                               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
