@@ -59,23 +59,23 @@ export default function ProposalLineItems({ items, currency, onChange }: Props) 
     <div className="space-y-3">
       {/* Header row */}
       <div className="hidden grid-cols-[2fr_80px_110px_110px_36px] gap-3 sm:grid">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Description</p>
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 text-center">Qty</p>
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 text-right">Rate</p>
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 text-right">Amount</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Description</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 text-center">Qty</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 text-right">Rate</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 text-right">Amount</p>
         <span />
       </div>
 
       {/* Line item rows */}
       {items.map((item, index) => (
-        <div key={item.id} className="grid grid-cols-1 gap-2 rounded-lg border border-gray-200 p-3 sm:grid-cols-[2fr_80px_110px_110px_36px] sm:items-center sm:gap-3 sm:rounded-none sm:border-0 sm:p-0">
+        <div key={item.id} className="grid grid-cols-1 gap-2 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:grid-cols-[2fr_80px_110px_110px_36px] sm:items-center sm:gap-3 sm:rounded-none sm:border-0 sm:p-0">
           {/* Description */}
           <input
             type="text"
             placeholder="e.g. Brand identity design"
             value={item.description}
             onChange={(e) => updateRow(item.id, 'description', e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-colors"
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 transition-colors"
           />
           {/* Quantity */}
           <input
@@ -84,7 +84,7 @@ export default function ProposalLineItems({ items, currency, onChange }: Props) 
             placeholder="1"
             value={item.quantity || ''}
             onChange={(e) => updateRow(item.id, 'quantity', parseFloat(e.target.value) || 0)}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-center text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-colors"
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-center text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 transition-colors"
           />
           {/* Rate */}
           <input
@@ -93,11 +93,11 @@ export default function ProposalLineItems({ items, currency, onChange }: Props) 
             placeholder="0.00"
             value={item.rate || ''}
             onChange={(e) => updateRow(item.id, 'rate', parseFloat(e.target.value) || 0)}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-right text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-colors"
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-right text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 transition-colors"
           />
           {/* Amount (read-only) */}
-          <div className="flex items-center justify-end rounded-lg bg-gray-50 px-3 py-2">
-            <span className="text-sm font-medium text-gray-900">
+          <div className="flex items-center justify-end rounded-lg bg-gray-50 dark:bg-gray-700 dark:border dark:border-gray-600 px-3 py-2">
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">
               {formatCurrency(item.amount, currency)}
             </span>
           </div>
@@ -116,7 +116,7 @@ export default function ProposalLineItems({ items, currency, onChange }: Props) 
       ))}
 
       {/* Divider */}
-      <div className="h-px bg-gray-200" />
+      <div className="h-px bg-gray-200 dark:bg-gray-700" />
 
       {/* Total row */}
       <div className="flex items-center justify-between">
@@ -131,8 +131,8 @@ export default function ProposalLineItems({ items, currency, onChange }: Props) 
           Add line item
         </button>
         <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold text-gray-500">Total</span>
-          <span className="text-xl font-bold text-gray-900">{formatCurrency(total, currency)}</span>
+          <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">Total</span>
+          <span className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(total, currency)}</span>
         </div>
       </div>
     </div>
