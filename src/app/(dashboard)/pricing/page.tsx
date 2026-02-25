@@ -256,7 +256,7 @@ function InsightIcon({ type }: { type: InsightCard['type'] }) {
 
 function Shimmer({ className = '' }: { className?: string }) {
   return (
-    <div className={`animate-pulse rounded-lg bg-gray-100 ${className}`} />
+    <div className={`animate-pulse rounded-lg bg-gray-100 dark:bg-gray-700 ${className}`} />
   );
 }
 
@@ -328,7 +328,7 @@ export default function AIPricingPage() {
     <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
 
       {/* ── Hero Banner ──────────────────────────────────────────────────── */}
-      <div className="mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 px-8 py-10 shadow-lg shadow-orange-200">
+      <div className="mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 px-8 py-10 shadow-lg shadow-orange-200 dark:shadow-orange-900/40">
         <div className="flex items-start justify-between">
           <div className="max-w-2xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white">
@@ -370,18 +370,18 @@ export default function AIPricingPage() {
         <Card className="h-full">
           <CardBody padding="lg">
             <div className="mb-6">
-              <h2 className="text-lg font-bold text-gray-900">Rate Analyzer</h2>
-              <p className="mt-1 text-sm text-gray-500">Find out if your hourly rate matches the market</p>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Rate Analyzer</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Find out if your hourly rate matches the market</p>
             </div>
 
             <div className="space-y-4">
               {/* Role */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Your Role</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Your Role</label>
                 <select
                   value={role}
                   onChange={e => setRole(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                 >
                   {ROLES.map(r => <option key={r}>{r}</option>)}
                 </select>
@@ -389,8 +389,8 @@ export default function AIPricingPage() {
 
               {/* Experience — segmented control */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Experience Level</label>
-                <div className="grid grid-cols-4 gap-1.5 rounded-xl border border-gray-200 bg-gray-50 p-1">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Experience Level</label>
+                <div className="grid grid-cols-4 gap-1.5 rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800">
                   {(Object.keys(EXPERIENCE_LABELS) as ExperienceLevel[]).map(level => (
                     <button
                       key={level}
@@ -398,14 +398,14 @@ export default function AIPricingPage() {
                       onClick={() => setExperience(level)}
                       className={`flex flex-col items-center rounded-lg py-2 text-center transition-all duration-150 ${
                         experience === level
-                          ? 'bg-white shadow-sm border border-gray-200'
+                          ? 'bg-white shadow-sm border border-gray-200 dark:bg-gray-700 dark:border-gray-600'
                           : 'hover:bg-white/60'
                       }`}
                     >
-                      <span className={`text-xs font-bold ${experience === level ? 'text-orange-600' : 'text-gray-600'}`}>
+                      <span className={`text-xs font-bold ${experience === level ? 'text-orange-600' : 'text-gray-600 dark:text-gray-400'}`}>
                         {EXPERIENCE_LABELS[level].label}
                       </span>
-                      <span className="text-[10px] text-gray-400 mt-0.5">{EXPERIENCE_LABELS[level].sub}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{EXPERIENCE_LABELS[level].sub}</span>
                     </button>
                   ))}
                 </div>
@@ -413,11 +413,11 @@ export default function AIPricingPage() {
 
               {/* Location */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Location / Market</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Location / Market</label>
                 <select
                   value={location}
                   onChange={e => setLocation(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                 >
                   {LOCATIONS.map(l => <option key={l}>{l}</option>)}
                 </select>
@@ -425,20 +425,20 @@ export default function AIPricingPage() {
 
               {/* Current rate (optional) */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Your Current Rate <span className="text-gray-400 font-normal">(optional)</span>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Your Current Rate <span className="text-gray-400 font-normal dark:text-gray-500">(optional)</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">$/hr</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400 dark:text-gray-500">$/hr</span>
                   <input
                     type="number"
                     value={currentRate}
                     onChange={e => setCurrentRate(e.target.value)}
                     placeholder="e.g. 85"
-                    className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-12 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                    className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-12 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-400">Enter your rate to see how you compare and your annual gap</p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Enter your rate to see how you compare and your annual gap</p>
               </div>
 
               <button
@@ -460,21 +460,21 @@ export default function AIPricingPage() {
             </div>
 
             {/* Rate Results */}
-            {rateLoading && <div className="mt-6 border-t border-gray-100 pt-6"><RateResultSkeleton /></div>}
+            {rateLoading && <div className="mt-6 border-t border-gray-100 dark:border-gray-700 pt-6"><RateResultSkeleton /></div>}
 
             {rateResult && !rateLoading && (
-              <div className="mt-6 border-t border-gray-100 pt-6">
+              <div className="mt-6 border-t border-gray-100 dark:border-gray-700 pt-6">
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-gray-900">Market Rate Analysis</h3>
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">Market Rate Analysis</h3>
                   <ConfidencePill score={rateResult.confidence} />
                 </div>
 
                 {/* Rate range bar */}
                 <div className="mb-4">
-                  <div className="mb-2 flex justify-between text-xs text-gray-400">
-                    <span>Low <span className="font-semibold text-gray-600">${rateResult.low}/hr</span></span>
-                    <span>Mid <span className="font-semibold text-gray-600">${rateResult.mid}/hr</span></span>
-                    <span>High <span className="font-semibold text-gray-600">${rateResult.high}/hr</span></span>
+                  <div className="mb-2 flex justify-between text-xs text-gray-400 dark:text-gray-500">
+                    <span>Low <span className="font-semibold text-gray-600 dark:text-gray-300">${rateResult.low}/hr</span></span>
+                    <span>Mid <span className="font-semibold text-gray-600 dark:text-gray-300">${rateResult.mid}/hr</span></span>
+                    <span>High <span className="font-semibold text-gray-600 dark:text-gray-300">${rateResult.high}/hr</span></span>
                   </div>
 
                   {(() => {
@@ -486,7 +486,7 @@ export default function AIPricingPage() {
                       : null;
 
                     return (
-                      <div className="relative h-3 w-full rounded-full bg-gray-100">
+                      <div className="relative h-3 w-full rounded-full bg-gray-100 dark:bg-gray-700">
                         {/* Market range band — only occupies the portion where market rates actually live */}
                         <div
                           className="absolute inset-y-0 rounded-full bg-gradient-to-r from-orange-300 to-orange-500"
@@ -505,17 +505,17 @@ export default function AIPricingPage() {
                   })()}
 
                   {rateResult.yourRate && (
-                    <p className="mt-1.5 text-center text-xs text-gray-500">
-                      Your rate: <span className="font-bold text-gray-800">${rateResult.yourRate}/hr</span>
+                    <p className="mt-1.5 text-center text-xs text-gray-500 dark:text-gray-400">
+                      Your rate: <span className="font-bold text-gray-800 dark:text-white">${rateResult.yourRate}/hr</span>
                       {' · '}
-                      <span className="text-gray-500">Market range: ${rateResult.low}–${rateResult.high}/hr</span>
+                      <span className="text-gray-500 dark:text-gray-400">Market range: ${rateResult.low}–${rateResult.high}/hr</span>
                     </p>
                   )}
                 </div>
 
                 {/* Annual gap */}
                 {rateResult.annualGap > 0 && (
-                  <div className="mb-4 rounded-xl bg-red-50 border border-red-100 p-4">
+                  <div className="mb-4 rounded-xl bg-red-50 border border-red-100 p-4 dark:bg-red-950/30 dark:border-red-900/40">
                     <p className="text-xs font-bold uppercase tracking-wider text-red-600">Estimated Annual Gap</p>
                     <p className="mt-1 text-2xl font-black text-red-700">{formatCurrency(rateResult.annualGap)}</p>
                     <p className="mt-0.5 text-xs text-red-500">left on the table per year vs. market mid-rate</p>
@@ -523,7 +523,7 @@ export default function AIPricingPage() {
                 )}
 
                 {/* Recommendation */}
-                <div className="rounded-xl bg-orange-50 border border-orange-100 p-4">
+                <div className="rounded-xl bg-orange-50 border border-orange-100 p-4 dark:bg-orange-950/30 dark:border-orange-900/40">
                   <div className="mb-2 flex items-center gap-1.5">
                     <svg className="h-4 w-4 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z"/>
@@ -541,27 +541,27 @@ export default function AIPricingPage() {
         <Card className="h-full">
           <CardBody padding="lg">
             <div className="mb-6">
-              <h2 className="text-lg font-bold text-gray-900">Project Estimator</h2>
-              <p className="mt-1 text-sm text-gray-500">Describe your project and get a market-aligned price estimate</p>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Project Estimator</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Describe your project and get a market-aligned price estimate</p>
             </div>
 
             <div className="space-y-4">
               {/* Project description */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Describe the Project</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Describe the Project</label>
                 <textarea
                   value={projectDesc}
                   onChange={e => setProjectDesc(e.target.value)}
                   placeholder="e.g. Brand identity for a fintech startup — logo, color system, typography, and brand guidelines doc. Client needs files by end of March."
                   rows={5}
-                  className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-colors"
+                  className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-colors dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
                 />
-                <p className="mt-1 text-xs text-gray-400">More detail = more accurate estimate. Include deliverables, timeline, and complexity.</p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">More detail = more accurate estimate. Include deliverables, timeline, and complexity.</p>
               </div>
 
               {/* Quick prompt chips */}
               <div>
-                <p className="mb-2 text-xs font-medium text-gray-400">Quick examples:</p>
+                <p className="mb-2 text-xs font-medium text-gray-400 dark:text-gray-500">Quick examples:</p>
                 <div className="flex flex-wrap gap-1.5">
                   {[
                     'Brand identity',
@@ -573,7 +573,7 @@ export default function AIPricingPage() {
                       key={chip}
                       type="button"
                       onClick={() => setProjectDesc(chip)}
-                      className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-colors"
+                      className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-colors dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
                     >
                       {chip}
                     </button>
@@ -582,15 +582,15 @@ export default function AIPricingPage() {
               </div>
 
               {!projectResult && !projectLoading && (
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400">How it works</p>
+                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">How it works</p>
                   <ul className="space-y-1.5">
                     {[
                       'Describe your deliverables and timeline',
                       'We analyze complexity and market rates',
                       'Get a Conservative / Recommended / Premium range',
                     ].map((step, i) => (
-                      <li key={i} className="flex items-start gap-2 text-xs text-gray-500">
+                      <li key={i} className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
                         <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[10px] font-bold text-orange-600">
                           {i + 1}
                         </span>
@@ -618,55 +618,55 @@ export default function AIPricingPage() {
                 ) : 'Estimate Project Value'}
               </button>
               {!projectDesc.trim() && !projectLoading && (
-                <p className="mt-2 text-center text-xs text-gray-400">
+                <p className="mt-2 text-center text-xs text-gray-400 dark:text-gray-500">
                   Enter a project description above to unlock
                 </p>
               )}
             </div>
 
             {/* Project Results */}
-            {projectLoading && <div className="mt-6 border-t border-gray-100 pt-6"><RateResultSkeleton /></div>}
+            {projectLoading && <div className="mt-6 border-t border-gray-100 dark:border-gray-700 pt-6"><RateResultSkeleton /></div>}
 
             {projectResult && !projectLoading && (
-              <div className="mt-6 border-t border-gray-100 pt-6 space-y-4">
+              <div className="mt-6 border-t border-gray-100 dark:border-gray-700 pt-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-gray-900">Project Estimate</h3>
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">Project Estimate</h3>
                   <ConfidencePill score={projectResult.confidence} />
                 </div>
 
                 {/* Price range */}
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-xl bg-gray-50 p-3 text-center">
-                    <p className="text-xs text-gray-400 font-medium">Conservative</p>
-                    <p className="mt-1 text-lg font-black text-gray-600">{formatCurrency(projectResult.low)}</p>
+                  <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-3 text-center">
+                    <p className="text-xs text-gray-400 font-medium dark:text-gray-500">Conservative</p>
+                    <p className="mt-1 text-lg font-black text-gray-600 dark:text-gray-300">{formatCurrency(projectResult.low)}</p>
                   </div>
                   <div className="rounded-xl bg-orange-50 border-2 border-orange-200 p-3 text-center">
                     <p className="text-xs text-orange-600 font-bold">Recommended</p>
                     <p className="mt-1 text-lg font-black text-orange-700">{formatCurrency(projectResult.recommended)}</p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-3 text-center">
-                    <p className="text-xs text-gray-400 font-medium">Premium</p>
-                    <p className="mt-1 text-lg font-black text-gray-600">{formatCurrency(projectResult.high)}</p>
+                  <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-3 text-center">
+                    <p className="text-xs text-gray-400 font-medium dark:text-gray-500">Premium</p>
+                    <p className="mt-1 text-lg font-black text-gray-600 dark:text-gray-300">{formatCurrency(projectResult.high)}</p>
                   </div>
                 </div>
 
                 {/* Hour breakdown */}
-                <div className="rounded-xl border border-gray-100 overflow-hidden">
-                  <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-100">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Suggested Breakdown</p>
+                <div className="rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                  <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide dark:text-gray-400">Suggested Breakdown</p>
                   </div>
-                  <div className="divide-y divide-gray-50">
+                  <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
                     {projectResult.breakdown.map(item => (
                       <div key={item.label} className="flex items-center justify-between px-4 py-2.5">
-                        <span className="text-sm text-gray-700">{item.label}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{item.label}</span>
                         <div className="flex items-center gap-3 text-right">
-                          <span className="text-xs text-gray-400">{item.hours}h × ${item.rate}</span>
-                          <span className="text-sm font-bold text-gray-900 w-20 text-right">{formatCurrency(item.hours * item.rate)}</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500">{item.hours}h × ${item.rate}</span>
+                          <span className="text-sm font-bold text-gray-900 w-20 text-right dark:text-white">{formatCurrency(item.hours * item.rate)}</span>
                         </div>
                       </div>
                     ))}
-                    <div className="flex items-center justify-between bg-gray-50 px-4 py-2.5">
-                      <span className="text-sm font-bold text-gray-900">Total Hours</span>
+                    <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 px-4 py-2.5">
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">Total Hours</span>
                       <span className="text-sm font-black text-orange-600">
                         {projectResult.breakdown.reduce((s, i) => s + i.hours, 0)}h
                       </span>
@@ -701,8 +701,8 @@ export default function AIPricingPage() {
       <div>
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Your Pricing Insights</h2>
-            <p className="mt-0.5 text-sm text-gray-500">Personalized analysis based on your invoices, payments, and expenses</p>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Your Pricing Insights</h2>
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Personalized analysis based on your invoices, payments, and expenses</p>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">
             <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
@@ -720,13 +720,13 @@ export default function AIPricingPage() {
                   <InsightIcon type={insight.type} />
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex items-start justify-between gap-2">
-                      <h3 className="text-sm font-bold text-gray-900 leading-snug">{insight.title}</h3>
+                      <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-snug">{insight.title}</h3>
                     </div>
-                    <p className="mb-2 text-lg font-black text-gray-900">{insight.metric}</p>
-                    <p className="mb-3 text-sm text-gray-500 leading-relaxed">{insight.body}</p>
-                    <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
-                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5">Recommended Action</p>
-                      <p className="text-xs font-semibold text-gray-700 leading-relaxed">{insight.action}</p>
+                    <p className="mb-2 text-lg font-black text-gray-900 dark:text-white">{insight.metric}</p>
+                    <p className="mb-3 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{insight.body}</p>
+                    <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 dark:bg-gray-800 dark:border-gray-700">
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5 dark:text-gray-500">Recommended Action</p>
+                      <p className="text-xs font-semibold text-gray-700 leading-relaxed dark:text-gray-200">{insight.action}</p>
                     </div>
                   </div>
                 </div>
