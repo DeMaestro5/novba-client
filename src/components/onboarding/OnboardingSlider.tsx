@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import DatePicker from '@/components/UI/DatePicker';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -14,7 +15,7 @@ export interface FormData {
   clientEmail: string;
   description: string;
   hours: string;
-  dueDate: string;
+  dueDate: Date | null;
 }
 
 export interface OnboardingSliderProps {
@@ -25,10 +26,10 @@ export interface OnboardingSliderProps {
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-const getDefaultDueDateStr = (): string => {
+const getDefaultDueDate = (): Date => {
   const d = new Date();
   d.setDate(d.getDate() + 14);
-  return d.toISOString().split('T')[0];
+  return d;
 };
 
 const ROLE_DEFAULTS: Record<string, string> = {
@@ -523,7 +524,7 @@ function StepInvoice({
   const canContinue = formData.description.trim().length > 0 && hours > 0;
 
   const formattedDue = formData.dueDate
-    ? new Date(formData.dueDate + 'T00:00:00').toLocaleDateString('en-US', {
+    ? formData.dueDate.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
@@ -597,16 +598,13 @@ function StepInvoice({
             </div>
           </div>
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1.5'>
-              Due Date
-            </label>
-            <input
-              type='date'
+            <DatePicker
+              label='Due Date'
               value={formData.dueDate}
-              onChange={(e) =>
-                setFormData((p) => ({ ...p, dueDate: e.target.value }))
+              onChange={(date) =>
+                setFormData((p) => ({ ...p, dueDate: date }))
               }
-              className={inputCls}
+              placeholder='Select due date'
             />
           </div>
         </div>
@@ -783,7 +781,7 @@ function StepDone({
         const invoicePayload = {
           clientId: mockClientId,
           issueDate: new Date().toISOString().split('T')[0],
-          dueDate: formData.dueDate,
+          dueDate: formData.dueDate?.toISOString().split('T')[0],
           status: 'DRAFT',
           lineItems: [
             {
@@ -982,7 +980,7 @@ export default function OnboardingSlider({
     clientEmail: '',
     description: '',
     hours: '',
-    dueDate: getDefaultDueDateStr(),
+    dueDate: getDefaultDueDate(),
   });
 
   const goNext = useCallback(() => {

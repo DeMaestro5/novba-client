@@ -96,6 +96,8 @@ export default function DatePicker({
   className = '',
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [alignRight, setAlignRight] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const [viewMonth, setViewMonth] = useState(() =>
     value ? value.getMonth() : new Date().getMonth()
   );
@@ -103,6 +105,19 @@ export default function DatePicker({
     value ? value.getFullYear() : new Date().getFullYear()
   );
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const CALENDAR_WIDTH = 280;
+  const CALENDAR_HEIGHT = 340;
+
+  // Smart dropdown placement: avoid overflow right and bottom
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setAlignRight(rect.left + CALENDAR_WIDTH > window.innerWidth - 16);
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setOpenUpward(spaceBelow < CALENDAR_HEIGHT);
+    }
+  }, [isOpen]);
 
   // Sync view to value when value changes externally
   useEffect(() => {
@@ -178,6 +193,7 @@ export default function DatePicker({
   const inputContainerClasses = `
     flex
     items-center
+    min-w-0
     rounded-lg
     border
     px-4
@@ -193,11 +209,11 @@ export default function DatePicker({
 
   const dropdownClasses = `
     absolute
-    left-0
-    right-0
-    top-full
-    mt-2
-    z-50
+    min-w-[280px]
+    w-[280px]
+    ${alignRight ? 'right-0' : 'left-0'}
+    ${openUpward ? 'bottom-full mb-2' : 'top-full mt-2'}
+    z-[9999]
     bg-white
     dark:bg-gray-800
     dark:border-gray-700
@@ -208,14 +224,14 @@ export default function DatePicker({
     p-4
     transition-all
     duration-150
-    origin-top
+    ${openUpward ? 'origin-bottom' : 'origin-top'}
     ${isOpen ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible pointer-events-none'}
   `
     .trim()
     .replace(/\s+/g, ' ');
 
   return (
-    <div ref={containerRef} className='relative'>
+    <div ref={containerRef} className='relative w-full'>
       {label && (
         <label className='mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300'>
           {label}
@@ -297,7 +313,7 @@ export default function DatePicker({
           {WEEKDAYS.map((day) => (
             <div
               key={day}
-              className='h-9 flex items-center justify-center text-xs font-medium uppercase text-gray-500'
+              className='h-8 sm:h-9 flex items-center justify-center text-xs font-medium uppercase text-gray-500'
             >
               {day}
             </div>
@@ -308,13 +324,16 @@ export default function DatePicker({
             const selected = value ? isSameDay(date, value) : false;
             const today = isToday(date);
             const cellClasses = `
-              h-9
-              w-9
+              h-8
+              w-8
+              sm:h-9
+              sm:w-9
               flex
               items-center
               justify-center
               rounded-lg
-              text-sm
+              text-xs
+              sm:text-sm
               cursor-pointer
               transition-colors
               duration-200

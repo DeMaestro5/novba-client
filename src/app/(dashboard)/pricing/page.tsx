@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Card, { CardBody } from '@/components/UI/Card';
+import Select from '@/components/UI/Select';
 
 const IS_FREE_TIER = true;
 
@@ -381,14 +382,13 @@ export default function AIPricingPage() {
             <div className="space-y-4">
               {/* Role */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Your Role</label>
-                <select
+                <Select
+                  label="Your Role"
                   value={role}
-                  onChange={e => setRole(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                >
-                  {ROLES.map(r => <option key={r}>{r}</option>)}
-                </select>
+                  onChange={(v) => setRole(v)}
+                  options={ROLES.map((r) => ({ value: r, label: r }))}
+                  placeholder="Select role"
+                />
               </div>
 
               {/* Experience — segmented control */}
@@ -417,14 +417,13 @@ export default function AIPricingPage() {
 
               {/* Location */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Location / Market</label>
-                <select
+                <Select
+                  label="Location / Market"
                   value={location}
-                  onChange={e => setLocation(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                >
-                  {LOCATIONS.map(l => <option key={l}>{l}</option>)}
-                </select>
+                  onChange={(v) => setLocation(v)}
+                  options={LOCATIONS.map((l) => ({ value: l, label: l }))}
+                  placeholder="Select location"
+                />
               </div>
 
               {/* Current rate (optional) */}
