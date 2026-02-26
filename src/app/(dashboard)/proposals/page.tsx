@@ -10,7 +10,17 @@ import Table, { TableRow, TableCell, TableHeader, TableBody, TableHead } from '@
 import DropdownMenu, { DropdownMenuItem } from '@/components/UI/DropdownMenu';
 import Modal, { ModalHeader, ModalBody, ModalFooter } from '@/components/UI/Modal';
 import { useToast } from '@/components/UI/Toast';
+import UpgradeModal from '@/components/UI/UpgradeModal';
 import { mockProposals, formatCurrency, type MockProposal, type ProposalStatus } from '@/lib/mock-proposals';
+
+const MOCK_USAGE = {
+  invoices: { used: 10, limit: 10 },
+  clients: { used: 3, limit: 3 },
+  proposals: { used: 5, limit: 5 },
+  projects: { used: 3, limit: 3 },
+  portfolio: { used: 3, limit: 3 },
+};
+const IS_FREE_TIER = true;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -40,6 +50,7 @@ export default function ProposalsPage() {
   const [activeFilter, setActiveFilter] = useState<ProposalStatus | 'ALL'>('ALL');
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<MockProposal | null>(null);
+  const [upgradeModal, setUpgradeModal] = useState(false);
 
   // Stats
   const stats = useMemo(() => ({
@@ -95,7 +106,13 @@ export default function ProposalsPage() {
         <Button
           variant="primary"
           className="bg-orange-600 hover:bg-orange-700"
-          onClick={() => router.push('/proposals/new')}
+          onClick={() => {
+            if (IS_FREE_TIER && MOCK_USAGE.proposals.used >= MOCK_USAGE.proposals.limit) {
+              setUpgradeModal(true);
+            } else {
+              router.push('/proposals/new');
+            }
+          }}
         >
           <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -376,6 +393,13 @@ export default function ProposalsPage() {
           </button>
         </ModalFooter>
       </Modal>
+      <UpgradeModal
+        isOpen={upgradeModal}
+        onClose={() => setUpgradeModal(false)}
+        feature="proposals"
+        used={MOCK_USAGE.proposals.used}
+        limit={MOCK_USAGE.proposals.limit}
+      />
     </div>
   );
 }

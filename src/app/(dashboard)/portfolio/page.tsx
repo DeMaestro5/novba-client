@@ -16,11 +16,21 @@ import Modal, {
 } from '@/components/UI/Modal';
 import EmptyState from '@/components/UI/EmptyState';
 import { useToast } from '@/components/UI/Toast';
+import UpgradeModal from '@/components/UI/UpgradeModal';
 import {
   MOCK_PORTFOLIO,
   MOCK_PUBLIC_PROFILE,
   type PortfolioItem,
 } from '@/lib/mock-portfolio';
+
+const MOCK_USAGE = {
+  invoices: { used: 10, limit: 10 },
+  clients: { used: 3, limit: 3 },
+  proposals: { used: 5, limit: 5 },
+  projects: { used: 3, limit: 3 },
+  portfolio: { used: 3, limit: 3 },
+};
+const IS_FREE_TIER = true;
 
 function formatMonthYear(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -140,6 +150,7 @@ export default function PortfolioPage() {
     'ALL' | 'PUBLISHED' | 'DRAFTS'
   >('ALL');
   const [deleteTarget, setDeleteTarget] = useState<PortfolioItem | null>(null);
+  const [upgradeModal, setUpgradeModal] = useState(false);
 
   const publishedCount = useMemo(
     () => items.filter((i) => i.isPublished).length,
@@ -209,7 +220,13 @@ export default function PortfolioPage() {
           <Button
             variant='primary'
             className='bg-orange-600 hover:bg-orange-700'
-            onClick={() => router.push('/portfolio/new')}
+            onClick={() => {
+              if (IS_FREE_TIER && MOCK_USAGE.portfolio.used >= MOCK_USAGE.portfolio.limit) {
+                setUpgradeModal(true);
+              } else {
+                router.push('/portfolio/new');
+              }
+            }}
           >
             <svg
               className='mr-2 h-4 w-4'
@@ -689,6 +706,13 @@ export default function PortfolioPage() {
           </button>
         </ModalFooter>
       </Modal>
+      <UpgradeModal
+        isOpen={upgradeModal}
+        onClose={() => setUpgradeModal(false)}
+        feature="portfolio items"
+        used={MOCK_USAGE.portfolio.used}
+        limit={MOCK_USAGE.portfolio.limit}
+      />
     </div>
   );
 }

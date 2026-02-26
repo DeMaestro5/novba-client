@@ -14,6 +14,16 @@ import Input from '@/components/UI/Input';
 import Pagination from '@/components/UI/Pagination';
 import Modal, { ModalHeader, ModalBody, ModalFooter } from '@/components/UI/Modal';
 import { useToast } from '@/components/UI/Toast';
+import UpgradeModal from '@/components/UI/UpgradeModal';
+
+const MOCK_USAGE = {
+  invoices: { used: 10, limit: 10 },
+  clients: { used: 3, limit: 3 },
+  proposals: { used: 5, limit: 5 },
+  projects: { used: 3, limit: 3 },
+  portfolio: { used: 3, limit: 3 },
+};
+const IS_FREE_TIER = true;
 
 const ITEMS_PER_PAGE = 10;
 
@@ -38,6 +48,7 @@ export default function ClientsPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [upgradeModal, setUpgradeModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; clientId: string; companyName: string }>({
     open: false, clientId: '', companyName: '',
   });
@@ -68,11 +79,21 @@ export default function ClientsPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Clients</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage your client relationships</p>
         </div>
-        <Link href="/clients/new" className="shrink-0">
-          <Button variant="primary" className="bg-orange-600 hover:bg-orange-700">
+        <div className="shrink-0">
+          <Button
+            variant="primary"
+            className="bg-orange-600 hover:bg-orange-700"
+            onClick={() => {
+              if (IS_FREE_TIER && MOCK_USAGE.clients.used >= MOCK_USAGE.clients.limit) {
+                setUpgradeModal(true);
+              } else {
+                router.push('/clients/new');
+              }
+            }}
+          >
             Add Client
           </Button>
-        </Link>
+        </div>
       </div>
 
       {/* Stats row */}
@@ -166,7 +187,20 @@ export default function ClientsPage() {
             <EmptyState
               title="No clients found"
               description={searchQuery ? 'Try adjusting your search.' : 'Add your first client to get started.'}
-              primaryAction={searchQuery ? undefined : { label: 'Add Client', onClick: () => router.push('/clients/new') }}
+              primaryAction={
+                searchQuery
+                  ? undefined
+                  : {
+                      label: 'Add Client',
+                      onClick: () => {
+                        if (IS_FREE_TIER && MOCK_USAGE.clients.used >= MOCK_USAGE.clients.limit) {
+                          setUpgradeModal(true);
+                        } else {
+                          router.push('/clients/new');
+                        }
+                      },
+                    }
+              }
             />
           ) : (
             <>
@@ -310,6 +344,13 @@ export default function ClientsPage() {
           </button>
         </ModalFooter>
       </Modal>
+      <UpgradeModal
+        isOpen={upgradeModal}
+        onClose={() => setUpgradeModal(false)}
+        feature="clients"
+        used={MOCK_USAGE.clients.used}
+        limit={MOCK_USAGE.clients.limit}
+      />
     </div>
   );
 }

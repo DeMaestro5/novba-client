@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Card, { CardBody } from '@/components/UI/Card';
+
+const IS_FREE_TIER = true;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -275,6 +278,7 @@ function RateResultSkeleton() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AIPricingPage() {
+  const router = useRouter();
   // Rate Analyzer state
   const [role, setRole] = useState('UI/UX Designer');
   const [experience, setExperience] = useState<ExperienceLevel>('MID');
@@ -698,7 +702,7 @@ export default function AIPricingPage() {
       </div>
 
       {/* ── Section 3: Personalized Insights ─────────────────────────────── */}
-      <div>
+      <div className="relative">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Your Pricing Insights</h2>
@@ -712,7 +716,7 @@ export default function AIPricingPage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="relative grid grid-cols-1 gap-4 md:grid-cols-2 rounded-2xl">
           {STATIC_INSIGHTS.map(insight => (
             <Card key={insight.id} className="hover:shadow-md transition-shadow duration-200">
               <CardBody padding="lg">
@@ -733,6 +737,36 @@ export default function AIPricingPage() {
               </CardBody>
             </Card>
           ))}
+          {IS_FREE_TIER && (
+            <div
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-2xl bg-gray-900/60 backdrop-blur-sm"
+              aria-hidden
+            >
+              <svg
+                className="h-8 w-8 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
+              <p className="text-center font-semibold text-white">
+                Upgrade to Pro to unlock AI Insights
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push('/subscription')}
+                className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700 transition-colors"
+              >
+                Upgrade to Pro →
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

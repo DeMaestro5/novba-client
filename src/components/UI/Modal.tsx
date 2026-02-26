@@ -19,6 +19,7 @@ export default function Modal({
   size = 'md',
   children,
   closeOnOverlayClick = true,
+  className: contentClassName,
 }: ModalProps) {
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -80,17 +81,11 @@ export default function Modal({
         className={`
           relative
           w-full
-          bg-white
-          dark:bg-gray-900
-          dark:border
-          dark:border-gray-700
-          rounded-lg
-          shadow-xl
           max-h-[90vh]
-          overflow-y-auto
           transition-all
           duration-200
           ${sizeStyles[size]}
+          ${contentClassName ?? 'overflow-y-auto rounded-lg border-0 bg-white shadow-xl dark:border dark:border-gray-700 dark:bg-gray-900'}
         `
           .trim()
           .replace(/\s+/g, ' ')}
