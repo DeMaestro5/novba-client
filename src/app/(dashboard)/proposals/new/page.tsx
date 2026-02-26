@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/UI/Button';
 import Input from '@/components/UI/Input';
+import DatePicker from '@/components/UI/DatePicker';
 import Card, { CardHeader, CardBody } from '@/components/UI/Card';
 import Select from '@/components/UI/Select';
 import TextArea from '@/components/UI/TextArea';
@@ -40,7 +41,7 @@ export default function NewProposalPage() {
     clientId: '',
     title: '',
     currency: 'USD',
-    validUntil: '',
+    validUntil: null as Date | null,
     scope: '',
     terms: 'Payment is 50% upfront and 50% upon delivery. Revisions are limited to 3 rounds.',
   });
@@ -69,7 +70,7 @@ export default function NewProposalPage() {
       scope: form.scope || undefined,
       terms: form.terms || undefined,
       currency: form.currency,
-      validUntil: form.validUntil || undefined,
+      validUntil: form.validUntil ? form.validUntil.toISOString().split('T')[0] : undefined,
       lineItems: lineItems.map((item, idx) => ({
         description: item.description,
         quantity: Number(item.quantity),
@@ -149,12 +150,11 @@ export default function NewProposalPage() {
                     onChange={(v) => update({ currency: v })}
                     fullWidth
                   />
-                  <Input
+                  <DatePicker
                     label="Valid Until"
-                    type="date"
                     value={form.validUntil}
-                    onChange={(e) => update({ validUntil: e.target.value })}
-                    fullWidth
+                    onChange={(date) => update({ validUntil: date })}
+                    placeholder="Select date"
                   />
                 </div>
               </div>
@@ -245,7 +245,7 @@ export default function NewProposalPage() {
                 scope={form.scope}
                 terms={form.terms}
                 currency={form.currency}
-                validUntil={form.validUntil || undefined}
+                validUntil={form.validUntil ? form.validUntil.toISOString().split('T')[0] : undefined}
                 lineItems={lineItems}
               />
             </div>
