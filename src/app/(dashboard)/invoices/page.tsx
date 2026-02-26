@@ -16,7 +16,11 @@ import Table, {
 import DropdownMenu, { DropdownMenuItem } from '@/components/UI/DropdownMenu';
 import EmptyState from '@/components/UI/EmptyState';
 import Input from '@/components/UI/Input';
-import Modal, { ModalHeader, ModalBody, ModalFooter } from '@/components/UI/Modal';
+import Modal, {
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from '@/components/UI/Modal';
 import Pagination from '@/components/UI/Pagination';
 import Select from '@/components/UI/Select';
 import { useToast } from '@/components/UI/Toast';
@@ -112,7 +116,11 @@ const mockInvoices: MockInvoice[] = [
     id: '5',
     invoiceNumber: 'INV-0005',
     status: 'PARTIALLY_PAID',
-    client: { id: 'c5', companyName: 'Solo Ventures', email: 'pay@soloventures.com' },
+    client: {
+      id: 'c5',
+      companyName: 'Solo Ventures',
+      email: 'pay@soloventures.com',
+    },
     issueDate: '2026-02-01',
     dueDate: '2026-03-02',
     total: 5500.0,
@@ -144,7 +152,11 @@ const mockInvoices: MockInvoice[] = [
     id: '8',
     invoiceNumber: 'INV-0008',
     status: 'SENT',
-    client: { id: 'c7', companyName: 'Cloud Nine', email: 'finance@cloudnine.io' },
+    client: {
+      id: 'c7',
+      companyName: 'Cloud Nine',
+      email: 'finance@cloudnine.io',
+    },
     issueDate: '2026-02-10',
     dueDate: '2026-03-12',
     total: 2900.0,
@@ -155,7 +167,11 @@ const mockInvoices: MockInvoice[] = [
     id: '9',
     invoiceNumber: 'INV-0009',
     status: 'DRAFT',
-    client: { id: 'c8', companyName: 'Pixel Perfect', email: 'billing@pixelperfect.com' },
+    client: {
+      id: 'c8',
+      companyName: 'Pixel Perfect',
+      email: 'billing@pixelperfect.com',
+    },
     issueDate: '2026-02-18',
     dueDate: '2026-03-20',
     total: 3100.0,
@@ -165,7 +181,11 @@ const mockInvoices: MockInvoice[] = [
     id: '10',
     invoiceNumber: 'INV-0010',
     status: 'OVERDUE',
-    client: { id: 'c9', companyName: 'Startup Alpha', email: 'accounts@startupalpha.com' },
+    client: {
+      id: 'c9',
+      companyName: 'Startup Alpha',
+      email: 'accounts@startupalpha.com',
+    },
     issueDate: '2026-01-05',
     dueDate: '2026-02-04',
     total: 4500.0,
@@ -176,7 +196,11 @@ const mockInvoices: MockInvoice[] = [
     id: '11',
     invoiceNumber: 'INV-0011',
     status: 'PAID',
-    client: { id: 'c3', companyName: 'Design Studio', email: 'accounts@designstudio.com' },
+    client: {
+      id: 'c3',
+      companyName: 'Design Studio',
+      email: 'accounts@designstudio.com',
+    },
     issueDate: '2025-11-15',
     dueDate: '2025-12-15',
     total: 2200.0,
@@ -187,7 +211,11 @@ const mockInvoices: MockInvoice[] = [
     id: '12',
     invoiceNumber: 'INV-0012',
     status: 'SENT',
-    client: { id: 'c10', companyName: 'DataFlow Inc', email: 'billing@dataflow.com' },
+    client: {
+      id: 'c10',
+      companyName: 'DataFlow Inc',
+      email: 'billing@dataflow.com',
+    },
     issueDate: '2026-02-14',
     dueDate: '2026-03-16',
     total: 6700.0,
@@ -208,7 +236,7 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 ];
 
 function getStatusBadgeVariant(
-  status: InvoiceStatus
+  status: InvoiceStatus,
 ): 'default' | 'success' | 'warning' | 'danger' | 'info' {
   switch (status) {
     case 'DRAFT':
@@ -266,7 +294,7 @@ export default function InvoicesPage() {
       list = list.filter(
         (inv) =>
           inv.invoiceNumber.toLowerCase().includes(q) ||
-          inv.client.companyName.toLowerCase().includes(q)
+          inv.client.companyName.toLowerCase().includes(q),
       );
     }
     return list;
@@ -274,7 +302,7 @@ export default function InvoicesPage() {
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredInvoices.length / ITEMS_PER_PAGE)
+    Math.ceil(filteredInvoices.length / ITEMS_PER_PAGE),
   );
   const effectivePage = Math.min(currentPage, totalPages);
   const displayInvoices = useMemo(() => {
@@ -283,20 +311,25 @@ export default function InvoicesPage() {
   }, [filteredInvoices, effectivePage]);
 
   return (
-    <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className='mx-auto max-w-[1400px] p-6 lg:p-8'>
+      <div className='mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Invoices</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
+            Invoices
+          </h1>
+          <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
             Manage and track all your invoices
           </p>
         </div>
-        <div className="shrink-0">
+        <div className='shrink-0'>
           <Button
-            variant="primary"
-            className="bg-orange-600 hover:bg-orange-700"
+            variant='primary'
+            className='bg-orange-600 hover:bg-orange-700'
             onClick={() => {
-              if (IS_FREE_TIER && MOCK_USAGE.invoices.used >= MOCK_USAGE.invoices.limit) {
+              if (
+                IS_FREE_TIER &&
+                MOCK_USAGE.invoices.used >= MOCK_USAGE.invoices.limit
+              ) {
                 setUpgradeModal(true);
               } else {
                 router.push('/invoices/new');
@@ -310,19 +343,19 @@ export default function InvoicesPage() {
 
       <Card>
         <CardHeader
-          title="All invoices"
+          title='All invoices'
           subtitle={`${filteredInvoices.length} invoice${filteredInvoices.length !== 1 ? 's' : ''}`}
           action={
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
               <Input
-                type="search"
-                placeholder="Search by invoice # or client..."
+                type='search'
+                placeholder='Search by invoice # or client...'
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                containerClassName="w-full sm:w-64 max-w-full"
+                containerClassName='w-full sm:w-64 max-w-full'
               />
               <Select
                 options={STATUS_OPTIONS}
@@ -331,16 +364,16 @@ export default function InvoicesPage() {
                   setStatusFilter(value);
                   setCurrentPage(1);
                 }}
-                placeholder="All statuses"
-                containerClassName="w-full sm:w-44"
+                placeholder='All statuses'
+                containerClassName='w-full sm:w-44'
               />
             </div>
           }
         />
-        <CardBody padding="lg" className="overflow-visible">
+        <CardBody padding='lg' className='overflow-visible'>
           {displayInvoices.length === 0 ? (
             <EmptyState
-              title="No invoices found"
+              title='No invoices found'
               description={
                 searchQuery || statusFilter
                   ? 'Try adjusting your search or filters.'
@@ -352,7 +385,10 @@ export default function InvoicesPage() {
                   : {
                       label: 'Create Invoice',
                       onClick: () => {
-                        if (IS_FREE_TIER && MOCK_USAGE.invoices.used >= MOCK_USAGE.invoices.limit) {
+                        if (
+                          IS_FREE_TIER &&
+                          MOCK_USAGE.invoices.used >= MOCK_USAGE.invoices.limit
+                        ) {
                           setUpgradeModal(true);
                         } else {
                           router.push('/invoices/new');
@@ -372,21 +408,23 @@ export default function InvoicesPage() {
                     <TableHead>Due Date</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className='text-right'>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {displayInvoices.map((inv) => (
                     <TableRow
                       key={inv.id}
-                      className="cursor-pointer transition-colors hover:bg-gray-50"
+                      className='cursor-pointer transition-colors hover:bg-gray-50'
                       onClick={() => router.push(`/invoices/${inv.id}`)}
                     >
                       <TableCell>
-                        <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                        <div
+                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                        >
                           <Link
                             href={`/invoices/${inv.id}`}
-                            className="font-medium text-orange-600 hover:underline"
+                            className='font-medium text-orange-600 hover:underline'
                           >
                             {inv.invoiceNumber}
                           </Link>
@@ -403,66 +441,68 @@ export default function InvoicesPage() {
                           {inv.status.replace('_', ' ')}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                        <DropdownMenu
-                          align="right"
-                          trigger={
-                            <button
-                              type="button"
-                              className="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                              aria-label="Actions"
-                            >
-                              <svg
-                                className="h-5 w-5"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                              </svg>
-                            </button>
-                          }
+                      <TableCell className='text-right'>
+                        <div
+                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         >
-                          <DropdownMenuItem
-                            onClick={() =>
-                              router.push(`/invoices/${inv.id}/edit`)
+                          <DropdownMenu
+                            align='right'
+                            trigger={
+                              <button
+                                type='button'
+                                className='rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500'
+                                aria-label='Actions'
+                              >
+                                <svg
+                                  className='h-5 w-5'
+                                  fill='currentColor'
+                                  viewBox='0 0 20 20'
+                                >
+                                  <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
+                                </svg>
+                              </button>
                             }
                           >
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              sessionStorage.setItem(
-                                'duplicateInvoice',
-                                JSON.stringify({
-                                  clientId: inv.client.id,
-                                  currency: inv.currency,
-                                }),
-                              );
-                              showToast('Opening duplicate...', 'info');
-                              router.push('/invoices/new?duplicate=true');
-                            }}
-                          >
-                            Duplicate
-                          </DropdownMenuItem>
-                          {inv.status === 'DRAFT' && (
-                            <DropdownMenuItem onClick={() => {}}>
-                              Send
+                            <DropdownMenuItem
+                              onClick={() =>
+                                router.push(`/invoices/${inv.id}/edit`)
+                              }
+                            >
+                              Edit
                             </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            variant="danger"
-                            onClick={() =>
-                              setDeleteModal({
-                                open: true,
-                                invoiceId: inv.id,
-                                invoiceNumber: inv.invoiceNumber,
-                              })
-                            }
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenu>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                sessionStorage.setItem(
+                                  'duplicateInvoice',
+                                  JSON.stringify({
+                                    clientId: inv.client.id,
+                                    currency: inv.currency,
+                                  }),
+                                );
+                                showToast('Opening duplicate...', 'info');
+                                router.push('/invoices/new?duplicate=true');
+                              }}
+                            >
+                              Duplicate
+                            </DropdownMenuItem>
+                            {inv.status === 'DRAFT' && (
+                              <DropdownMenuItem onClick={() => {}}>
+                                Send
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              variant='danger'
+                              onClick={() =>
+                                setDeleteModal({
+                                  open: true,
+                                  invoiceId: inv.id,
+                                  invoiceNumber: inv.invoiceNumber,
+                                })
+                              }
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenu>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -470,7 +510,7 @@ export default function InvoicesPage() {
                 </TableBody>
               </Table>
               {totalPages > 1 && (
-                <div className="mt-4">
+                <div className='mt-4'>
                   <Pagination
                     currentPage={effectivePage}
                     totalPages={totalPages}
@@ -489,7 +529,7 @@ export default function InvoicesPage() {
         onClose={() =>
           setDeleteModal({ open: false, invoiceId: '', invoiceNumber: '' })
         }
-        size="sm"
+        size='sm'
       >
         <ModalHeader
           title={`Delete ${deleteModal.invoiceNumber}?`}
@@ -498,23 +538,23 @@ export default function InvoicesPage() {
           }
         />
         <ModalBody>
-          <div className="flex flex-col items-center py-4 text-center">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+          <div className='flex flex-col items-center py-4 text-center'>
+            <div className='mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100'>
               <svg
-                className="h-6 w-6 text-red-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+                className='h-6 w-6 text-red-600'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
               >
                 <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
                   strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
                 />
               </svg>
             </div>
-            <p className="text-sm text-gray-500">
+            <p className='text-sm text-gray-500'>
               This invoice will be permanently deleted. This action cannot be
               undone.
             </p>
@@ -522,7 +562,7 @@ export default function InvoicesPage() {
         </ModalBody>
         <ModalFooter>
           <Button
-            variant="outline"
+            variant='outline'
             onClick={() =>
               setDeleteModal({ open: false, invoiceId: '', invoiceNumber: '' })
             }
@@ -535,7 +575,7 @@ export default function InvoicesPage() {
               showToast(`${deleteModal.invoiceNumber} deleted`, 'success');
               setDeleteModal({ open: false, invoiceId: '', invoiceNumber: '' });
             }}
-            className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+            className='rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors'
           >
             Delete Invoice
           </button>
@@ -544,7 +584,7 @@ export default function InvoicesPage() {
       <UpgradeModal
         isOpen={upgradeModal}
         onClose={() => setUpgradeModal(false)}
-        feature="invoices"
+        feature='invoices'
         used={MOCK_USAGE.invoices.used}
         limit={MOCK_USAGE.invoices.limit}
       />

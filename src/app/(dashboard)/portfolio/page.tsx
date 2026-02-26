@@ -204,7 +204,9 @@ export default function PortfolioPage() {
       {/* Header */}
       <div className='mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>Portfolio</h1>
+          <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
+            Portfolio
+          </h1>
           <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
             Manage your public portfolio and showcase your work
           </p>
@@ -221,7 +223,10 @@ export default function PortfolioPage() {
             variant='primary'
             className='bg-orange-600 hover:bg-orange-700'
             onClick={() => {
-              if (IS_FREE_TIER && MOCK_USAGE.portfolio.used >= MOCK_USAGE.portfolio.limit) {
+              if (
+                IS_FREE_TIER &&
+                MOCK_USAGE.portfolio.used >= MOCK_USAGE.portfolio.limit
+              ) {
                 setUpgradeModal(true);
               } else {
                 router.push('/portfolio/new');
@@ -272,7 +277,9 @@ export default function PortfolioPage() {
           <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
             {items.length}
           </p>
-          <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>all time</p>
+          <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
+            all time
+          </p>
         </div>
 
         <div className='rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:bg-gray-900 dark:border-gray-700'>
@@ -299,7 +306,9 @@ export default function PortfolioPage() {
           <p className='mt-3 text-3xl font-bold text-green-600'>
             {publishedCount}
           </p>
-          <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>live on portfolio</p>
+          <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
+            live on portfolio
+          </p>
         </div>
 
         <div className='rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:bg-gray-900 dark:border-gray-700'>
@@ -329,8 +338,12 @@ export default function PortfolioPage() {
               </svg>
             </div>
           </div>
-          <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>{totalViews}</p>
-          <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>across all projects</p>
+          <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
+            {totalViews}
+          </p>
+          <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
+            across all projects
+          </p>
         </div>
 
         <div className='rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:bg-gray-900 dark:border-gray-700'>
@@ -357,7 +370,9 @@ export default function PortfolioPage() {
           <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
             {profileVisits.toLocaleString()}
           </p>
-          <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>this month</p>
+          <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
+            this month
+          </p>
         </div>
       </div>
 
@@ -365,7 +380,9 @@ export default function PortfolioPage() {
       {publishedCount >= 1 && (
         <div className='mb-6 flex flex-col gap-3 rounded-xl bg-orange-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:bg-orange-950/30 dark:border dark:border-orange-900/30'>
           <div className='flex items-center gap-2'>
-            <span className='font-medium text-gray-900 dark:text-white'>Public portfolio:</span>
+            <span className='font-medium text-gray-900 dark:text-white'>
+              Public portfolio:
+            </span>
             <code className='rounded bg-white px-2 py-1 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-300'>
               novba.app/p/{MOCK_PUBLIC_PROFILE.slug}
             </code>
@@ -709,7 +726,7 @@ export default function PortfolioPage() {
       <UpgradeModal
         isOpen={upgradeModal}
         onClose={() => setUpgradeModal(false)}
-        feature="portfolio items"
+        feature='portfolio items'
         used={MOCK_USAGE.portfolio.used}
         limit={MOCK_USAGE.portfolio.limit}
       />
