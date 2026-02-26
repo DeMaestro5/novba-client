@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Button from '@/components/UI/Button';
 import Input from '@/components/UI/Input';
 import Card, { CardHeader, CardBody } from '@/components/UI/Card';
@@ -123,8 +124,8 @@ function TabItem({
       onClick={onClick}
       className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors text-left ${
         active
-          ? 'bg-orange-50 text-orange-600'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+          ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600'
+          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900'
       }`}
     >
       <span className={active ? 'text-orange-600' : 'text-gray-400'}>{icon}</span>
@@ -172,14 +173,14 @@ function ProfileSection({ settings, update, showToast, saveProfile }: Pick<Secti
         <CardHeader title="Profile photo" subtitle="This appears on your invoices and proposals" />
         <CardBody>
           <div className="flex items-center gap-5">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-orange-100 text-2xl font-bold text-orange-600 shrink-0 ring-4 ring-orange-50">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/40 text-2xl font-bold text-orange-600 shrink-0 ring-4 ring-orange-50">
               {settings.name ? settings.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'N'}
             </div>
             <div className="space-y-2">
               <Button variant="outline" size="sm" onClick={() => showToast('Photo upload coming soon', 'info')}>
                 Upload photo
               </Button>
-              <p className="text-xs text-gray-400">JPG or PNG, max 2MB</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">JPG or PNG, max 2MB</p>
             </div>
           </div>
         </CardBody>
@@ -248,11 +249,11 @@ function BusinessSection({ settings, update, showToast, saveBusiness }: Pick<Sec
         <CardHeader title="Business logo" subtitle="Appears on invoices, proposals, and contracts sent to clients" />
         <CardBody>
           <div className="flex items-center gap-5">
-            <div className="flex h-20 w-36 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 shrink-0">
+            <div className="flex h-20 w-36 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 shrink-0">
               {settings.businessLogo ? (
                 <img src={settings.businessLogo} alt="Logo" className="h-full w-full rounded-xl object-contain" />
               ) : (
-                <svg className="h-7 w-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-7 w-7 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               )}
@@ -261,7 +262,7 @@ function BusinessSection({ settings, update, showToast, saveBusiness }: Pick<Sec
               <Button variant="outline" size="sm" onClick={() => showToast('Logo upload coming soon', 'info')}>
                 Upload logo
               </Button>
-              <p className="text-xs text-gray-400">PNG or SVG recommended, max 2MB</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">PNG or SVG recommended, max 2MB</p>
             </div>
           </div>
         </CardBody>
@@ -421,7 +422,7 @@ function InvoiceDefaultsSection({ settings, update, saveInvoiceDefaults }: Pick<
                   onChange={(e) => update({ invoiceNumberPrefix: e.target.value.toUpperCase() })}
                   fullWidth
                 />
-                <p className="mt-1.5 text-xs text-gray-400">e.g. INV generates INV-0001</p>
+                <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-400">e.g. INV generates INV-0001</p>
               </div>
               <div>
                 <Input
@@ -432,14 +433,14 @@ function InvoiceDefaultsSection({ settings, update, saveInvoiceDefaults }: Pick<
                   onChange={(e) => update({ nextInvoiceNumber: parseInt(e.target.value) || 1 })}
                   fullWidth
                 />
-                <p className="mt-1.5 text-xs text-gray-400">
+                <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-400">
                   Next invoice will be {settings.invoiceNumberPrefix || 'INV'}-{String(settings.nextInvoiceNumber).padStart(4, '0')}
                 </p>
               </div>
             </div>
-            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Preview</p>
-              <p className="mt-1 text-lg font-bold text-gray-900">
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Preview</p>
+              <p className="mt-1 text-lg font-bold text-gray-900 dark:text-white">
                 {settings.invoiceNumberPrefix || 'INV'}-{String(settings.nextInvoiceNumber).padStart(4, '0')}
               </p>
             </div>
@@ -565,15 +566,15 @@ function PaymentsSection({ settings, update, showToast, connectStripe, setDiscon
                 </Badge>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Card Payments</p>
-                  <p className="mt-1 text-sm font-medium text-gray-900">
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Card Payments</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">
                     {settings.stripeChargesEnabled ? 'Enabled' : 'Pending'}
                   </p>
                 </div>
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Payouts</p>
-                  <p className="mt-1 text-sm font-medium text-gray-900">Enabled</p>
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Payouts</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">Enabled</p>
                 </div>
               </div>
               <div className="flex gap-3">
@@ -591,18 +592,18 @@ function PaymentsSection({ settings, update, showToast, connectStripe, setDiscon
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm border border-gray-200">
-                  <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-6 text-center">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600">
+                  <svg className="h-6 w-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                   </svg>
                 </div>
-                <p className="text-sm font-semibold text-gray-900">No payment account connected</p>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">No payment account connected</p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Connect Stripe to let clients pay invoices online with card or bank transfer.
                 </p>
               </div>
-              <div className="space-y-2 text-sm text-gray-600">
+              <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 {[
                   'Accept credit cards, debit cards, and bank transfers',
                   'Automatic payment reconciliation on invoices',
@@ -637,18 +638,18 @@ function PaymentsSection({ settings, update, showToast, connectStripe, setDiscon
                 key={method.label}
                 className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 ${
                   method.active
-                    ? 'border-green-200 bg-green-50'
-                    : 'border-gray-200 bg-gray-50 opacity-50'
+                    ? 'border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-900/40'
+                    : 'border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700 opacity-50'
                 }`}
               >
-                <span className={method.active ? 'text-green-600' : 'text-gray-400'}>
+                <span className={method.active ? 'text-green-600' : 'text-gray-400 dark:text-gray-600'}>
                   {method.icon}
                 </span>
                 <div>
-                  <p className={`text-xs font-medium ${method.active ? 'text-green-800' : 'text-gray-500'}`}>
+                  <p className={`text-xs font-medium ${method.active ? 'text-green-800 dark:text-white' : 'text-gray-500 dark:text-gray-500'}`}>
                     {method.label}
                   </p>
-                  <p className={`text-xs ${method.active ? 'text-green-600' : 'text-gray-400'}`}>
+                  <p className={`text-xs ${method.active ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
                     {method.active ? 'Available' : 'Coming soon'}
                   </p>
                 </div>
@@ -664,6 +665,7 @@ function PaymentsSection({ settings, update, showToast, connectStripe, setDiscon
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
+  const router = useRouter();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [settings, setSettings] = useState({ ...mockSettings });
@@ -817,8 +819,8 @@ export default function SettingsPage() {
     <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
       {/* Page header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-500">Manage your account, business, and invoice preferences</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage your account, business, and invoice preferences</p>
       </div>
 
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
@@ -837,15 +839,15 @@ export default function SettingsPage() {
           </nav>
 
           {/* Plan badge */}
-          <div className="mt-6 border-t border-gray-200 pt-6">
-            <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
+          <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+            <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-gray-900 dark:border-gray-700 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-orange-600">Current Plan</p>
-              <p className="mt-1 font-semibold text-gray-900">Free Plan</p>
-              <p className="mt-1 text-xs text-gray-500">Up to 5 invoices/month</p>
+              <p className="mt-1 font-semibold text-gray-900 dark:text-white">Free Plan</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Up to 5 invoices/month</p>
               <button
                 type="button"
                 className="mt-3 w-full rounded-lg bg-orange-600 py-2 text-xs font-semibold text-white hover:bg-orange-700 transition-colors"
-                onClick={() => showToast('Upgrade coming soon', 'info')}
+                onClick={() => router.push('/subscription')}
               >
                 Upgrade to Pro
               </button>
@@ -861,10 +863,10 @@ export default function SettingsPage() {
           {activeTab === 'portfolio-profile' && (
             <div className="space-y-6">
               {/* Portfolio Identity */}
-              <section className="rounded-2xl border border-gray-200 bg-white p-6">
-                <div className="mb-6 border-b border-gray-100 pb-4">
-                  <h2 className="text-base font-semibold text-gray-900">Portfolio Identity</h2>
-                  <p className="mt-1 text-sm text-gray-500">
+              <section className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+                <div className="mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">Portfolio Identity</h2>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     This is how you appear on your public portfolio page
                   </p>
                 </div>
@@ -872,27 +874,27 @@ export default function SettingsPage() {
                 <div className="space-y-5">
                   {/* Portfolio URL / Slug */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                       Portfolio URL
                     </label>
-                    <div className="flex items-center rounded-xl border-2 border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
-                      <span className="ml-3 text-sm text-gray-400 whitespace-nowrap">novba.app/p/</span>
+                    <div className="flex items-center rounded-xl border-2 border-gray-200 dark:border-gray-600 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
+                      <span className="ml-3 text-sm text-gray-400 dark:text-gray-500 whitespace-nowrap">novba.app/p/</span>
                       <input
                         type="text"
                         value={portfolioForm.portfolioSlug}
                         onChange={(e) => setPortfolioForm((p) => ({ ...p, portfolioSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
                         placeholder="your-name"
-                        className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 text-sm"
+                        className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-0 text-sm"
                       />
                     </div>
-                    <p className="mt-1.5 text-xs text-gray-400">
+                    <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
                       Lowercase letters, numbers, and hyphens only. Min 3 characters.
                     </p>
                   </div>
 
                   {/* Display Title */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                       Display Title
                     </label>
                     <input
@@ -901,16 +903,16 @@ export default function SettingsPage() {
                       onChange={(e) => setPortfolioForm((p) => ({ ...p, portfolioTitle: e.target.value }))}
                       placeholder="UI/UX Designer & Full-Stack Developer"
                       maxLength={100}
-                      className="w-full rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all"
+                      className="w-full rounded-xl border-2 border-gray-200 dark:border-gray-600 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all"
                     />
-                    <p className="mt-1.5 text-xs text-gray-400">
+                    <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
                       Shown below your name on your portfolio. Max 100 characters.
                     </p>
                   </div>
 
                   {/* Bio */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                       Bio
                     </label>
                     <textarea
@@ -919,17 +921,17 @@ export default function SettingsPage() {
                       placeholder="I help startups and scale-ups turn complex problems into products people actually use..."
                       rows={4}
                       maxLength={500}
-                      className="w-full rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all resize-none"
+                      className="w-full rounded-xl border-2 border-gray-200 dark:border-gray-600 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all resize-none"
                     />
                     <div className="mt-1.5 flex items-center justify-between">
-                      <p className="text-xs text-gray-400">Appears in your profile section. Max 500 characters.</p>
-                      <p className="text-xs text-gray-400">{portfolioForm.portfolioBio.length}/500</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">Appears in your profile section. Max 500 characters.</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{portfolioForm.portfolioBio.length}/500</p>
                     </div>
                   </div>
 
                   {/* Location */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                       Location
                     </label>
                     <input
@@ -938,15 +940,15 @@ export default function SettingsPage() {
                       onChange={(e) => setPortfolioForm((p) => ({ ...p, portfolioLocation: e.target.value }))}
                       placeholder="Lagos, Nigeria"
                       maxLength={100}
-                      className="w-full rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all"
+                      className="w-full rounded-xl border-2 border-gray-200 dark:border-gray-600 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all"
                     />
                   </div>
 
                   {/* Availability Toggle */}
-                  <div className="flex items-center justify-between rounded-xl border-2 border-gray-200 p-4">
+                  <div className="flex items-center justify-between rounded-xl border-2 border-gray-200 dark:border-gray-600 p-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Available for work</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Available for work</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                         Shows a green &quot;Available for work&quot; badge on your portfolio
                       </p>
                     </div>
@@ -959,10 +961,10 @@ export default function SettingsPage() {
               </section>
 
               {/* Social Links */}
-              <section className="rounded-2xl border border-gray-200 bg-white p-6">
-                <div className="mb-6 border-b border-gray-100 pb-4">
-                  <h2 className="text-base font-semibold text-gray-900">Social Links</h2>
-                  <p className="mt-1 text-sm text-gray-500">
+              <section className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+                <div className="mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">Social Links</h2>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Displayed as icon buttons on your public portfolio
                   </p>
                 </div>
@@ -970,10 +972,10 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   {/* LinkedIn */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">LinkedIn</label>
-                    <div className="flex items-center rounded-xl border-2 border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">LinkedIn</label>
+                    <div className="flex items-center rounded-xl border-2 border-gray-200 dark:border-gray-600 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
                       <span className="ml-3">
-                        <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                         </svg>
                       </span>
@@ -982,17 +984,17 @@ export default function SettingsPage() {
                         value={portfolioForm.linkedinUrl}
                         onChange={(e) => setPortfolioForm((p) => ({ ...p, linkedinUrl: e.target.value }))}
                         placeholder="https://linkedin.com/in/your-name"
-                        className="flex-1 border-0 bg-transparent py-2.5 px-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0"
+                        className="flex-1 border-0 bg-transparent py-2.5 px-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-0"
                       />
                     </div>
                   </div>
 
                   {/* Twitter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Twitter / X</label>
-                    <div className="flex items-center rounded-xl border-2 border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Twitter / X</label>
+                    <div className="flex items-center rounded-xl border-2 border-gray-200 dark:border-gray-600 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
                       <span className="ml-3">
-                        <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                         </svg>
                       </span>
@@ -1001,17 +1003,17 @@ export default function SettingsPage() {
                         value={portfolioForm.twitterUrl}
                         onChange={(e) => setPortfolioForm((p) => ({ ...p, twitterUrl: e.target.value }))}
                         placeholder="https://twitter.com/your-handle"
-                        className="flex-1 border-0 bg-transparent py-2.5 px-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0"
+                        className="flex-1 border-0 bg-transparent py-2.5 px-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-0"
                       />
                     </div>
                   </div>
 
                   {/* GitHub */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">GitHub</label>
-                    <div className="flex items-center rounded-xl border-2 border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">GitHub</label>
+                    <div className="flex items-center rounded-xl border-2 border-gray-200 dark:border-gray-600 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
                       <span className="ml-3">
-                        <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 24 24">
                           <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
                         </svg>
                       </span>
@@ -1020,7 +1022,7 @@ export default function SettingsPage() {
                         value={portfolioForm.githubUrl}
                         onChange={(e) => setPortfolioForm((p) => ({ ...p, githubUrl: e.target.value }))}
                         placeholder="https://github.com/your-username"
-                        className="flex-1 border-0 bg-transparent py-2.5 px-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0"
+                        className="flex-1 border-0 bg-transparent py-2.5 px-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-0"
                       />
                     </div>
                   </div>
@@ -1029,12 +1031,12 @@ export default function SettingsPage() {
 
               {/* Public URL preview banner */}
               {portfolioForm.portfolioSlug && portfolioForm.portfolioSlug.length >= 3 && (
-                <div className="flex items-center justify-between rounded-xl bg-orange-50 border border-orange-100 px-4 py-3">
+                <div className="flex items-center justify-between rounded-xl bg-orange-50 dark:bg-gray-800 border border-orange-100 dark:border-gray-700 px-4 py-3">
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-sm text-gray-700">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
                       Your portfolio will be live at{' '}
-                      <span className="font-semibold text-gray-900">
+                      <span className="font-semibold text-gray-900 dark:text-white">
                         novba.app/p/{portfolioForm.portfolioSlug}
                       </span>
                     </span>

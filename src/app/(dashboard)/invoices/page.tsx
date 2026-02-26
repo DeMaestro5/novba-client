@@ -20,6 +20,16 @@ import Modal, { ModalHeader, ModalBody, ModalFooter } from '@/components/UI/Moda
 import Pagination from '@/components/UI/Pagination';
 import Select from '@/components/UI/Select';
 import { useToast } from '@/components/UI/Toast';
+import UpgradeModal from '@/components/UI/UpgradeModal';
+
+const MOCK_USAGE = {
+  invoices: { used: 10, limit: 10 },
+  clients: { used: 3, limit: 3 },
+  proposals: { used: 5, limit: 5 },
+  projects: { used: 3, limit: 3 },
+  portfolio: { used: 3, limit: 3 },
+};
+const IS_FREE_TIER = true;
 
 type InvoiceStatus =
   | 'DRAFT'
@@ -239,6 +249,7 @@ export default function InvoicesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const { showToast } = useToast();
+  const [upgradeModal, setUpgradeModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{
     open: boolean;
     invoiceId: string;
@@ -280,11 +291,21 @@ export default function InvoicesPage() {
             Manage and track all your invoices
           </p>
         </div>
-        <Link href="/invoices/new" className="shrink-0">
-          <Button variant="primary" className="bg-orange-600 hover:bg-orange-700">
+        <div className="shrink-0">
+          <Button
+            variant="primary"
+            className="bg-orange-600 hover:bg-orange-700"
+            onClick={() => {
+              if (IS_FREE_TIER && MOCK_USAGE.invoices.used >= MOCK_USAGE.invoices.limit) {
+                setUpgradeModal(true);
+              } else {
+                router.push('/invoices/new');
+              }
+            }}
+          >
             Create Invoice
           </Button>
-        </Link>
+        </div>
       </div>
 
       <Card>
@@ -330,7 +351,13 @@ export default function InvoicesPage() {
                   ? undefined
                   : {
                       label: 'Create Invoice',
-                      onClick: () => router.push('/invoices/new'),
+                      onClick: () => {
+                        if (IS_FREE_TIER && MOCK_USAGE.invoices.used >= MOCK_USAGE.invoices.limit) {
+                          setUpgradeModal(true);
+                        } else {
+                          router.push('/invoices/new');
+                        }
+                      },
                     }
               }
             />
@@ -514,6 +541,13 @@ export default function InvoicesPage() {
           </button>
         </ModalFooter>
       </Modal>
+      <UpgradeModal
+        isOpen={upgradeModal}
+        onClose={() => setUpgradeModal(false)}
+        feature="invoices"
+        used={MOCK_USAGE.invoices.used}
+        limit={MOCK_USAGE.invoices.limit}
+      />
     </div>
   );
 }

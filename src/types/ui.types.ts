@@ -103,6 +103,7 @@ export interface ModalProps {
   size?: ModalSize;
   children: React.ReactNode;
   closeOnOverlayClick?: boolean;
+  className?: string;
 }
 
 export interface ModalHeaderProps {
