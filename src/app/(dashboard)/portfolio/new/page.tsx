@@ -25,7 +25,7 @@ export default function NewPortfolioPage() {
       <div className="mb-6">
         <Link
           href="/portfolio"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-900"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-orange-600 dark:text-gray-400 dark:hover:text-orange-500"
         >
           <svg
             className="h-4 w-4"
@@ -44,8 +44,8 @@ export default function NewPortfolioPage() {
         </Link>
       </div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Add New Project</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Add New Project</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Showcase your work and attract new clients
         </p>
       </div>

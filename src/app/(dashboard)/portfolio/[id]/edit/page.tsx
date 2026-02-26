@@ -28,8 +28,8 @@ export default function EditPortfolioPage() {
     return (
       <div className="mx-auto max-w-[1200px] p-6 lg:p-8">
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <p className="font-semibold text-gray-900">Project not found</p>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="font-semibold text-gray-900 dark:text-white">Project not found</p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             The project you&apos;re looking for doesn&apos;t exist.
           </p>
           <Link
@@ -48,7 +48,7 @@ export default function EditPortfolioPage() {
       <div className="mb-6">
         <Link
           href="/portfolio"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-900"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-orange-600 dark:text-gray-400 dark:hover:text-orange-500"
         >
           <svg
             className="h-4 w-4"
@@ -67,8 +67,8 @@ export default function EditPortfolioPage() {
         </Link>
       </div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Edit Project</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Project</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Update your project details and showcase
         </p>
       </div>
