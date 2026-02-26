@@ -26,15 +26,17 @@ export default function EditPortfolioPage() {
 
   if (!item) {
     return (
-      <div className="mx-auto max-w-[1200px] p-6 lg:p-8">
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <p className="font-semibold text-gray-900">Project not found</p>
-          <p className="mt-1 text-sm text-gray-500">
+      <div className='mx-auto max-w-[1200px] p-6 lg:p-8'>
+        <div className='flex flex-col items-center justify-center py-24 text-center'>
+          <p className='font-semibold text-gray-900 dark:text-white'>
+            Project not found
+          </p>
+          <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
             The project you&apos;re looking for doesn&apos;t exist.
           </p>
           <Link
-            href="/portfolio"
-            className="mt-4 text-sm font-medium text-orange-600 hover:text-orange-700"
+            href='/portfolio'
+            className='mt-4 text-sm font-medium text-orange-600 hover:text-orange-700'
           >
             Back to Portfolio
           </Link>
@@ -44,36 +46,38 @@ export default function EditPortfolioPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] p-6 lg:p-8">
-      <div className="mb-6">
+    <div className='mx-auto max-w-[1200px] p-6 lg:p-8'>
+      <div className='mb-6'>
         <Link
-          href="/portfolio"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-900"
+          href='/portfolio'
+          className='inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-orange-600 dark:text-gray-400 dark:hover:text-orange-500'
         >
           <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+            className='h-4 w-4'
+            fill='none'
+            stroke='currentColor'
+            viewBox='0 0 24 24'
           >
             <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              strokeLinecap='round'
+              strokeLinejoin='round'
               strokeWidth={2}
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              d='M10 19l-7-7m0 0l7-7m-7 7h18'
             />
           </svg>
           Back to Portfolio
         </Link>
       </div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Edit Project</h1>
-        <p className="mt-1 text-sm text-gray-500">
+      <div className='mb-8'>
+        <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
+          Edit Project
+        </h1>
+        <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
           Update your project details and showcase
         </p>
       </div>
       <PortfolioForm
-        mode="edit"
+        mode='edit'
         initialData={item}
         onSave={handleSave}
         isSaving={isSaving}

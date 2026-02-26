@@ -161,20 +161,20 @@ export default function PortfolioForm({
                 containerClassName="w-full"
               />
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-white">
                   Slug
                 </label>
-                <div className="flex items-center rounded-lg border-2 border-gray-300 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200">
-                  <span className="ml-3 text-sm text-gray-500">novba.app/p/</span>
+                <div className="flex items-center rounded-lg border-2 border-gray-300 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200 dark:border-gray-700">
+                  <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">novba.app/p/</span>
                   <input
                     type="text"
                     value={form.slug}
                     onChange={(e) => update({ slug: e.target.value })}
                     placeholder="my-project"
-                    className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0"
+                    className="flex-1 border-0 bg-transparent py-2.5 pr-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 dark:text-white dark:placeholder-gray-500"
                   />
                 </div>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   URL-friendly, lowercase letters and hyphens only
                 </p>
               </div>
@@ -229,13 +229,14 @@ export default function PortfolioForm({
                 onChange={(e) => setTechInput(e.target.value)}
                 onKeyDown={handleTechKeyDown}
                 placeholder="Add technology"
-                className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
               />
               <Button
                 variant="outline"
                 type="button"
                 onClick={addTech}
                 disabled={form.technologies.length >= 15 || !techInput.trim()}
+                className="dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 Add
               </Button>
@@ -245,13 +246,13 @@ export default function PortfolioForm({
                 {form.technologies.map((t, i) => (
                   <span
                     key={t}
-                    className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
+                    className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-300"
                   >
                     {t}
                     <button
                       type="button"
                       onClick={() => removeTech(i)}
-                      className="ml-1 rounded p-0.5 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+                      className="ml-1 rounded p-0.5 text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                       aria-label={`Remove ${t}`}
                     >
                       <svg
@@ -272,7 +273,7 @@ export default function PortfolioForm({
                 ))}
               </div>
             )}
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
               Max 15 tags. Press Enter to add.
             </p>
           </CardBody>
@@ -376,7 +377,7 @@ export default function PortfolioForm({
                 type="button"
                 onClick={() => {}}
                 onMouseDown={() => {}}
-                className="flex h-48 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-white text-gray-500 transition-colors hover:border-orange-300 hover:bg-orange-50"
+                className="flex h-48 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-white text-gray-500 transition-colors hover:border-orange-300 hover:bg-orange-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400"
               >
                 <svg
                   className="mb-2 h-10 w-10 text-gray-400"
@@ -392,7 +393,7 @@ export default function PortfolioForm({
                   />
                 </svg>
                 <span className="text-sm font-medium">Add cover image</span>
-                <span className="mt-0.5 text-xs text-gray-400">
+                <span className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                   PNG, JPG up to 5MB
                 </span>
               </button>
