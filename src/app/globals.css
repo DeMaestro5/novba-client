@@ -2,6 +2,16 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+html {
+  background-color: #080808;
+  overscroll-behavior: none;
+}
+
+body {
+  background-color: #080808;
+  overscroll-behavior: none;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -17,8 +27,6 @@
 body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  overscroll-behavior: none;
-  background-color: #f9fafb;
 }
 
 /* Block system dark mode — Novba theme is user-controlled only */

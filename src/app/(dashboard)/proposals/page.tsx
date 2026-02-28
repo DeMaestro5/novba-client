@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/UI/Button';
@@ -87,6 +87,12 @@ export default function ProposalsPage() {
     }),
     [proposals],
   );
+
+  // Threshold for "expiring within 7 days" — set in effect to avoid Date.now() during render
+  const [sevenDaysFromNow, setSevenDaysFromNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setSevenDaysFromNow(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+  }, []);
 
   // Filtered list
   const filtered = useMemo(() => {
@@ -420,9 +426,9 @@ export default function ProposalsPage() {
                 {filtered.map((proposal) => {
                   const sc = STATUS_CONFIG[proposal.status];
                   const isExpiringSoon =
+                    sevenDaysFromNow != null &&
                     proposal.validUntil &&
-                    new Date(proposal.validUntil) <
-                      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) &&
+                    new Date(proposal.validUntil) < sevenDaysFromNow &&
                     proposal.status !== 'APPROVED' &&
                     proposal.status !== 'DECLINED' &&
                     proposal.status !== 'EXPIRED';
