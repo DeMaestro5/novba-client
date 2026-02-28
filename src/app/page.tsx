@@ -91,14 +91,17 @@ function Navbar() {
     >
       <div className='mx-auto flex h-16 max-w-7xl items-center justify-between px-6'>
         <span className='text-xl font-black tracking-tight text-white'>
-          nov<span className='text-orange-500'>ba</span>
+          <span className='text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.8)]'>
+            nov
+          </span>
+          <span className='text-orange-500'>ba</span>
         </span>
         <div className='flex items-center gap-5'>
           <Link
             href='/login'
             className='text-sm font-medium text-white/40 transition-colors hover:text-white'
           >
-            Sign in
+            Login
           </Link>
           <Link
             href='/signup'
@@ -245,9 +248,11 @@ function EmailCapture() {
           </svg>
         </div>
         <div>
-          <p className='text-sm font-bold text-white'>You're on the list.</p>
+          <p className='text-sm font-bold text-white'>
+            You&apos;re on the list.
+          </p>
           <p className='text-xs text-white/40'>
-            We'll reach out when it's your turn.
+            We&apos;ll reach out when it&apos;s your turn.
           </p>
         </div>
       </motion.div>
@@ -387,13 +392,13 @@ function AIRateReveal() {
             className='mt-6 space-y-2'
           >
             <p className='text-base text-white/35'>
-              You've been charging{' '}
+              You&apos;ve been charging{' '}
               <span className='font-bold text-white/50 line-through'>
                 $45/hr
               </span>
             </p>
             <p className='text-lg font-bold text-orange-400'>
-              That's $83,200 left on the table this year.
+              That&apos;s $83,200 left on the table this year.
             </p>
           </motion.div>
         )}
@@ -609,8 +614,8 @@ function StatTicker({
 export default function LandingPage() {
   return (
     <div
-      className='min-h-screen text-white'
-      style={{ background: '#080808', overscrollBehavior: 'none' }}
+      className='min-h-screen min-h-[100dvh] text-white bg-[#080808]'
+      style={{ overscrollBehavior: 'none' }}
     >
       <Navbar />
 
@@ -1227,12 +1232,12 @@ export default function LandingPage() {
           <span className='text-lg font-black text-white'>
             nov<span className='text-orange-500'>ba</span>
           </span>
-          <div className='flex flex-wrap items-center justify-center gap-6 text-sm text-white/20'>
+          <div className='flex flex-wrap items-center justify-center gap-6 text-sm text-white/40'>
             <Link
               href='/login'
               className='transition-colors hover:text-white/60'
             >
-              Sign In
+              Login
             </Link>
             <Link
               href='/signup'
@@ -1246,7 +1251,7 @@ export default function LandingPage() {
             >
               Contact
             </a>
-            <span className='text-white/10'>·</span>
+            <span className='text-white/20'>·</span>
             <a href='#' className='transition-colors hover:text-white/60'>
               Privacy
             </a>
@@ -1254,7 +1259,7 @@ export default function LandingPage() {
               Terms
             </a>
           </div>
-          <p className='text-sm text-white/15'>
+          <p className='text-sm text-white/30'>
             © 2026 Novba. Built for freelancers.
           </p>
         </div>
