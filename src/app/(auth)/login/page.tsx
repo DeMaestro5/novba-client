@@ -30,11 +30,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.onboardingCompleted === true) {
-        router.replace('/dashboard');
-      } else {
-        router.replace('/onboarding');
-      }
+      router.replace('/dashboard');
     }
   }, [isAuthenticated, user, router]);
 
@@ -75,11 +71,7 @@ export default function LoginPage() {
     await login(email, password);
     const state = useAuthStore.getState();
     if (!state.error && state.user) {
-      if (state.user.onboardingCompleted === true) {
-        router.replace('/dashboard');
-      } else {
-        router.replace('/onboarding');
-      }
+      router.replace('/dashboard');
     }
   };
 

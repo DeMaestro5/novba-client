@@ -247,6 +247,10 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
   const { mode, setMode } = useTheme();
   const { user } = useAuthStore();
 
+  const displayName = user?.firstName
+    ? `${user.firstName} ${user.lastName ?? ''}`.trim()
+    : (user as any)?.name ?? 'User';
+
   // Read from localStorage on mount; defer setState to avoid synchronous setState in effect
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -530,17 +534,17 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
               {user?.profilePicUrl ? (
                 <img src={user.profilePicUrl} alt="" className="h-full w-full rounded-full object-cover" />
               ) : (
-                [user?.firstName?.[0], user?.lastName?.[0]].filter(Boolean).join('').toUpperCase() || '?'
+                displayName ? displayName.charAt(0).toUpperCase() : '?'
               )}
             </div>
             {/* Name/Plan - hidden when collapsed */}
             {!isCollapsed && (
               <div className='min-w-0 flex-1'>
                 <p className='truncate text-sm font-semibold text-gray-900 dark:text-white'>
-                  {user ? `${user.firstName} ${user.lastName}`.trim() || user.email : '—'}
+                  {displayName}
                 </p>
                 <p className='truncate text-xs text-gray-500 dark:text-gray-500'>
-                  {user?.plan ? `${user.plan.charAt(0).toUpperCase()}${user.plan.slice(1)} Plan` : '—'}
+                  {user?.plan ? `${user.plan.charAt(0).toUpperCase()}${user.plan.slice(1)} Plan` : 'Free Plan'}
                 </p>
               </div>
             )}
