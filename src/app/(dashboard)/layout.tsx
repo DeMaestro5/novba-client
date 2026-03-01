@@ -4,6 +4,7 @@ import { useState, useEffect, useLayoutEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { ToastProvider } from '@/components/UI/Toast';
+import { useAuthStore } from '@/store/authStore';
 
 export default function DashboardLayout({
   children,
@@ -11,6 +12,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const { user, isInitialized } = useAuthStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -29,13 +31,13 @@ export default function DashboardLayout({
     setIsMounted(true);
   }, []);
 
+  // Send to onboarding if user is loaded and has not completed onboarding
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const completed = localStorage.getItem('novba_onboarding_completed');
-    if (completed !== 'true') {
+    if (!isInitialized || !user) return;
+    if (user.onboardingCompleted !== true) {
       router.replace('/onboarding');
     }
-  }, [router]);
+  }, [isInitialized, user, router]);
 
   const handleCollapseChange = (collapsed: boolean) => {
     setIsCollapsed(collapsed);

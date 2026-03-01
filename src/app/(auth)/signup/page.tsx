@@ -2,11 +2,20 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import zxcvbn from 'zxcvbn';
 import Input from '@/components/UI/Input';
 import Button from '@/components/UI/Button';
+import { useAuthStore } from '@/store/authStore';
+import { oauthApi } from '@/lib/api';
 
 export default function SignupPage() {
+  const router = useRouter();
+  const register = useAuthStore((s) => s.register);
+  const error = useAuthStore((s) => s.error);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const clearError = useAuthStore((s) => s.clearError);
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -14,7 +23,6 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   const passwordAnalysis = useMemo(() => {
     if (!password) return null;
@@ -34,19 +42,11 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    try {
-      await new Promise((r) => setTimeout(r, 800));
-      console.log('Signup:', {
-        firstName,
-        lastName,
-        email,
-        password,
-        confirmPassword,
-        agreedToTerms,
-      });
-    } finally {
-      setIsLoading(false);
+    clearError();
+    await register({ firstName, lastName, email, password });
+    const state = useAuthStore.getState();
+    if (!state.error) {
+      router.push('/verify-email?email=' + encodeURIComponent(email));
     }
   };
 
@@ -89,6 +89,7 @@ export default function SignupPage() {
             <div className='mb-4 space-y-2'>
               <button
                 type='button'
+                onClick={() => { window.location.href = oauthApi.getGoogleUrl(); }}
                 className='flex w-full items-center justify-center gap-3 rounded-lg border-2 border-gray-200 cursor-pointer bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md focus:outline-none'
               >
                 <svg className='h-5 w-5' viewBox='0 0 24 24' aria-hidden>
@@ -113,6 +114,7 @@ export default function SignupPage() {
               </button>
               <button
                 type='button'
+                onClick={() => { window.location.href = oauthApi.getGitHubUrl(); }}
                 className='flex w-full items-center cursor-pointer justify-center gap-3 rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md focus:outline-none'
               >
                 <svg
@@ -404,6 +406,14 @@ export default function SignupPage() {
                 </label>
               </div>
 
+              {error && (
+                <p className='mb-3 text-sm font-medium text-red-600 flex items-center gap-1'>
+                  <svg className='w-4 h-4 shrink-0' fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {error}
+                </p>
+              )}
               <Button
                 type='submit'
                 variant='primary'

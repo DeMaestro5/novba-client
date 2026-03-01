@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
+import { useAuthStore } from '@/store/authStore';
 
 const navItems = [
   {
@@ -244,6 +245,7 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
   const [isHydrated, setIsHydrated] = useState(false);
   const pathname = usePathname();
   const { mode, setMode } = useTheme();
+  const { user } = useAuthStore();
 
   // Read from localStorage on mount; defer setState to avoid synchronous setState in effect
   useEffect(() => {
@@ -523,17 +525,23 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
           <div
             className={`flex cursor-pointer items-center rounded-xl p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${isCollapsed ? 'lg:justify-center' : 'gap-3'}`}
           >
-            {/* Avatar - always visible */}
+            {/* Avatar - initials or profile pic */}
             <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-600 text-sm font-bold text-white'>
-              S
+              {user?.profilePicUrl ? (
+                <img src={user.profilePicUrl} alt="" className="h-full w-full rounded-full object-cover" />
+              ) : (
+                [user?.firstName?.[0], user?.lastName?.[0]].filter(Boolean).join('').toUpperCase() || '?'
+              )}
             </div>
             {/* Name/Plan - hidden when collapsed */}
             {!isCollapsed && (
               <div className='min-w-0 flex-1'>
                 <p className='truncate text-sm font-semibold text-gray-900 dark:text-white'>
-                  Stephen O.
+                  {user ? `${user.firstName} ${user.lastName}`.trim() || user.email : '—'}
                 </p>
-                <p className='truncate text-xs text-gray-500 dark:text-gray-500'>Free Plan</p>
+                <p className='truncate text-xs text-gray-500 dark:text-gray-500'>
+                  {user?.plan ? `${user.plan.charAt(0).toUpperCase()}${user.plan.slice(1)} Plan` : '—'}
+                </p>
               </div>
             )}
           </div>

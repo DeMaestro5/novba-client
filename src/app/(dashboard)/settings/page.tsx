@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/UI/Button';
+import { useAuthStore } from '@/store/authStore';
 import Input from '@/components/UI/Input';
 import Card, { CardHeader, CardBody } from '@/components/UI/Card';
 import Select from '@/components/UI/Select';
@@ -681,6 +682,12 @@ export default function SettingsPage() {
   });
   const [disconnectModal, setDisconnectModal] = useState(false);
   const [isSavingPortfolio, setIsSavingPortfolio] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await useAuthStore.getState().logout();
+  };
 
   const update = (patch: Partial<typeof mockSettings>) => {
     setSettings((prev) => ({ ...prev, ...patch }));
@@ -852,6 +859,16 @@ export default function SettingsPage() {
                 Upgrade to Pro
               </button>
             </div>
+            <button
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="mt-3 w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200 group"
+            >
+              <svg className="w-4 h-4 shrink-0 transition-colors group-hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              {isLoggingOut ? 'Signing out...' : 'Sign out'}
+            </button>
           </div>
         </aside>
 
