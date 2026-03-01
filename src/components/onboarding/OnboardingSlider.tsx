@@ -809,13 +809,11 @@ function StepDone({
   }, []);
 
   const completeAndGo = () => {
-    localStorage.setItem('novba_onboarding_completed', 'true');
     onComplete();
   };
 
   const handleSendInvoice = () => {
     if (invoiceId && !isLoading) {
-      localStorage.setItem('novba_onboarding_completed', 'true');
       onSendInvoice(invoiceId);
     }
   };
@@ -989,7 +987,6 @@ export default function OnboardingSlider({
   }, []);
 
   const handleSkip = useCallback(() => {
-    localStorage.setItem('novba_onboarding_completed', 'true');
     onComplete();
   }, [onComplete]);
 

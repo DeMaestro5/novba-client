@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Button from '@/components/UI/Button';
+import { authApi } from '@/lib/api';
+import axios from 'axios';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -19,6 +21,7 @@ function EmailFormState({
   setEmailError,
   validateEmailFn,
   isLoading,
+  submitError,
   handleSubmit,
 }: {
   email: string;
@@ -27,6 +30,7 @@ function EmailFormState({
   setEmailError: (v: string) => void;
   validateEmailFn: (v: string) => string;
   isLoading: boolean;
+  submitError: string | null;
   handleSubmit: (e: React.FormEvent) => void;
 }) {
   return (
@@ -119,6 +123,14 @@ function EmailFormState({
           )}
         </div>
 
+        {submitError && (
+          <p className="mb-4 text-sm font-medium text-red-600 flex items-center gap-1">
+            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {submitError}
+          </p>
+        )}
         <Button
           type="submit"
           variant="primary"
@@ -237,6 +249,7 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -246,9 +259,17 @@ export default function ForgotPasswordPage() {
       return;
     }
     setIsLoading(true);
+    setSubmitError(null);
     try {
-      await new Promise((r) => setTimeout(r, 1200));
+      await authApi.forgotPassword(email);
       setIsSubmitted(true);
+    } catch (err) {
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined;
+      if (status === 404) {
+        setIsSubmitted(true);
+      } else {
+        setSubmitError('Something went wrong. Please try again later.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -267,6 +288,7 @@ export default function ForgotPasswordPage() {
                   setIsSubmitted(false);
                   setEmail('');
                   setEmailError('');
+                  setSubmitError(null);
                 }}
               />
             ) : (
@@ -277,6 +299,7 @@ export default function ForgotPasswordPage() {
                 setEmailError={setEmailError}
                 validateEmailFn={validateEmail}
                 isLoading={isLoading}
+                submitError={submitError}
                 handleSubmit={handleSubmit}
               />
             )}
