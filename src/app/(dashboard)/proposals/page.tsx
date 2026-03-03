@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/UI/Button';
@@ -14,6 +14,7 @@ import Table, {
   TableHead,
 } from '@/components/UI/Table';
 import DropdownMenu, { DropdownMenuItem } from '@/components/UI/DropdownMenu';
+import TableActionsTrigger from '@/components/UI/TableActionsTrigger';
 import Modal, {
   ModalHeader,
   ModalBody,
@@ -88,11 +89,11 @@ export default function ProposalsPage() {
     [proposals],
   );
 
-  // Threshold for "expiring within 7 days" — set in effect to avoid Date.now() during render
-  const [sevenDaysFromNow, setSevenDaysFromNow] = useState<Date | null>(null);
-  useEffect(() => {
-    setSevenDaysFromNow(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
-  }, []);
+  // Threshold for "expiring within 7 days" — stable for the session
+  const sevenDaysFromNow = useMemo(
+    () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    [],
+  );
 
   // Filtered list
   const filtered = useMemo(() => {
@@ -426,7 +427,6 @@ export default function ProposalsPage() {
                 {filtered.map((proposal) => {
                   const sc = STATUS_CONFIG[proposal.status];
                   const isExpiringSoon =
-                    sevenDaysFromNow != null &&
                     proposal.validUntil &&
                     new Date(proposal.validUntil) < sevenDaysFromNow &&
                     proposal.status !== 'APPROVED' &&
@@ -504,21 +504,7 @@ export default function ProposalsPage() {
                       </TableCell>
                       <TableCell className='text-right'>
                         <div onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenu
-                            trigger={
-                              <button className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors'>
-                                <svg
-                                  className='h-4 w-4'
-                                  fill='currentColor'
-                                  viewBox='0 0 24 24'
-                                >
-                                  <circle cx='12' cy='5' r='1.5' />
-                                  <circle cx='12' cy='12' r='1.5' />
-                                  <circle cx='12' cy='19' r='1.5' />
-                                </svg>
-                              </button>
-                            }
-                          >
+                          <DropdownMenu trigger={<TableActionsTrigger />}>
                             <DropdownMenuItem
                               onClick={() =>
                                 router.push(`/proposals/${proposal.id}/edit`)

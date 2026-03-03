@@ -9,6 +9,7 @@ import DropdownMenu, {
   DropdownMenuItem,
   DropdownMenuDivider,
 } from '@/components/UI/DropdownMenu';
+import TableActionsTrigger from '@/components/UI/TableActionsTrigger';
 import Modal, {
   ModalHeader,
   ModalBody,
@@ -646,22 +647,7 @@ export default function PortfolioPage() {
                       Edit
                     </button>
                     <DropdownMenu
-                      trigger={
-                        <button
-                          type='button'
-                          className='flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 dark:border-gray-700 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300'
-                        >
-                          <svg
-                            className='h-4 w-4'
-                            fill='currentColor'
-                            viewBox='0 0 24 24'
-                          >
-                            <circle cx='12' cy='5' r='1.5' />
-                            <circle cx='12' cy='12' r='1.5' />
-                            <circle cx='12' cy='19' r='1.5' />
-                          </svg>
-                        </button>
-                      }
+                      trigger={<TableActionsTrigger />}
                     >
                       <DropdownMenuItem
                         onClick={() =>

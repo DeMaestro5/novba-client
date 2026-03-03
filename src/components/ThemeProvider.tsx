@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -32,7 +33,16 @@ function applyTheme(resolved: 'light' | 'dark') {
   }
 }
 
+/** Auth routes always use light theme so login/signup stay white. */
+const AUTH_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email'];
+
+function isAuthPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [mode, setModeState] = useState<ThemeMode>('light');
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
@@ -41,17 +51,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const resolved = saved === 'system' ? getSystemTheme() : saved;
     setModeState(saved);
     setResolvedTheme(resolved);
-    applyTheme(resolved);
   }, []);
 
-  // Listen for system preference changes when mode is 'system'
+  useEffect(() => {
+    const effective = isAuthPath(pathname) ? 'light' : resolvedTheme;
+    applyTheme(effective);
+  }, [pathname, resolvedTheme]);
+
   useEffect(() => {
     if (mode !== 'system') return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = (e: MediaQueryListEvent) => {
-      const resolved = e.matches ? 'dark' : 'light';
-      setResolvedTheme(resolved);
-      applyTheme(resolved);
+      setResolvedTheme(e.matches ? 'dark' : 'light');
     };
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
@@ -61,8 +72,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const resolved = newMode === 'system' ? getSystemTheme() : newMode;
     setModeState(newMode);
     setResolvedTheme(resolved);
-    applyTheme(resolved);
     localStorage.setItem('novba_theme_mode', newMode);
+    if (!isAuthPath(pathname)) applyTheme(resolved);
   };
 
   return (

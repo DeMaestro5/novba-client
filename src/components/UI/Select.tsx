@@ -165,7 +165,7 @@ export default function Select({
     z-50
   `;
 
-  // Option styles
+  // Option styles – dark mode uses shallow yellow (amber) for option text
   const optionStyles = (selected: boolean, disabled?: boolean) => `
     px-4
     py-2.5
@@ -175,8 +175,8 @@ export default function Select({
     flex
     items-center
     gap-2
-    ${selected ? 'bg-orange-50 text-orange-900' : 'text-gray-900 dark:text-gray-200 dark:hover:bg-gray-700'}
-    ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}
+    ${selected ? 'bg-orange-50 text-orange-900 dark:bg-orange-900/30 dark:text-amber-200' : 'text-gray-900 dark:text-amber-100 hover:bg-gray-50 dark:hover:bg-gray-700 dark:hover:text-amber-50'}
+    ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
   `;
 
   // Error message styles
@@ -211,9 +211,9 @@ export default function Select({
           onKeyDown={handleKeyDown}
           disabled={disabled}
         >
-          {/* Selected option or placeholder */}
+          {/* Selected option or placeholder – dark: shallow yellow when value selected */}
           <span
-            className={`flex items-center gap-2 ${!selectedOption ? 'text-gray-600 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}
+            className={`flex items-center gap-2 ${!selectedOption ? 'text-gray-600 dark:text-amber-200/80' : 'text-gray-900 dark:text-amber-100'}`}
           >
             {selectedOption?.icon && (
               <span className='shrink-0'>{selectedOption.icon}</span>
@@ -245,7 +245,7 @@ export default function Select({
               <div className='p-2 border-b border-gray-200 dark:border-gray-700'>
                 <input
                   type='text'
-                  className='w-full px-3 py-2 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700 dark:placeholder:text-gray-500 placeholder-gray-600 border border-gray-300 rounded focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-200'
+                  className='w-full px-3 py-2 text-sm text-gray-900 dark:text-amber-100 dark:bg-gray-800 dark:border-gray-700 dark:placeholder:text-amber-200/70 placeholder-gray-600 border border-gray-300 rounded focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-200'
                   placeholder='Search...'
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -257,7 +257,7 @@ export default function Select({
             {/* Options List */}
             <div>
               {filteredOptions.length === 0 ? (
-                <div className='px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-center'>
+                <div className='px-4 py-3 text-sm text-gray-600 dark:text-amber-200/80 text-center'>
                   No options found
                 </div>
               ) : (
@@ -267,7 +267,7 @@ export default function Select({
                     className={`${optionStyles(
                       option.value === value,
                       option.disabled,
-                    )} ${index === focusedIndex ? 'bg-orange-50' : ''}`}
+                    )} ${index === focusedIndex ? 'bg-orange-50 dark:bg-gray-700 dark:text-amber-100' : ''}`}
                     onClick={() => handleSelect(option)}
                   >
                     {/* Option icon */}
@@ -277,9 +277,9 @@ export default function Select({
 
                     {/* Option label and description */}
                     <div className='flex-1'>
-                      <div className='text-sm font-medium'>{option.label}</div>
+                      <div className='text-sm font-medium text-inherit'>{option.label}</div>
                       {option.description && (
-                        <div className='text-xs text-gray-600 dark:text-gray-400'>
+                        <div className='text-xs text-gray-600 dark:text-amber-200/80'>
                           {option.description}
                         </div>
                       )}
@@ -288,7 +288,7 @@ export default function Select({
                     {/* Checkmark for selected option */}
                     {option.value === value && (
                       <svg
-                        className='w-5 h-5 text-orange-600 shrink-0'
+                        className='w-5 h-5 text-orange-600 dark:text-amber-400 shrink-0'
                         fill='currentColor'
                         viewBox='0 0 20 20'
                       >

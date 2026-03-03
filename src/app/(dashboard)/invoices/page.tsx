@@ -16,6 +16,7 @@ import Table, {
   TableCell,
 } from '@/components/UI/Table';
 import DropdownMenu, { DropdownMenuItem } from '@/components/UI/DropdownMenu';
+import TableActionsTrigger from '@/components/UI/TableActionsTrigger';
 import EmptyState from '@/components/UI/EmptyState';
 import Input from '@/components/UI/Input';
 import Modal, {
@@ -140,7 +141,10 @@ export default function InvoicesPage() {
       fetchInvoices();
     } catch (err: unknown) {
       const ax = err as { response?: { data?: { message?: string } } };
-      showToast(ax?.response?.data?.message || 'Failed to send invoice', 'error');
+      showToast(
+        ax?.response?.data?.message || 'Failed to send invoice',
+        'error',
+      );
     } finally {
       setActionLoading(null);
     }
@@ -339,21 +343,7 @@ export default function InvoicesPage() {
                         >
                           <DropdownMenu
                             align='right'
-                            trigger={
-                              <button
-                                type='button'
-                                className='rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500'
-                                aria-label='Actions'
-                              >
-                                <svg
-                                  className='h-5 w-5'
-                                  fill='currentColor'
-                                  viewBox='0 0 20 20'
-                                >
-                                  <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
-                                </svg>
-                              </button>
-                            }
+                            trigger={<TableActionsTrigger />}
                           >
                             <DropdownMenuItem
                               onClick={() =>

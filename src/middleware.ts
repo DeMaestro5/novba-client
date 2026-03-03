@@ -8,6 +8,7 @@ const PROTECTED_PREFIXES = [
   '/expenses',
   '/proposals',
   '/contracts',
+  '/projects',
   '/payments',
   '/portfolio',
   '/settings',

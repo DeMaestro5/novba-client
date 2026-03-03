@@ -12,6 +12,7 @@ import Table, {
   TableHead,
 } from '@/components/UI/Table';
 import DropdownMenu, { DropdownMenuItem } from '@/components/UI/DropdownMenu';
+import TableActionsTrigger from '@/components/UI/TableActionsTrigger';
 import Modal, {
   ModalHeader,
   ModalBody,
@@ -229,7 +230,9 @@ function AddExpensePanel({ isOpen, onClose, onAdd }: AddExpensePanelProps) {
         {/* Header */}
         <div className='flex items-center justify-between border-b border-gray-100 dark:border-gray-700 px-6 py-5'>
           <div>
-            <h2 className='text-lg font-bold text-gray-900 dark:text-white'>Add Expense</h2>
+            <h2 className='text-lg font-bold text-gray-900 dark:text-white'>
+              Add Expense
+            </h2>
             <p className='mt-0.5 text-sm text-gray-400 dark:text-gray-400'>
               Record a new business expense
             </p>
@@ -483,7 +486,9 @@ export default function ExpensesPage() {
         {/* Header */}
         <div className='mb-6 flex items-start justify-between'>
           <div>
-            <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>Expenses</h1>
+            <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
+              Expenses
+            </h1>
             <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
               Track spending and maximize tax deductions
             </p>
@@ -545,7 +550,9 @@ export default function ExpensesPage() {
                   <p className='mt-2 text-3xl font-black text-gray-900 dark:text-white'>
                     {formatCurrency(stats.totalSpent)}
                   </p>
-                  <p className='mt-1.5 text-sm text-gray-400 dark:text-gray-500'>all time</p>
+                  <p className='mt-1.5 text-sm text-gray-400 dark:text-gray-500'>
+                    all time
+                  </p>
                 </div>
                 <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-700'>
                   <svg
@@ -805,7 +812,9 @@ export default function ExpensesPage() {
                     />
                   </svg>
                 </div>
-                <p className='font-semibold text-gray-900 dark:text-white'>No expenses found</p>
+                <p className='font-semibold text-gray-900 dark:text-white'>
+                  No expenses found
+                </p>
                 <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
                   {search
                     ? 'Try a different search term'
@@ -882,21 +891,7 @@ export default function ExpensesPage() {
 
                       {/* Actions */}
                       <TableCell className='py-4 pr-4 text-right'>
-                        <DropdownMenu
-                          trigger={
-                            <button className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-900 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-all'>
-                              <svg
-                                className='h-4 w-4'
-                                fill='currentColor'
-                                viewBox='0 0 24 24'
-                              >
-                                <circle cx='12' cy='5' r='1.5' />
-                                <circle cx='12' cy='12' r='1.5' />
-                                <circle cx='12' cy='19' r='1.5' />
-                              </svg>
-                            </button>
-                          }
-                        >
+                        <DropdownMenu trigger={<TableActionsTrigger />}>
                           <DropdownMenuItem
                             onClick={() => handleToggleTax(expense.id)}
                           >
