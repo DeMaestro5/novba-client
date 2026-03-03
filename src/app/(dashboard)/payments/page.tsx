@@ -13,6 +13,7 @@ import Table, {
   TableHead,
 } from '@/components/UI/Table';
 import DropdownMenu, { DropdownMenuItem } from '@/components/UI/DropdownMenu';
+import TableActionsTrigger from '@/components/UI/TableActionsTrigger';
 import Modal, {
   ModalHeader,
   ModalBody,
@@ -668,17 +669,7 @@ export default function PaymentsPage() {
                           <TableCell className='py-4 pr-4 text-right'>
                             <DropdownMenu
                               trigger={
-                                <button className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-900 opacity-0 group-hover:opacity-100 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-all'>
-                                  <svg
-                                    className='h-4 w-4'
-                                    fill='currentColor'
-                                    viewBox='0 0 24 24'
-                                  >
-                                    <circle cx='12' cy='5' r='1.5' />
-                                    <circle cx='12' cy='12' r='1.5' />
-                                    <circle cx='12' cy='19' r='1.5' />
-                                  </svg>
-                                </button>
+                                <TableActionsTrigger className="opacity-0 group-hover:opacity-100" />
                               }
                             >
                               <DropdownMenuItem

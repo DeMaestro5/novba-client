@@ -338,9 +338,9 @@ export default function DatePicker({
               transition-colors
               duration-200
               ${selected ? 'bg-orange-600 text-white hover:bg-orange-700' : ''}
-              ${!selected && today ? 'border border-orange-300 text-gray-900' : ''}
+              ${!selected && today ? 'border border-orange-300 text-gray-900 dark:text-gray-200' : ''}
               ${!selected && !today && isCurrentMonth ? 'text-gray-900 dark:text-gray-200 dark:hover:bg-gray-700 hover:bg-gray-100' : ''}
-              ${!selected && !isCurrentMonth ? 'text-gray-400 dark:text-gray-600 hover:bg-gray-50' : ''}
+              ${!selected && !isCurrentMonth ? 'text-gray-400 dark:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700' : ''}
             `
               .trim()
               .replace(/\s+/g, ' ');

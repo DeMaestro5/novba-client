@@ -15,6 +15,7 @@ import Table, {
   TableCell,
 } from '@/components/UI/Table';
 import DropdownMenu, { DropdownMenuItem } from '@/components/UI/DropdownMenu';
+import TableActionsTrigger from '@/components/UI/TableActionsTrigger';
 import EmptyState from '@/components/UI/EmptyState';
 import Input from '@/components/UI/Input';
 import Pagination from '@/components/UI/Pagination';
@@ -306,7 +307,9 @@ export default function ClientsPage() {
             <p
               className={`mt-1 text-sm font-medium ${(aggStats?.overdueCount ?? 0) > 0 ? 'text-red-500' : 'text-gray-400 dark:text-gray-600'}`}
             >
-              {(aggStats?.overdueCount ?? 0) > 0 ? 'needs attention' : 'all clear'}
+              {(aggStats?.overdueCount ?? 0) > 0
+                ? 'needs attention'
+                : 'all clear'}
             </p>
           </CardBody>
         </Card>
@@ -345,11 +348,21 @@ export default function ClientsPage() {
                 <TableBody>
                   {[...Array(5)].map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell><Skeleton className='h-4 w-full' /></TableCell>
-                      <TableCell><Skeleton className='h-4 w-full' /></TableCell>
-                      <TableCell><Skeleton className='h-4 w-full' /></TableCell>
-                      <TableCell><Skeleton className='h-4 w-full' /></TableCell>
-                      <TableCell><Skeleton className='h-4 w-full' /></TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-full' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-full' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-full' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-full' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-full' />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -431,21 +444,7 @@ export default function ClientsPage() {
                         >
                           <DropdownMenu
                             align='right'
-                            trigger={
-                              <button
-                                type='button'
-                                className='rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white'
-                                aria-label='Actions'
-                              >
-                                <svg
-                                  className='h-5 w-5'
-                                  fill='currentColor'
-                                  viewBox='0 0 20 20'
-                                >
-                                  <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
-                                </svg>
-                              </button>
-                            }
+                            trigger={<TableActionsTrigger />}
                           >
                             <DropdownMenuItem
                               onClick={() =>
