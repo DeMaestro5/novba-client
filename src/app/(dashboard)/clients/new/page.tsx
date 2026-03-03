@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import api from '@/lib/api';
 import ClientForm from '@/components/ClientForm';
 import { ClientFormData } from '@/types/client.types';
 import { useToast } from '@/components/UI/Toast';
@@ -9,10 +11,45 @@ import { useToast } from '@/components/UI/Toast';
 export default function NewClientPage() {
   const router = useRouter();
   const { showToast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = (data: ClientFormData) => {
-    showToast(`${data.companyName} added successfully`, 'success');
-    router.push('/clients');
+  const handleSave = async (data: ClientFormData) => {
+    setIsSaving(true);
+    try {
+      const payload = {
+        companyName: data.companyName,
+        contactName: data.contactName || undefined,
+        email: data.email || undefined,
+        phone: data.phone || undefined,
+        billingAddress:
+          data.street || data.city || data.state || data.zip || data.country
+            ? {
+                street: data.street || undefined,
+                city: data.city || undefined,
+                state: data.state || undefined,
+                zip: data.zip || undefined,
+                country: data.country || undefined,
+              }
+            : undefined,
+        paymentTerms: data.paymentTerms,
+        currency: data.currency,
+        notes: data.notes || undefined,
+      };
+
+      await api.post('/clients', payload);
+      showToast(`${data.companyName} added successfully`, 'success');
+      router.push('/clients');
+    } catch (err: unknown) {
+      const ax = err as { response?: { status?: number; data?: { message?: string } } };
+      if (ax?.response?.status === 403) {
+        showToast('Client limit reached. Upgrade to add more.', 'error');
+      } else {
+        const msg = ax?.response?.data?.message || 'Failed to add client';
+        showToast(msg, 'error');
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (

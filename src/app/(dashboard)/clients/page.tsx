@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { mockClients } from '@/lib/mock-clients';
+import api, { dashboardApi } from '@/lib/api';
+import type { ApiClient, ApiPagination } from '@/types/api.types';
 import Button from '@/components/UI/Button';
 import Card, { CardHeader, CardBody } from '@/components/UI/Card';
-import Badge from '@/components/UI/Badge';
 import Table, {
   TableHeader,
   TableBody,
@@ -26,16 +26,13 @@ import Modal, {
 import { useToast } from '@/components/UI/Toast';
 import UpgradeModal from '@/components/UI/UpgradeModal';
 
-const MOCK_USAGE = {
-  invoices: { used: 10, limit: 10 },
-  clients: { used: 3, limit: 3 },
-  proposals: { used: 5, limit: 5 },
-  projects: { used: 3, limit: 3 },
-  portfolio: { used: 3, limit: 3 },
-};
-const IS_FREE_TIER = true;
-
-const ITEMS_PER_PAGE = 10;
+function Skeleton({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`animate-pulse rounded-md bg-gray-200 dark:bg-gray-700 ${className}`}
+    />
+  );
+}
 
 function formatCurrency(amount: number, currency: string) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(
@@ -57,10 +54,12 @@ function formatPaymentTerms(terms: string) {
 export default function ClientsPage() {
   const router = useRouter();
   const { showToast } = useToast();
-
+  const [clients, setClients] = useState<ApiClient[]>([]);
+  const [pagination, setPagination] = useState<ApiPagination | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [upgradeModal, setUpgradeModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{
     open: boolean;
     clientId: string;
@@ -70,31 +69,81 @@ export default function ClientsPage() {
     clientId: '',
     companyName: '',
   });
+  const [upgradeModal, setUpgradeModal] = useState(false);
+  const [aggStats, setAggStats] = useState<{
+    totalRevenue: number;
+    outstanding: number;
+    overdueCount: number;
+  } | null>(null);
 
-  const filteredClients = useMemo(() => {
-    if (!searchQuery.trim()) return mockClients;
-    const q = searchQuery.toLowerCase().trim();
-    return mockClients.filter(
-      (c) =>
-        c.companyName.toLowerCase().includes(q) ||
-        c.contactName?.toLowerCase().includes(q) ||
-        c.email?.toLowerCase().includes(q),
-    );
+  const fetchClients = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: '10',
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      });
+      const res = await api.get(`/clients?${params}`);
+      setClients(res.data.data.clients);
+      setPagination(res.data.data.pagination);
+    } catch {
+      showToast('Failed to load clients', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, debouncedSearch, showToast]);
+
+  const fetchAggStats = useCallback(async () => {
+    try {
+      const res = await dashboardApi.getOverview();
+      const data = res.data.data.overview;
+      setAggStats({
+        totalRevenue: data.revenue?.total ?? 0,
+        outstanding: data.outstanding?.total ?? 0,
+        overdueCount: data.outstanding?.overdueCount ?? 0,
+      });
+    } catch {
+      // silently fail — stats are supplementary
+    }
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
   }, [searchQuery]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredClients.length / ITEMS_PER_PAGE),
-  );
-  const effectivePage = Math.min(currentPage, totalPages);
-  const displayClients = useMemo(() => {
-    const start = (effectivePage - 1) * ITEMS_PER_PAGE;
-    return filteredClients.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredClients, effectivePage]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
+
+  useEffect(() => {
+    fetchAggStats();
+  }, [fetchAggStats]);
+
+  const handleDelete = async (clientId: string, companyName: string) => {
+    try {
+      await api.delete(`/clients/${clientId}`);
+      showToast(`${companyName} deleted`, 'success');
+      setDeleteModal({ open: false, clientId: '', companyName: '' });
+      fetchClients();
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      const msg = ax?.response?.data?.message || 'Cannot delete this client';
+      showToast(msg, 'error');
+      setDeleteModal({ open: false, clientId: '', companyName: '' });
+    }
+  };
+
+  const totalPages = pagination?.totalPages ?? 1;
+  const effectivePage = Math.min(currentPage, Math.max(1, totalPages));
 
   return (
     <div className='mx-auto max-w-[1400px] p-6 lg:p-8'>
-      {/* Page header */}
       <div className='mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
         <div>
           <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
@@ -108,23 +157,13 @@ export default function ClientsPage() {
           <Button
             variant='primary'
             className='bg-orange-600 hover:bg-orange-700'
-            onClick={() => {
-              if (
-                IS_FREE_TIER &&
-                MOCK_USAGE.clients.used >= MOCK_USAGE.clients.limit
-              ) {
-                setUpgradeModal(true);
-              } else {
-                router.push('/clients/new');
-              }
-            }}
+            onClick={() => router.push('/clients/new')}
           >
             Add Client
           </Button>
         </div>
       </div>
 
-      {/* Stats row */}
       <div className='mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4'>
         <Card>
           <CardBody padding='lg'>
@@ -148,9 +187,13 @@ export default function ClientsPage() {
                 </svg>
               </div>
             </div>
-            <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
-              {mockClients.length}
-            </p>
+            {isLoading ? (
+              <Skeleton className='mt-3 h-9 w-20' />
+            ) : (
+              <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
+                {pagination?.total ?? 0}
+              </p>
+            )}
             <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
               active relationships
             </p>
@@ -179,12 +222,13 @@ export default function ClientsPage() {
                 </svg>
               </div>
             </div>
-            <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
-              {formatCurrency(
-                mockClients.reduce((s, c) => s + c.totalRevenue, 0),
-                'USD',
-              )}
-            </p>
+            {aggStats === null ? (
+              <Skeleton className='mt-3 h-9 w-24' />
+            ) : (
+              <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
+                {formatCurrency(aggStats?.totalRevenue ?? 0, 'USD')}
+              </p>
+            )}
             <p className='mt-1 text-sm font-medium text-green-600'>
               collected to date
             </p>
@@ -213,12 +257,13 @@ export default function ClientsPage() {
                 </svg>
               </div>
             </div>
-            <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
-              {formatCurrency(
-                mockClients.reduce((s, c) => s + c.outstandingBalance, 0),
-                'USD',
-              )}
-            </p>
+            {aggStats === null ? (
+              <Skeleton className='mt-3 h-9 w-24' />
+            ) : (
+              <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
+                {formatCurrency(aggStats?.outstanding ?? 0, 'USD')}
+              </p>
+            )}
             <p className='mt-1 text-sm font-medium text-orange-600'>
               awaiting payment
             </p>
@@ -232,10 +277,10 @@ export default function ClientsPage() {
                 Overdue Invoices
               </p>
               <div
-                className={`flex h-9 w-9 items-center justify-center rounded-lg ${mockClients.reduce((s, c) => s + c.overdueCount, 0) > 0 ? 'bg-red-50 dark:bg-red-900/30' : 'bg-gray-50 dark:bg-gray-700'}`}
+                className={`flex h-9 w-9 items-center justify-center rounded-lg ${(aggStats?.overdueCount ?? 0) > 0 ? 'bg-red-50 dark:bg-red-900/30' : 'bg-gray-50 dark:bg-gray-700'}`}
               >
                 <svg
-                  className={`h-5 w-5 ${mockClients.reduce((s, c) => s + c.overdueCount, 0) > 0 ? 'text-red-600' : 'text-gray-400'}`}
+                  className={`h-5 w-5 ${(aggStats?.overdueCount ?? 0) > 0 ? 'text-red-600' : 'text-gray-400'}`}
                   fill='none'
                   stroke='currentColor'
                   viewBox='0 0 24 24'
@@ -249,27 +294,28 @@ export default function ClientsPage() {
                 </svg>
               </div>
             </div>
+            {aggStats === null ? (
+              <Skeleton className='mt-3 h-9 w-12' />
+            ) : (
+              <p
+                className={`mt-3 text-3xl font-bold ${(aggStats?.overdueCount ?? 0) > 0 ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}
+              >
+                {aggStats?.overdueCount ?? 0}
+              </p>
+            )}
             <p
-              className={`mt-3 text-3xl font-bold ${mockClients.reduce((s, c) => s + c.overdueCount, 0) > 0 ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}
+              className={`mt-1 text-sm font-medium ${(aggStats?.overdueCount ?? 0) > 0 ? 'text-red-500' : 'text-gray-400 dark:text-gray-600'}`}
             >
-              {mockClients.reduce((s, c) => s + c.overdueCount, 0)}
-            </p>
-            <p
-              className={`mt-1 text-sm font-medium ${mockClients.reduce((s, c) => s + c.overdueCount, 0) > 0 ? 'text-red-500' : 'text-gray-400 dark:text-gray-600'}`}
-            >
-              {mockClients.reduce((s, c) => s + c.overdueCount, 0) > 0
-                ? 'needs attention'
-                : 'all clear'}
+              {(aggStats?.overdueCount ?? 0) > 0 ? 'needs attention' : 'all clear'}
             </p>
           </CardBody>
         </Card>
       </div>
 
-      {/* Client table */}
       <Card>
         <CardHeader
           title='All clients'
-          subtitle={`${filteredClients.length} client${filteredClients.length !== 1 ? 's' : ''}`}
+          subtitle={`${pagination?.total ?? 0} client${(pagination?.total ?? 0) !== 1 ? 's' : ''}`}
           action={
             <Input
               type='search'
@@ -284,7 +330,32 @@ export default function ClientsPage() {
           }
         />
         <CardBody padding='lg' className='overflow-visible'>
-          {displayClients.length === 0 ? (
+          {isLoading ? (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Payment Terms</TableHead>
+                    <TableHead className='text-right'>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className='h-4 w-full' /></TableCell>
+                      <TableCell><Skeleton className='h-4 w-full' /></TableCell>
+                      <TableCell><Skeleton className='h-4 w-full' /></TableCell>
+                      <TableCell><Skeleton className='h-4 w-full' /></TableCell>
+                      <TableCell><Skeleton className='h-4 w-full' /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
+          ) : clients.length === 0 ? (
             <EmptyState
               title='No clients found'
               description={
@@ -297,16 +368,7 @@ export default function ClientsPage() {
                   ? undefined
                   : {
                       label: 'Add Client',
-                      onClick: () => {
-                        if (
-                          IS_FREE_TIER &&
-                          MOCK_USAGE.clients.used >= MOCK_USAGE.clients.limit
-                        ) {
-                          setUpgradeModal(true);
-                        } else {
-                          router.push('/clients/new');
-                        }
-                      },
+                      onClick: () => router.push('/clients/new'),
                     }
               }
             />
@@ -319,13 +381,11 @@ export default function ClientsPage() {
                     <TableHead>Contact</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Payment Terms</TableHead>
-                    <TableHead>Revenue</TableHead>
-                    <TableHead>Outstanding</TableHead>
                     <TableHead className='text-right'>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayClients.map((client) => (
+                  {clients.map((client) => (
                     <TableRow
                       key={client.id}
                       className='cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -341,11 +401,6 @@ export default function ClientsPage() {
                           >
                             {client.companyName}
                           </Link>
-                          {client.overdueCount > 0 && (
-                            <Badge variant='danger' size='sm' className='ml-2'>
-                              {client.overdueCount} overdue
-                            </Badge>
-                          )}
                         </div>
                       </TableCell>
                       <TableCell className='text-gray-700 dark:text-gray-300'>
@@ -368,23 +423,6 @@ export default function ClientsPage() {
                       <TableCell>
                         <span className='text-sm text-gray-700 dark:text-gray-300'>
                           {formatPaymentTerms(client.paymentTerms)}
-                        </span>
-                      </TableCell>
-                      <TableCell className='font-medium text-gray-900 dark:text-white'>
-                        {formatCurrency(client.totalRevenue, client.currency)}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={
-                            client.outstandingBalance > 0
-                              ? 'font-medium text-orange-600'
-                              : 'text-gray-500'
-                          }
-                        >
-                          {formatCurrency(
-                            client.outstandingBalance,
-                            client.currency,
-                          )}
                         </span>
                       </TableCell>
                       <TableCell className='text-right'>
@@ -450,7 +488,6 @@ export default function ClientsPage() {
         </CardBody>
       </Card>
 
-      {/* Delete confirmation modal */}
       <Modal
         isOpen={deleteModal.open}
         onClose={() =>
@@ -497,11 +534,9 @@ export default function ClientsPage() {
             Cancel
           </Button>
           <button
-            onClick={() => {
-              console.log('DELETE client:', deleteModal.clientId);
-              showToast(`${deleteModal.companyName} deleted`, 'success');
-              setDeleteModal({ open: false, clientId: '', companyName: '' });
-            }}
+            onClick={() =>
+              handleDelete(deleteModal.clientId, deleteModal.companyName)
+            }
             className='rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2'
           >
             Delete Client
@@ -512,8 +547,8 @@ export default function ClientsPage() {
         isOpen={upgradeModal}
         onClose={() => setUpgradeModal(false)}
         feature='clients'
-        used={MOCK_USAGE.clients.used}
-        limit={MOCK_USAGE.clients.limit}
+        used={0}
+        limit={0}
       />
     </div>
   );
