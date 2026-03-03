@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import api from '@/lib/api';
+import type { ApiInvoice, ApiPagination } from '@/types/api.types';
 import Button from '@/components/UI/Button';
 import Card, { CardHeader, CardBody } from '@/components/UI/Card';
 import Badge from '@/components/UI/Badge';
@@ -26,205 +28,14 @@ import Select from '@/components/UI/Select';
 import { useToast } from '@/components/UI/Toast';
 import UpgradeModal from '@/components/UI/UpgradeModal';
 
-const MOCK_USAGE = {
-  invoices: { used: 10, limit: 10 },
-  clients: { used: 3, limit: 3 },
-  proposals: { used: 5, limit: 5 },
-  projects: { used: 3, limit: 3 },
-  portfolio: { used: 3, limit: 3 },
-};
-const IS_FREE_TIER = true;
-
-type InvoiceStatus =
-  | 'DRAFT'
-  | 'SENT'
-  | 'PAID'
-  | 'OVERDUE'
-  | 'CANCELLED'
-  | 'PARTIALLY_PAID';
-
-interface MockInvoice {
-  id: string;
-  invoiceNumber: string;
-  status: InvoiceStatus;
-  client: { id: string; companyName: string; email?: string };
-  issueDate: string;
-  dueDate: string;
-  total: number;
-  currency: string;
-  paidAt?: string;
-  sentAt?: string;
+function Skeleton({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`animate-pulse rounded-md bg-gray-200 dark:bg-gray-700 ${className}`}
+    />
+  );
 }
 
-const mockInvoices: MockInvoice[] = [
-  {
-    id: '1',
-    invoiceNumber: 'INV-0001',
-    status: 'PAID',
-    client: { id: 'c1', companyName: 'Acme Corp', email: 'billing@acme.com' },
-    issueDate: '2026-01-15',
-    dueDate: '2026-02-14',
-    total: 2400.0,
-    currency: 'USD',
-    paidAt: '2026-02-10',
-  },
-  {
-    id: '2',
-    invoiceNumber: 'INV-0002',
-    status: 'SENT',
-    client: {
-      id: 'c2',
-      companyName: 'TechStart Inc',
-      email: 'finance@techstart.com',
-    },
-    issueDate: '2026-02-01',
-    dueDate: '2026-03-01',
-    total: 3600.0,
-    currency: 'USD',
-    sentAt: '2026-02-01',
-  },
-  {
-    id: '3',
-    invoiceNumber: 'INV-0003',
-    status: 'OVERDUE',
-    client: {
-      id: 'c3',
-      companyName: 'Design Studio',
-      email: 'accounts@designstudio.com',
-    },
-    issueDate: '2026-01-10',
-    dueDate: '2026-02-09',
-    total: 1800.0,
-    currency: 'USD',
-    sentAt: '2026-01-10',
-  },
-  {
-    id: '4',
-    invoiceNumber: 'INV-0004',
-    status: 'DRAFT',
-    client: {
-      id: 'c4',
-      companyName: 'Growth Labs',
-      email: 'billing@growthlabs.com',
-    },
-    issueDate: '2026-02-15',
-    dueDate: '2026-03-15',
-    total: 4200.0,
-    currency: 'USD',
-  },
-  {
-    id: '5',
-    invoiceNumber: 'INV-0005',
-    status: 'PARTIALLY_PAID',
-    client: {
-      id: 'c5',
-      companyName: 'Solo Ventures',
-      email: 'pay@soloventures.com',
-    },
-    issueDate: '2026-02-01',
-    dueDate: '2026-03-02',
-    total: 5500.0,
-    currency: 'USD',
-    sentAt: '2026-02-01',
-  },
-  {
-    id: '6',
-    invoiceNumber: 'INV-0006',
-    status: 'CANCELLED',
-    client: { id: 'c6', companyName: 'Legacy Co', email: 'billing@legacy.com' },
-    issueDate: '2026-01-20',
-    dueDate: '2026-02-19',
-    total: 1200.0,
-    currency: 'USD',
-  },
-  {
-    id: '7',
-    invoiceNumber: 'INV-0007',
-    status: 'PAID',
-    client: { id: 'c1', companyName: 'Acme Corp', email: 'billing@acme.com' },
-    issueDate: '2025-12-01',
-    dueDate: '2025-12-31',
-    total: 1800.0,
-    currency: 'USD',
-    paidAt: '2025-12-28',
-  },
-  {
-    id: '8',
-    invoiceNumber: 'INV-0008',
-    status: 'SENT',
-    client: {
-      id: 'c7',
-      companyName: 'Cloud Nine',
-      email: 'finance@cloudnine.io',
-    },
-    issueDate: '2026-02-10',
-    dueDate: '2026-03-12',
-    total: 2900.0,
-    currency: 'USD',
-    sentAt: '2026-02-10',
-  },
-  {
-    id: '9',
-    invoiceNumber: 'INV-0009',
-    status: 'DRAFT',
-    client: {
-      id: 'c8',
-      companyName: 'Pixel Perfect',
-      email: 'billing@pixelperfect.com',
-    },
-    issueDate: '2026-02-18',
-    dueDate: '2026-03-20',
-    total: 3100.0,
-    currency: 'USD',
-  },
-  {
-    id: '10',
-    invoiceNumber: 'INV-0010',
-    status: 'OVERDUE',
-    client: {
-      id: 'c9',
-      companyName: 'Startup Alpha',
-      email: 'accounts@startupalpha.com',
-    },
-    issueDate: '2026-01-05',
-    dueDate: '2026-02-04',
-    total: 4500.0,
-    currency: 'USD',
-    sentAt: '2026-01-05',
-  },
-  {
-    id: '11',
-    invoiceNumber: 'INV-0011',
-    status: 'PAID',
-    client: {
-      id: 'c3',
-      companyName: 'Design Studio',
-      email: 'accounts@designstudio.com',
-    },
-    issueDate: '2025-11-15',
-    dueDate: '2025-12-15',
-    total: 2200.0,
-    currency: 'USD',
-    paidAt: '2025-12-10',
-  },
-  {
-    id: '12',
-    invoiceNumber: 'INV-0012',
-    status: 'SENT',
-    client: {
-      id: 'c10',
-      companyName: 'DataFlow Inc',
-      email: 'billing@dataflow.com',
-    },
-    issueDate: '2026-02-14',
-    dueDate: '2026-03-16',
-    total: 6700.0,
-    currency: 'USD',
-    sentAt: '2026-02-14',
-  },
-];
-
-const ITEMS_PER_PAGE = 10;
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'All statuses' },
   { value: 'DRAFT', label: 'Draft' },
@@ -236,7 +47,7 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 ];
 
 function getStatusBadgeVariant(
-  status: InvoiceStatus,
+  status: string,
 ): 'default' | 'success' | 'warning' | 'danger' | 'info' {
   switch (status) {
     case 'DRAFT':
@@ -273,8 +84,12 @@ function formatDate(dateStr: string): string {
 
 export default function InvoicesPage() {
   const router = useRouter();
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [invoices, setInvoices] = useState<ApiInvoice[]>([]);
+  const [pagination, setPagination] = useState<ApiPagination | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const { showToast } = useToast();
   const [upgradeModal, setUpgradeModal] = useState(false);
@@ -283,32 +98,84 @@ export default function InvoicesPage() {
     invoiceId: string;
     invoiceNumber: string;
   }>({ open: false, invoiceId: '', invoiceNumber: '' });
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const filteredInvoices = useMemo(() => {
-    let list = mockInvoices;
-    if (statusFilter) {
-      list = list.filter((inv) => inv.status === statusFilter);
+  const fetchInvoices = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: '10',
+        ...(statusFilter ? { status: statusFilter } : {}),
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      });
+      const res = await api.get(`/invoices?${params}`);
+      setInvoices(res.data.data.invoices);
+      setPagination(res.data.data.pagination);
+    } catch {
+      showToast('Failed to load invoices', 'error');
+    } finally {
+      setIsLoading(false);
     }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        (inv) =>
-          inv.invoiceNumber.toLowerCase().includes(q) ||
-          inv.client.companyName.toLowerCase().includes(q),
-      );
-    }
-    return list;
+  }, [currentPage, statusFilter, debouncedSearch, showToast]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
   }, [statusFilter, searchQuery]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredInvoices.length / ITEMS_PER_PAGE),
-  );
-  const effectivePage = Math.min(currentPage, totalPages);
-  const displayInvoices = useMemo(() => {
-    const start = (effectivePage - 1) * ITEMS_PER_PAGE;
-    return filteredInvoices.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredInvoices, effectivePage]);
+  useEffect(() => {
+    fetchInvoices();
+  }, [fetchInvoices]);
+
+  const handleSend = async (invoiceId: string, invoiceNumber: string) => {
+    setActionLoading(invoiceId);
+    try {
+      await api.post(`/invoices/${invoiceId}/send`);
+      showToast(`${invoiceNumber} sent successfully`, 'success');
+      fetchInvoices();
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      showToast(ax?.response?.data?.message || 'Failed to send invoice', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDuplicate = async (invoiceId: string) => {
+    setActionLoading(invoiceId);
+    try {
+      const res = await api.post(`/invoices/${invoiceId}/duplicate`);
+      const newInvoice = res.data.data.invoice;
+      showToast('Invoice duplicated', 'success');
+      router.push(`/invoices/${newInvoice.id}/edit`);
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      showToast(ax?.response?.data?.message || 'Failed to duplicate', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/invoices/${deleteModal.invoiceId}`);
+      showToast(`${deleteModal.invoiceNumber} deleted`, 'success');
+      setDeleteModal({ open: false, invoiceId: '', invoiceNumber: '' });
+      fetchInvoices();
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      showToast(ax?.response?.data?.message || 'Failed to delete', 'error');
+      setDeleteModal({ open: false, invoiceId: '', invoiceNumber: '' });
+    }
+  };
+
+  const totalPages = pagination?.totalPages ?? 1;
+  const effectivePage = Math.min(currentPage, Math.max(1, totalPages));
 
   return (
     <div className='mx-auto max-w-[1400px] p-6 lg:p-8'>
@@ -325,16 +192,7 @@ export default function InvoicesPage() {
           <Button
             variant='primary'
             className='bg-orange-600 hover:bg-orange-700'
-            onClick={() => {
-              if (
-                IS_FREE_TIER &&
-                MOCK_USAGE.invoices.used >= MOCK_USAGE.invoices.limit
-              ) {
-                setUpgradeModal(true);
-              } else {
-                router.push('/invoices/new');
-              }
-            }}
+            onClick={() => router.push('/invoices/new')}
           >
             Create Invoice
           </Button>
@@ -344,7 +202,7 @@ export default function InvoicesPage() {
       <Card>
         <CardHeader
           title='All invoices'
-          subtitle={`${filteredInvoices.length} invoice${filteredInvoices.length !== 1 ? 's' : ''}`}
+          subtitle={`${pagination?.total ?? 0} invoice${(pagination?.total ?? 0) !== 1 ? 's' : ''}`}
           action={
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
               <Input
@@ -371,7 +229,50 @@ export default function InvoicesPage() {
           }
         />
         <CardBody padding='lg' className='overflow-visible'>
-          {displayInvoices.length === 0 ? (
+          {isLoading ? (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Invoice #</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Issue Date</TableHead>
+                    <TableHead>Due Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className='text-right'>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className='h-4 w-full' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-full' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-full' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-full' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-full' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-full' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-full' />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
+          ) : invoices.length === 0 ? (
             <EmptyState
               title='No invoices found'
               description={
@@ -384,16 +285,7 @@ export default function InvoicesPage() {
                   ? undefined
                   : {
                       label: 'Create Invoice',
-                      onClick: () => {
-                        if (
-                          IS_FREE_TIER &&
-                          MOCK_USAGE.invoices.used >= MOCK_USAGE.invoices.limit
-                        ) {
-                          setUpgradeModal(true);
-                        } else {
-                          router.push('/invoices/new');
-                        }
-                      },
+                      onClick: () => router.push('/invoices/new'),
                     }
               }
             />
@@ -412,10 +304,10 @@ export default function InvoicesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayInvoices.map((inv) => (
+                  {invoices.map((inv) => (
                     <TableRow
                       key={inv.id}
-                      className='cursor-pointer transition-colors hover:bg-gray-50'
+                      className='cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800'
                       onClick={() => router.push(`/invoices/${inv.id}`)}
                     >
                       <TableCell>
@@ -434,7 +326,7 @@ export default function InvoicesPage() {
                       <TableCell>{formatDate(inv.issueDate)}</TableCell>
                       <TableCell>{formatDate(inv.dueDate)}</TableCell>
                       <TableCell>
-                        {formatCurrency(inv.total, inv.currency)}
+                        {formatCurrency(Number(inv.total), inv.currency)}
                       </TableCell>
                       <TableCell>
                         <Badge variant={getStatusBadgeVariant(inv.status)}>
@@ -471,22 +363,16 @@ export default function InvoicesPage() {
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => {
-                                sessionStorage.setItem(
-                                  'duplicateInvoice',
-                                  JSON.stringify({
-                                    clientId: inv.client.id,
-                                    currency: inv.currency,
-                                  }),
-                                );
-                                showToast('Opening duplicate...', 'info');
-                                router.push('/invoices/new?duplicate=true');
-                              }}
+                              onClick={() => handleDuplicate(inv.id)}
                             >
                               Duplicate
                             </DropdownMenuItem>
                             {inv.status === 'DRAFT' && (
-                              <DropdownMenuItem onClick={() => {}}>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleSend(inv.id, inv.invoiceNumber)
+                                }
+                              >
                                 Send
                               </DropdownMenuItem>
                             )}
@@ -570,11 +456,7 @@ export default function InvoicesPage() {
             Cancel
           </Button>
           <button
-            onClick={() => {
-              console.log('DELETE invoice:', deleteModal.invoiceId);
-              showToast(`${deleteModal.invoiceNumber} deleted`, 'success');
-              setDeleteModal({ open: false, invoiceId: '', invoiceNumber: '' });
-            }}
+            onClick={handleDelete}
             className='rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors'
           >
             Delete Invoice
@@ -585,8 +467,8 @@ export default function InvoicesPage() {
         isOpen={upgradeModal}
         onClose={() => setUpgradeModal(false)}
         feature='invoices'
-        used={MOCK_USAGE.invoices.used}
-        limit={MOCK_USAGE.invoices.limit}
+        used={0}
+        limit={0}
       />
     </div>
   );

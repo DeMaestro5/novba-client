@@ -39,13 +39,6 @@ const mockClients = [
   { value: 'c4', label: 'Growth Labs' },
 ];
 
-const mockProjects = [
-  { value: '', label: 'No Project' },
-  { value: 'p1', label: 'Website Redesign' },
-  { value: 'p2', label: 'Mobile App Development' },
-  { value: 'p3', label: 'Brand Identity' },
-];
-
 const currencyOptions = [
   { value: 'USD', label: 'USD' },
   { value: 'EUR', label: 'EUR' },
@@ -79,16 +72,27 @@ export const initialFormData: InvoiceFormData = {
   lineItems: [defaultLineItem(0)],
 };
 
+type ClientOption = { id: string; companyName: string; currency: string; paymentTerms: string };
+type ProjectOption = { id: string; name: string; status: string };
+
 interface InvoiceFormProps {
   initialData?: InvoiceFormData;
   invoiceNumber?: string;
+  clients?: ClientOption[];
+  projects?: ProjectOption[];
+  onSave?: (data: InvoiceFormData, action: 'draft' | 'send') => void | Promise<void>;
   onCancel: () => void;
+  isSaving?: boolean;
 }
 
 export default function InvoiceForm({
   initialData,
   invoiceNumber = 'Auto-generated',
+  clients: clientsProp,
+  projects: projectsProp = [],
+  onSave,
   onCancel,
+  isSaving = false,
 }: InvoiceFormProps) {
   const router = useRouter();
   const { showToast } = useToast();
@@ -96,6 +100,15 @@ export default function InvoiceForm({
     initialData ?? initialFormData,
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const clientOptions = clientsProp?.length
+    ? clientsProp.map((c) => ({ value: c.id, label: c.companyName }))
+    : mockClients;
+
+  const projectOptions = [
+    { value: '', label: 'No project' },
+    ...(projectsProp ?? []).map((p) => ({ value: p.id, label: p.name })),
+  ];
 
   const lineItemsWithAmounts = formData.lineItems.map((item) => ({
     ...item,
@@ -168,82 +181,22 @@ export default function InvoiceForm({
 
   const handleSaveDraft = () => {
     if (!validate()) return;
-
-    const subtotalVal = lineItemsWithAmounts.reduce(
-      (sum, item) => sum + item.amount,
-      0,
-    );
-    const taxAmountVal = (subtotalVal * formData.taxRate) / 100;
-    const totalVal = subtotalVal + taxAmountVal;
-
-    const payload = {
-      clientId: formData.clientId,
-      projectId: formData.projectId || undefined,
-      issueDate: formData.issueDate,
-      dueDate: formData.dueDate,
-      currency: formData.currency,
-      taxRate: formData.taxRate,
-      notes: formData.notes || undefined,
-      terms: formData.terms || undefined,
-      lineItems: formData.lineItems.map((item, index) => ({
-        description: item.description,
-        quantity: item.quantity,
-        rate: item.rate,
-        amount: item.quantity * item.rate,
-        order: index,
-      })),
-      subtotal: subtotalVal,
-      taxAmount: taxAmountVal,
-      total: totalVal,
-      status: 'DRAFT',
-    };
-
-    console.log('=== SAVE AS DRAFT PAYLOAD ===');
-    console.log(JSON.stringify(payload, null, 2));
-    console.log('=============================');
-
+    if (onSave) {
+      void Promise.resolve(onSave(formData, 'draft'));
+      return;
+    }
     showToast('Invoice saved as draft', 'success');
-    router.push('/invoices/1'); // will be dynamic ID from API response
+    router.push('/invoices/1');
   };
 
   const handleSaveAndSend = () => {
     if (!validate()) return;
-
-    const subtotalVal = lineItemsWithAmounts.reduce(
-      (sum, item) => sum + item.amount,
-      0,
-    );
-    const taxAmountVal = (subtotalVal * formData.taxRate) / 100;
-    const totalVal = subtotalVal + taxAmountVal;
-
-    const payload = {
-      clientId: formData.clientId,
-      projectId: formData.projectId || undefined,
-      issueDate: formData.issueDate,
-      dueDate: formData.dueDate,
-      currency: formData.currency,
-      taxRate: formData.taxRate,
-      notes: formData.notes || undefined,
-      terms: formData.terms || undefined,
-      lineItems: formData.lineItems.map((item, index) => ({
-        description: item.description,
-        quantity: item.quantity,
-        rate: item.rate,
-        amount: item.quantity * item.rate,
-        order: index,
-      })),
-      subtotal: subtotalVal,
-      taxAmount: taxAmountVal,
-      total: totalVal,
-      status: 'SENT',
-    };
-
-    console.log('=== SAVE & SEND PAYLOAD ===');
-    console.log(JSON.stringify(payload, null, 2));
-    console.log('===========================');
-
+    if (onSave) {
+      void Promise.resolve(onSave(formData, 'send'));
+      return;
+    }
     showToast('Invoice sent successfully 🎉', 'success');
-    router.push('/invoices/1'); // will be dynamic ID from API response
+    router.push('/invoices/1');
   };
 
   return (
@@ -255,7 +208,7 @@ export default function InvoiceForm({
             <div className='space-y-4'>
               <Select
                 label='Client'
-                options={mockClients}
+                options={clientOptions}
                 value={formData.clientId}
                 onChange={(value) => updateForm({ clientId: value })}
                 placeholder='Select a client'
@@ -318,7 +271,7 @@ export default function InvoiceForm({
               </div>
               <Select
                 label='Project (optional)'
-                options={mockProjects}
+                options={projectOptions}
                 value={formData.projectId}
                 onChange={(value) => updateForm({ projectId: value })}
                 placeholder='No project'
@@ -533,13 +486,14 @@ export default function InvoiceForm({
               variant='primary'
               className='bg-orange-600 hover:bg-orange-700'
               onClick={handleSaveAndSend}
+              disabled={isSaving}
             >
               Save & Send
             </Button>
-            <Button variant='outline' className="dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700" onClick={handleSaveDraft}>
+            <Button variant='outline' className="dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700" onClick={handleSaveDraft} disabled={isSaving}>
               Save as Draft
             </Button>
-            <Button variant='secondary' className="dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700" onClick={onCancel}>
+            <Button variant='secondary' className="dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700" onClick={onCancel} disabled={isSaving}>
               Cancel
             </Button>
           </div>

@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import api from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
+import type { ApiInvoice } from '@/types/api.types';
 import Button from '@/components/UI/Button';
 import Card, { CardHeader, CardBody } from '@/components/UI/Card';
 import Badge from '@/components/UI/Badge';
@@ -13,85 +16,16 @@ import DropdownMenu, {
 import Modal, { ModalHeader, ModalBody, ModalFooter } from '@/components/UI/Modal';
 import { useToast } from '@/components/UI/Toast';
 
-type InvoiceStatus =
-  | 'DRAFT'
-  | 'SENT'
-  | 'PAID'
-  | 'OVERDUE'
-  | 'CANCELLED'
-  | 'PARTIALLY_PAID';
-
-const mockUser = {
-  businessName: 'Novba',
-  email: 'stephen@novba.com',
-  phone: '+1 (555) 123-4567',
-  address: '123 Freelance Ave, San Francisco, CA 94102',
-};
-
-const mockInvoiceDetail = {
-  id: '1',
-  invoiceNumber: 'INV-0001',
-  status: 'PAID' as InvoiceStatus,
-  issueDate: '2026-01-15',
-  dueDate: '2026-02-14',
-  subtotal: 2250.0,
-  taxRate: 6.67,
-  taxAmount: 150.0,
-  total: 2400.0,
-  currency: 'USD',
-  notes: 'Thank you for your business!',
-  terms: 'Payment due within 30 days.',
-  paidAt: '2026-02-10',
-  sentAt: '2026-01-15',
-  client: {
-    id: 'c1',
-    companyName: 'Acme Corp',
-    contactName: 'John Doe',
-    email: 'billing@acme.com',
-    billingAddress: {
-      street: '123 Business St',
-      city: 'San Francisco',
-      state: 'CA',
-      zip: '94102',
-      country: 'United States',
-    },
-  },
-  project: {
-    id: 'p1',
-    name: 'Website Redesign',
-    status: 'COMPLETED',
-  },
-  lineItems: [
-    {
-      id: 'li1',
-      description: 'Website Design - Homepage',
-      quantity: 1,
-      rate: 1500.0,
-      amount: 1500.0,
-      order: 0,
-    },
-    {
-      id: 'li2',
-      description: 'Website Development - 3 Pages',
-      quantity: 3,
-      rate: 250.0,
-      amount: 750.0,
-      order: 1,
-    },
-  ],
-  payments: [
-    {
-      id: 'pay1',
-      amount: 2400.0,
-      paidAt: '2026-02-10',
-      paymentMethod: 'STRIPE',
-      status: 'COMPLETED',
-    },
-  ],
-};
+function Skeleton({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`animate-pulse rounded-md bg-gray-200 dark:bg-gray-700 ${className}`}
+    />
+  );
+}
 
 function getStatusBadgeVariant(
-  status: InvoiceStatus
+  status: string,
 ): 'default' | 'success' | 'warning' | 'danger' | 'info' {
   switch (status) {
     case 'DRAFT':
@@ -126,13 +60,8 @@ function formatCurrency(amount: number, currency: string): string {
   }).format(amount);
 }
 
-function formatAddress(addr: {
-  street?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  country?: string;
-}): string {
+function formatAddress(addr: ApiInvoice['client']['billingAddress']): string {
+  if (!addr) return '';
   const parts = [
     addr.street,
     [addr.city, addr.state, addr.zip].filter(Boolean).join(', '),
@@ -145,13 +74,174 @@ export default function InvoiceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { showToast } = useToast();
+  const user = useAuthStore((s) => s.user);
+  const [invoice, setInvoice] = useState<ApiInvoice | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const id = params?.id as string;
-  // In real app, fetch by id; for now use mock
-  const invoice = mockInvoiceDetail;
+
+  useEffect(() => {
+    if (!id) return;
+    api
+      .get(`/invoices/${id}`)
+      .then((res) => setInvoice(res.data.data.invoice))
+      .catch(() => setNotFound(true))
+      .finally(() => setIsLoading(false));
+  }, [id]);
+
+  const businessName =
+    (user as { businessName?: string })?.businessName ||
+    (user as { name?: string })?.name ||
+    'Your Business';
+  const businessEmail =
+    (user as { businessEmail?: string })?.businessEmail || user?.email || '';
+  const businessPhone =
+    (user as { businessPhone?: string })?.businessPhone ||
+    (user as { phone?: string })?.phone ||
+    '';
+  const businessAddress = [
+    (user as { businessAddress?: string })?.businessAddress,
+    (user as { businessCity?: string })?.businessCity,
+    (user as { businessState?: string })?.businessState,
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+  const handleSend = async () => {
+    if (!invoice) return;
+    setActionLoading('send');
+    try {
+      const res = await api.post(`/invoices/${id}/send`);
+      setInvoice(res.data.data.invoice);
+      showToast('Invoice sent successfully', 'success');
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      showToast(ax?.response?.data?.message || 'Failed to send invoice', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    setActionLoading('duplicate');
+    try {
+      const res = await api.post(`/invoices/${id}/duplicate`);
+      const newInvoice = res.data.data.invoice;
+      showToast('Invoice duplicated', 'success');
+      router.push(`/invoices/${newInvoice.id}/edit`);
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      showToast(ax?.response?.data?.message || 'Failed to duplicate', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/invoices/${id}`);
+      showToast(`${invoice?.invoiceNumber} deleted`, 'success');
+      router.push('/invoices');
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      showToast(ax?.response?.data?.message || 'Failed to delete', 'error');
+      setShowDeleteModal(false);
+    }
+  };
+
+  const handlePaymentLink = async () => {
+    setActionLoading('payment');
+    try {
+      const res = await api.get(`/invoices/${id}/payment-link`);
+      const { paymentLink } = res.data.data;
+      await navigator.clipboard.writeText(paymentLink);
+      showToast('Payment link copied to clipboard', 'success');
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      showToast(
+        ax?.response?.data?.message || 'Failed to generate payment link',
+        'error',
+      );
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    setActionLoading('pdf');
+    try {
+      const res = await api.get(`/invoices/${id}/pdf`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(
+        new Blob([res.data], { type: 'application/pdf' }),
+      );
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-${invoice?.invoiceNumber}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      showToast('Failed to download PDF', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
+        <nav className="mb-6 flex items-center gap-2">
+          <Link
+            href="/invoices"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 transition-colors hover:text-orange-600"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Invoices
+          </Link>
+        </nav>
+        <Card className="mb-6">
+          <CardBody padding="lg">
+            <Skeleton className="h-8 w-48" />
+          </CardBody>
+        </Card>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <Skeleton className="h-[400px] w-full" />
+          </div>
+          <div className="space-y-6">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound || !invoice) {
+    return (
+      <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
+        <Card>
+          <CardBody padding="lg">
+            <p className="text-gray-700 dark:text-gray-300">Invoice not found.</p>
+            <Link
+              href="/invoices"
+              className="mt-2 inline-block text-sm text-orange-600 hover:underline"
+            >
+              Back to Invoices
+            </Link>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
 
   const showPaymentSection = ['SENT', 'OVERDUE', 'PARTIALLY_PAID'].includes(
-    invoice.status
+    invoice.status,
   );
 
   return (
@@ -159,7 +249,7 @@ export default function InvoiceDetailPage() {
       <nav className="mb-6 flex items-center gap-2">
         <Link
           href="/invoices"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-orange-600 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 transition-colors hover:text-orange-600"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -168,7 +258,6 @@ export default function InvoiceDetailPage() {
         </Link>
       </nav>
 
-      {/* Header Card */}
       <Card className="mb-6">
         <CardBody padding="lg">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -185,6 +274,8 @@ export default function InvoiceDetailPage() {
                 <Button
                   variant="primary"
                   className="bg-orange-600 hover:bg-orange-700"
+                  onClick={handleSend}
+                  disabled={!!actionLoading}
                 >
                   Send Invoice
                 </Button>
@@ -198,11 +289,7 @@ export default function InvoiceDetailPage() {
                   trigger={
                     <Button variant="outline">
                       Send
-                      <svg
-                        className="ml-1 h-4 w-4"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
+                      <svg className="ml-1 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                         <path
                           fillRule="evenodd"
                           d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
@@ -212,9 +299,13 @@ export default function InvoiceDetailPage() {
                     </Button>
                   }
                 >
-                  <DropdownMenuItem onClick={() => {}}>Send Now</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSend}>
+                    Send Now
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {}}>Schedule</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {}}>Copy Link</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handlePaymentLink}>
+                    Copy Link
+                  </DropdownMenuItem>
                 </DropdownMenu>
               )}
               <DropdownMenu
@@ -222,14 +313,10 @@ export default function InvoiceDetailPage() {
                 trigger={
                   <button
                     type="button"
-                    className="inline-flex items-center justify-center rounded-lg border-2 border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="inline-flex items-center justify-center rounded-lg border-2 border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                   >
                     More
-                    <svg
-                      className="ml-1 h-4 w-4"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
+                    <svg className="ml-1 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                       <path
                         fillRule="evenodd"
                         d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
@@ -239,31 +326,14 @@ export default function InvoiceDetailPage() {
                   </button>
                 }
               >
-                <DropdownMenuItem
-                onClick={() => {
-                  sessionStorage.setItem(
-                    'duplicateInvoice',
-                    JSON.stringify({
-                      clientId: invoice.client.id,
-                      currency: invoice.currency,
-                      taxRate: invoice.taxRate,
-                      notes: invoice.notes,
-                      terms: invoice.terms,
-                      lineItems: invoice.lineItems,
-                    }),
-                  );
-                  showToast('Opening duplicate...', 'info');
-                  router.push('/invoices/new?duplicate=true');
-                }}
-              >
-                Duplicate
-              </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {}}>Download PDF</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDuplicate}>
+                  Duplicate
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownloadPdf}>
+                  Download PDF
+                </DropdownMenuItem>
                 <DropdownMenuDivider />
-                <DropdownMenuItem
-                  variant="danger"
-                  onClick={() => setShowDeleteModal(true)}
-                >
+                <DropdownMenuItem variant="danger" onClick={() => setShowDeleteModal(true)}>
                   Delete
                 </DropdownMenuItem>
               </DropdownMenu>
@@ -273,14 +343,11 @@ export default function InvoiceDetailPage() {
       </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Invoice Preview - PDF style */}
         <div className="lg:col-span-2">
           <Card className="overflow-hidden">
             <CardBody padding="lg" className="relative">
               {invoice.status === 'PAID' && (
-                <div
-                  className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center select-none"
-                >
+                <div className="pointer-events-none absolute inset-0 z-10 flex select-none items-center justify-center">
                   <span
                     className="text-8xl font-black text-green-500/20"
                     style={{ transform: 'rotate(-15deg)', letterSpacing: '0.05em' }}
@@ -290,19 +357,24 @@ export default function InvoiceDetailPage() {
                 </div>
               )}
               <div className="space-y-8">
-                {/* Top row: Business info | Invoice info */}
-                <div className="flex flex-col gap-6 border-b border-gray-200 dark:border-gray-700 pb-6 sm:flex-row sm:justify-between">
+                <div className="flex flex-col gap-6 border-b border-gray-200 pb-6 dark:border-gray-700 sm:flex-row sm:justify-between">
                   <div>
-<h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                    {mockUser.businessName}
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                      {businessName}
                     </h2>
                     <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                      {mockUser.email}
+                      {businessEmail}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{mockUser.phone}</p>
-                    <p className="mt-1 whitespace-pre-line text-sm text-gray-600 dark:text-gray-400">
-                      {mockUser.address}
-                    </p>
+                    {businessPhone && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {businessPhone}
+                      </p>
+                    )}
+                    {businessAddress && (
+                      <p className="mt-1 whitespace-pre-line text-sm text-gray-600 dark:text-gray-400">
+                        {businessAddress}
+                      </p>
+                    )}
                   </div>
                   <div className="text-left sm:text-right">
                     <p className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -324,7 +396,6 @@ export default function InvoiceDetailPage() {
                   </div>
                 </div>
 
-                {/* Bill To */}
                 <div>
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     Bill To
@@ -338,17 +409,19 @@ export default function InvoiceDetailPage() {
                     </p>
                   )}
                   {invoice.client.email && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{invoice.client.email}</p>
-                  )}
-                  {invoice.client.billingAddress && (
-                    <p className="mt-1 whitespace-pre-line text-sm text-gray-600 dark:text-gray-400">
-                      {formatAddress(invoice.client.billingAddress)}
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {invoice.client.email}
                     </p>
                   )}
+                  {invoice.client.billingAddress &&
+                    formatAddress(invoice.client.billingAddress) && (
+                      <p className="mt-1 whitespace-pre-line text-sm text-gray-600 dark:text-gray-400">
+                        {formatAddress(invoice.client.billingAddress)}
+                      </p>
+                    )}
                 </div>
 
-                {/* Line items table */}
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50 dark:bg-gray-800">
@@ -376,13 +449,13 @@ export default function InvoiceDetailPage() {
                             {item.description}
                           </td>
                           <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
-                            {item.quantity}
+                            {Number(item.quantity)}
                           </td>
                           <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
-                            {formatCurrency(item.rate, invoice.currency)}
+                            {formatCurrency(Number(item.rate), invoice.currency)}
                           </td>
                           <td className="px-4 py-3 text-right text-gray-900 dark:text-white">
-                            {formatCurrency(item.amount, invoice.currency)}
+                            {formatCurrency(Number(item.amount), invoice.currency)}
                           </td>
                         </tr>
                       ))}
@@ -390,25 +463,24 @@ export default function InvoiceDetailPage() {
                   </table>
                 </div>
 
-                {/* Totals */}
                 <div className="flex justify-end">
                   <div className="w-full max-w-xs space-y-2">
                     <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
                       <span>Subtotal</span>
                       <span>
-                        {formatCurrency(invoice.subtotal, invoice.currency)}
+                        {formatCurrency(Number(invoice.subtotal), invoice.currency)}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
-                      <span>Tax ({invoice.taxRate}%)</span>
+                      <span>Tax ({Number(invoice.taxRate)}%)</span>
                       <span>
-                        {formatCurrency(invoice.taxAmount, invoice.currency)}
+                        {formatCurrency(Number(invoice.taxAmount), invoice.currency)}
                       </span>
                     </div>
-                    <div className="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-3 text-lg font-bold text-gray-900 dark:text-white">
+                    <div className="flex justify-between border-t border-gray-200 pt-3 text-lg font-bold text-gray-900 dark:border-gray-700 dark:text-white">
                       <span>Total</span>
                       <span>
-                        {formatCurrency(invoice.total, invoice.currency)}
+                        {formatCurrency(Number(invoice.total), invoice.currency)}
                       </span>
                     </div>
                   </div>
@@ -416,8 +488,8 @@ export default function InvoiceDetailPage() {
 
                 {invoice.notes && (
                   <div>
-<h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Notes
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Notes
                     </h3>
                     <p className="mt-2 whitespace-pre-line text-sm text-gray-700 dark:text-gray-300">
                       {invoice.notes}
@@ -439,7 +511,6 @@ export default function InvoiceDetailPage() {
           </Card>
         </div>
 
-        {/* Right column: Payment, Activity, Related */}
         <div className="space-y-6">
           {showPaymentSection && (
             <Card>
@@ -448,15 +519,16 @@ export default function InvoiceDetailPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Amount Due</span>
-                    <span className="font-semibold text-gray-900">
-                      {formatCurrency(invoice.total, invoice.currency)}
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {formatCurrency(Number(invoice.total), invoice.currency)}
                     </span>
                   </div>
                   <Button
                     variant="primary"
                     size="sm"
                     className="w-full bg-orange-600 hover:bg-orange-700"
-                    onClick={() => {}}
+                    onClick={handlePaymentLink}
+                    disabled={!!actionLoading}
                   >
                     Generate Payment Link
                   </Button>
@@ -465,18 +537,18 @@ export default function InvoiceDetailPage() {
                   </p>
                 </div>
                 {invoice.payments && invoice.payments.length > 0 && (
-                  <div className="mt-4 border-t border-gray-100 pt-4">
-                    <h4 className="text-xs font-semibold uppercase text-gray-500 mb-2">
+                  <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-700">
+                    <h4 className="mb-2 text-xs font-semibold uppercase text-gray-500">
                       Payment history
                     </h4>
                     <div className="space-y-2">
                       {invoice.payments.map((pay) => (
                         <div
                           key={pay.id}
-                          className="flex justify-between text-sm text-gray-700"
+                          className="flex justify-between text-sm text-gray-700 dark:text-gray-300"
                         >
                           <span>
-                            {formatCurrency(pay.amount, invoice.currency)} ·{' '}
+                            {formatCurrency(Number(pay.amount), invoice.currency)} ·{' '}
                             {formatDate(pay.paidAt)}
                           </span>
                           <Badge variant="success" size="sm">
@@ -498,7 +570,7 @@ export default function InvoiceDetailPage() {
                 <li className="flex gap-3 text-sm">
                   <span className="text-gray-400">•</span>
                   <span className="text-gray-700 dark:text-gray-300">
-                    Created on {formatDate(invoice.issueDate)}
+                    Created on {formatDate(invoice.createdAt)}
                   </span>
                 </li>
                 {invoice.sentAt && (
@@ -525,10 +597,12 @@ export default function InvoiceDetailPage() {
             <Card>
               <CardHeader title="Related" />
               <CardBody>
-<p className="text-sm font-medium text-gray-900 dark:text-white">
-                {invoice.project.name}
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {invoice.project.name}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{invoice.project.status}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {invoice.project.status}
+                </p>
                 <Link
                   href="#"
                   className="mt-2 inline-block text-sm text-orange-600 hover:underline"
@@ -578,12 +652,8 @@ export default function InvoiceDetailPage() {
             Cancel
           </Button>
           <button
-            onClick={() => {
-              console.log('DELETE invoice:', invoice.id);
-              showToast(`${invoice.invoiceNumber} deleted`, 'success');
-              router.push('/invoices');
-            }}
-            className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+            onClick={handleDelete}
+            className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
           >
             Delete Invoice
           </button>
