@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import api from '@/lib/api';
 import DatePicker from '@/components/UI/DatePicker';
+import { useToast } from '@/components/UI/Toast';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -20,7 +22,7 @@ export interface FormData {
 
 export interface OnboardingSliderProps {
   onComplete: () => void;
-  onSendInvoice: (invoiceId: string) => void;
+  onSendInvoice: (invoiceId: string | null) => void;
   userFirstName?: string;
 }
 
@@ -512,11 +514,15 @@ function StepClient({
 function StepInvoice({
   formData,
   setFormData,
-  onNext,
+  onCreateInvoice,
+  isCreating,
+  apiError,
 }: {
   formData: FormData;
   setFormData: React.Dispatch<React.SetStateAction<FormData>>;
-  onNext: () => void;
+  onCreateInvoice: () => Promise<void>;
+  isCreating: boolean;
+  apiError: string | null;
 }) {
   const hours = Number(formData.hours) || 0;
   const rate = Number(formData.hourlyRate) || 0;
@@ -688,13 +694,23 @@ function StepInvoice({
         </div>
       </div>
 
+      {apiError && (
+        <p className='mt-3 text-sm text-red-500'>{apiError}</p>
+      )}
       <button
         type='button'
-        onClick={onNext}
-        disabled={!canContinue}
-        className='w-full mt-5 bg-orange-500 hover:bg-orange-400 active:scale-[0.98] text-white rounded-xl font-bold px-6 py-3.5 transition-all shadow-sm shadow-orange-200 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-gray-200'
+        onClick={() => void onCreateInvoice()}
+        disabled={!canContinue || isCreating}
+        className='w-full mt-5 bg-orange-500 hover:bg-orange-400 active:scale-[0.98] text-white rounded-xl font-bold px-6 py-3.5 transition-all shadow-sm shadow-orange-200 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-gray-200 flex items-center justify-center gap-2'
       >
-        Create Invoice →
+        {isCreating ? (
+          <>
+            <span className='w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin' />
+            Creating…
+          </>
+        ) : (
+          'Create Invoice →'
+        )}
       </button>
     </div>
   );
@@ -707,27 +723,13 @@ function StepDone({
   userFirstName,
   onComplete,
   onSendInvoice,
-  clientId,
-  invoiceId,
-  apiError,
-  isLoading,
-  setClientId,
-  setInvoiceId,
-  setApiError,
-  setIsLoading,
+  createdInvoiceId,
 }: {
   formData: FormData;
   userFirstName?: string;
   onComplete: () => void;
-  onSendInvoice: (invoiceId: string) => void;
-  clientId: string | null;
-  invoiceId: string | null;
-  apiError: string | null;
-  isLoading: boolean;
-  setClientId: (id: string | null) => void;
-  setInvoiceId: (id: string | null) => void;
-  setApiError: (err: string | null) => void;
-  setIsLoading: (v: boolean) => void;
+  onSendInvoice: (invoiceId: string | null) => void;
+  createdInvoiceId: string | null;
 }) {
   const hours = Number(formData.hours) || 0;
   const rate = Number(formData.hourlyRate) || 0;
@@ -754,68 +756,12 @@ function StepDone({
     });
   }, []);
 
-  // API calls on mount
-  useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      if (clientId !== null) return;
-      setIsLoading(true);
-      setApiError(null);
-      try {
-        // TODO: Replace with: const clientRes = await fetch('/api/v1/clients', { method: 'POST', ... })
-        await new Promise((r) => setTimeout(r, 1500));
-        if (cancelled) return;
-        const clientPayload = {
-          companyName: formData.companyName,
-          contactName: formData.contactName || undefined,
-          email: formData.clientEmail || undefined,
-        };
-        console.log('POST /api/v1/clients', clientPayload);
-        const mockClientId = 'client_' + Date.now();
-        setClientId(mockClientId);
-
-        // TODO: Replace with: const invoiceRes = await fetch('/api/v1/invoices', { method: 'POST', ... })
-        await new Promise((r) => setTimeout(r, 800));
-        if (cancelled) return;
-        const invoicePayload = {
-          clientId: mockClientId,
-          issueDate: new Date().toISOString().split('T')[0],
-          dueDate: formData.dueDate?.toISOString().split('T')[0],
-          status: 'DRAFT',
-          lineItems: [
-            {
-              description: formData.description,
-              quantity: Number(formData.hours),
-              rate: Number(formData.hourlyRate),
-              amount: Number(formData.hours) * Number(formData.hourlyRate),
-              order: 1,
-            },
-          ],
-        };
-        console.log('POST /api/v1/invoices', invoicePayload);
-        setInvoiceId('inv_' + Date.now());
-      } catch {
-        if (!cancelled) setApiError('Something went wrong. Please try again.');
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-    run();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const completeAndGo = () => {
     onComplete();
   };
 
   const handleSendInvoice = () => {
-    if (invoiceId && !isLoading) {
-      onSendInvoice(invoiceId);
-    }
+    onSendInvoice(createdInvoiceId);
   };
 
   return (
@@ -918,32 +864,21 @@ function StepDone({
         </div>
       </div>
 
-      {apiError && <p className='text-red-500 text-sm mb-3'>{apiError}</p>}
-
       <div className='flex flex-col gap-2.5 w-full'>
         <button
           type='button'
           onClick={handleSendInvoice}
-          disabled={isLoading || !invoiceId}
-          className='w-full bg-orange-500 hover:bg-orange-400 active:scale-[0.98] text-white rounded-xl font-bold px-6 py-3.5 transition-all shadow-sm shadow-orange-200 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-gray-200 flex items-center justify-center gap-2'
+          className='w-full bg-orange-500 hover:bg-orange-400 active:scale-[0.98] text-white rounded-xl font-bold px-6 py-3.5 transition-all shadow-sm shadow-orange-200 flex items-center justify-center gap-2'
         >
-          {isLoading ? (
-            <>
-              <span className='w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin' />
-              Creating your invoice…
-            </>
-          ) : (
-            'Send Invoice Now →'
-          )}
+          Send Invoice Now →
         </button>
         <p className='text-xs text-gray-400 text-center -mt-1'>
           You&apos;ll be taken to your invoice to review before sending
         </p>
         <button
           type='button'
-          onClick={() => !isLoading && completeAndGo()}
-          disabled={isLoading}
-          className='w-full bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold px-6 py-3.5 transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-200'
+          onClick={completeAndGo}
+          className='w-full bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold px-6 py-3.5 transition-all'
         >
           Explore My Dashboard
         </button>
@@ -965,10 +900,12 @@ export default function OnboardingSlider({
 }: OnboardingSliderProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [clientId, setClientId] = useState<string | null>(null);
-  const [invoiceId, setInvoiceId] = useState<string | null>(null);
+  const [createdClientId, setCreatedClientId] = useState<string | null>(null);
+  const [createdInvoiceId, setCreatedInvoiceId] = useState<string | null>(null);
+  const [createdInvoiceNumber, setCreatedInvoiceNumber] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { showToast } = useToast();
 
   const [formData, setFormData] = useState<FormData>({
     role: '',
@@ -989,6 +926,89 @@ export default function OnboardingSlider({
   const handleSkip = useCallback(() => {
     onComplete();
   }, [onComplete]);
+
+  // Create client + invoice once when user clicks "Create Invoice" on step 3 (avoids duplicate from effect double-run)
+  const handleCreateClientAndInvoice = useCallback(async () => {
+    setApiError(null);
+    setIsLoading(true);
+    try {
+      const clientPayload = {
+        companyName: formData.companyName.trim(),
+        contactName: formData.contactName?.trim() || undefined,
+        email: formData.clientEmail?.trim() || undefined,
+        paymentTerms: 'NET_30',
+        currency: 'USD',
+      };
+      const clientRes = await api.post('/clients', clientPayload);
+      const createdClientId =
+        (clientRes.data as { data?: { client?: { id: string } } })?.data?.client?.id ?? null;
+      if (!createdClientId || typeof createdClientId !== 'string') {
+        const msg = 'Could not create client. Please try again.';
+        setApiError(msg);
+        showToast(msg, 'error');
+        return;
+      }
+      setCreatedClientId(createdClientId);
+
+      const issueDate = new Date();
+      const dueDate = formData.dueDate ?? new Date(issueDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+      const hoursNum = Number(formData.hours) || 0;
+      const rateNum = Number(formData.hourlyRate) || 0;
+      const amount = hoursNum * rateNum;
+      const invoicePayload = {
+        clientId: createdClientId,
+        issueDate: issueDate.toISOString(),
+        dueDate: dueDate.toISOString(),
+        taxRate: 0,
+        currency: 'USD',
+        lineItems: [
+          {
+            description: formData.description.trim(),
+            quantity: hoursNum,
+            rate: rateNum,
+            amount,
+            order: 0,
+          },
+        ],
+      };
+      try {
+        const invoiceRes = await api.post('/invoices', invoicePayload);
+        const invoiceData = (invoiceRes.data as { data?: { invoice?: { id: string; invoiceNumber: string } } })?.data?.invoice ?? null;
+        const id = invoiceData?.id ?? null;
+        const invoiceNumber = invoiceData?.invoiceNumber ?? null;
+        if (id && typeof id === 'string') {
+          setCreatedInvoiceId(id);
+          if (invoiceNumber != null) setCreatedInvoiceNumber(invoiceNumber);
+          try {
+            await api.post('/onboarding/complete');
+          } catch {
+            try {
+              await api.put('/profile', { onboardingCompleted: true });
+            } catch {
+              // Ignore; page will call /onboarding/skip on button click
+            }
+          }
+          goNext();
+        } else {
+          const msg = 'Client created but invoice failed. You can create an invoice from the dashboard.';
+          setApiError(msg);
+          showToast(msg, 'error');
+          goNext();
+        }
+      } catch (invoiceErr: unknown) {
+        const msg = (invoiceErr as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Invoice creation failed. You can create an invoice from the dashboard.';
+        setApiError(msg);
+        showToast(msg, 'error');
+        goNext();
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Something went wrong. Please try again.';
+      setApiError(msg);
+      showToast(msg, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [formData.companyName, formData.contactName, formData.clientEmail, formData.description, formData.dueDate, formData.hours, formData.hourlyRate, goNext, showToast]);
 
   // Lock body scroll when onboarding is open
   useEffect(() => {
@@ -1073,7 +1093,9 @@ export default function OnboardingSlider({
               <StepInvoice
                 formData={formData}
                 setFormData={setFormData}
-                onNext={goNext}
+                onCreateInvoice={handleCreateClientAndInvoice}
+                isCreating={isLoading}
+                apiError={apiError}
               />
             )}
             {currentStep === 4 && (
@@ -1082,14 +1104,7 @@ export default function OnboardingSlider({
                 userFirstName={userFirstName}
                 onComplete={onComplete}
                 onSendInvoice={onSendInvoice}
-                clientId={clientId}
-                invoiceId={invoiceId}
-                apiError={apiError}
-                isLoading={isLoading}
-                setClientId={setClientId}
-                setInvoiceId={setInvoiceId}
-                setApiError={setApiError}
-                setIsLoading={setIsLoading}
+                createdInvoiceId={createdInvoiceId}
               />
             )}
           </motion.div>

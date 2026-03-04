@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import OnboardingSlider from '@/components/onboarding/OnboardingSlider';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
+import { ToastProvider } from '@/components/UI/Toast';
 
 const FLOATER_CARDS = [
   {
@@ -106,10 +107,11 @@ export default function OnboardingPage() {
     if (user) {
       setUser({ ...user, onboardingCompleted: true });
     }
-    router.replace('/dashboard');
+    // from=onboarding tells dashboard to refetch so new client/invoice data appears
+    router.replace('/dashboard?from=onboarding');
   };
 
-  const handleSendInvoice = async (invoiceId: string) => {
+  const handleSendInvoice = async (invoiceId: string | null) => {
     try {
       await api.post('/onboarding/skip', { reason: 'completed' });
     } catch {
@@ -118,7 +120,7 @@ export default function OnboardingPage() {
     if (user) {
       setUser({ ...user, onboardingCompleted: true });
     }
-    router.replace('/invoices/' + invoiceId);
+    router.replace(invoiceId ? `/invoices/${invoiceId}` : '/invoices');
   };
 
   // Show spinner until auth is resolved
@@ -133,79 +135,81 @@ export default function OnboardingPage() {
 
   // User exists and hasn't completed onboarding — show the page
   return (
-    <div
-      className='relative min-h-screen overflow-hidden bg-gray-50 flex items-center justify-center p-4'
-      style={{
-        backgroundImage:
-          'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
-        backgroundSize: '24px 24px',
-      }}
-    >
-      {/* Subtle warm glow */}
+    <ToastProvider>
       <div
-        className='fixed inset-0 pointer-events-none'
+        className='relative min-h-screen overflow-hidden bg-gray-50 flex items-center justify-center p-4'
         style={{
-          background:
-            'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(249,115,22,0.08), transparent)',
+          backgroundImage:
+            'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
         }}
-        aria-hidden
-      />
-
-      {/* Floating invoice cards */}
-      {FLOATER_CARDS.map((card, i) => (
+      >
+        {/* Subtle warm glow */}
         <div
-          key={i}
-          className={`absolute pointer-events-none ${card.position}`}
-          style={{ transform: `rotate(${card.rotate}deg)`, zIndex: 0 }}
+          className='fixed inset-0 pointer-events-none'
+          style={{
+            background:
+              'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(249,115,22,0.08), transparent)',
+          }}
           aria-hidden
-        >
-          <motion.div
-            className='h-[110px] w-[180px] rounded-2xl border border-gray-200 bg-white p-4'
-            style={{
-              boxShadow:
-                '0 8px 32px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)',
-            }}
-            initial={{ opacity: 0, y: 0 }}
-            animate={{
-              opacity: [0, 0.85, 0.85, 0],
-              y: [-8, 8, -6, -8],
-            }}
-            transition={{
-              duration: card.duration,
-              delay: card.delay,
-              repeat: Infinity,
-              ease: 'easeInOut' as const,
-            }}
-          >
-            <div className='flex items-start justify-between gap-2'>
-              <div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-500 text-xs font-black text-white'>
-                {card.letter}
-              </div>
-              <span
-                className={
-                  card.status === 'Paid'
-                    ? 'rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-600'
-                    : 'rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-600'
-                }
-              >
-                {card.status}
-              </span>
-            </div>
-            <p className='mt-2 text-xs font-semibold text-gray-700'>
-              {card.company}
-            </p>
-            <p className='mt-1 text-base font-black text-gray-900'>
-              {card.amount}
-            </p>
-          </motion.div>
-        </div>
-      ))}
+        />
 
-      <OnboardingSlider
-        onComplete={handleComplete}
-        onSendInvoice={handleSendInvoice}
-        userFirstName={user.firstName}
-      />
-    </div>
+        {/* Floating invoice cards */}
+        {FLOATER_CARDS.map((card, i) => (
+          <div
+            key={i}
+            className={`absolute pointer-events-none ${card.position}`}
+            style={{ transform: `rotate(${card.rotate}deg)`, zIndex: 0 }}
+            aria-hidden
+          >
+            <motion.div
+              className='h-[110px] w-[180px] rounded-2xl border border-gray-200 bg-white p-4'
+              style={{
+                boxShadow:
+                  '0 8px 32px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)',
+              }}
+              initial={{ opacity: 0, y: 0 }}
+              animate={{
+                opacity: [0, 0.85, 0.85, 0],
+                y: [-8, 8, -6, -8],
+              }}
+              transition={{
+                duration: card.duration,
+                delay: card.delay,
+                repeat: Infinity,
+                ease: 'easeInOut' as const,
+              }}
+            >
+              <div className='flex items-start justify-between gap-2'>
+                <div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-500 text-xs font-black text-white'>
+                  {card.letter}
+                </div>
+                <span
+                  className={
+                    card.status === 'Paid'
+                      ? 'rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-600'
+                      : 'rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-600'
+                  }
+                >
+                  {card.status}
+                </span>
+              </div>
+              <p className='mt-2 text-xs font-semibold text-gray-700'>
+                {card.company}
+              </p>
+              <p className='mt-1 text-base font-black text-gray-900'>
+                {card.amount}
+              </p>
+            </motion.div>
+          </div>
+        ))}
+
+        <OnboardingSlider
+          onComplete={handleComplete}
+          onSendInvoice={handleSendInvoice}
+          userFirstName={user.firstName}
+        />
+      </div>
+    </ToastProvider>
   );
 }

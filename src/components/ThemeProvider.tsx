@@ -33,12 +33,19 @@ function applyTheme(resolved: 'light' | 'dark') {
   }
 }
 
-/** Auth routes always use light theme so login/signup stay white. */
-const AUTH_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email'];
+/** Routes that always use light theme (auth + onboarding stay white). */
+const LIGHT_ONLY_PATHS = [
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+  '/onboarding',
+];
 
-function isAuthPath(pathname: string | null): boolean {
+function isLightOnlyPath(pathname: string | null): boolean {
   if (!pathname) return false;
-  return AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  return LIGHT_ONLY_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -54,7 +61,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const effective = isAuthPath(pathname) ? 'light' : resolvedTheme;
+    const effective = isLightOnlyPath(pathname) ? 'light' : resolvedTheme;
     applyTheme(effective);
   }, [pathname, resolvedTheme]);
 
@@ -73,7 +80,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setModeState(newMode);
     setResolvedTheme(resolved);
     localStorage.setItem('novba_theme_mode', newMode);
-    if (!isAuthPath(pathname)) applyTheme(resolved);
+    if (!isLightOnlyPath(pathname)) applyTheme(resolved);
   };
 
   return (

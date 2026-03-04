@@ -50,6 +50,12 @@ export interface ApiLineItem {
   order: number;
 }
 
+/**
+ * Invoice API contract (client expectation):
+ * - POST /invoices returns 201 with data.invoice containing id (UUID), invoiceNumber, etc.
+ * - GET /invoices/:id uses the same id; backend must ensure read-after-write consistency
+ *   and same tenant/account scoping for both create and get.
+ */
 export interface ApiInvoice {
   id: string;
   invoiceNumber: string;

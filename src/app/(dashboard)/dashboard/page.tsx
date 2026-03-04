@@ -5,12 +5,14 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from 'recharts';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
 import { useAuthStore } from '@/store/authStore';
 import { useDashboard } from '@/hooks/useDashboard';
 import { NewUserDashboard } from '@/components/NewUserDashboard';
+import { ActivationDashboard } from '@/components/ActivationDashboard';
 
 type Period = 'week' | 'month' | 'quarter' | 'year';
 
@@ -105,7 +107,19 @@ export default function DashboardPage() {
     healthMetrics,
     recentActivity,
     isLoading,
+    refetch,
   } = useDashboard(selectedPeriod);
+
+  const searchParams = useSearchParams();
+  // Refetch when landing from onboarding so new client/invoice data appears
+  useEffect(() => {
+    if (searchParams.get('from') === 'onboarding' && typeof refetch === 'function') {
+      refetch();
+      const url = new URL(window.location.href);
+      url.searchParams.delete('from');
+      window.history.replaceState({}, '', url.pathname + (url.search || ''));
+    }
+  }, [searchParams, refetch]);
 
   const chartColors = {
     grid: isDark ? '#1f2937' : '#f3f4f6',
@@ -134,87 +148,104 @@ export default function DashboardPage() {
     conservative: m.conservative,
   })) ?? [];
 
+  const isEmpty = !isLoading && overview !== null && (overview?.counts?.totalInvoices ?? 0) === 0 && (overview?.counts?.totalClients ?? 0) === 0;
+  const pendingAmount = overview?.outstanding?.total ?? 0;
+  const isActivation =
+    !isLoading &&
+    overview !== null &&
+    (overview?.revenue?.total ?? 0) === 0 &&
+    pendingAmount === 0 &&
+    (overview?.counts?.totalClients ?? 0) === 0 &&
+    (overview?.counts?.totalInvoices ?? 0) > 0;
+  const showHeaderAndBanner = !isEmpty && !isActivation;
+
   return (
     <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
 
-      {/* ===== HEADER ===== */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {getGreeting()}, {firstName} 👋
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {getFormattedDate()} · Here&apos;s your business overview
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 bg-white p-1 shadow-sm">
-            {periods.map((p) => (
-              <button
-                key={p.value}
-                onClick={() => setSelectedPeriod(p.value as Period)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
-                  selectedPeriod === p.value
-                    ? 'bg-orange-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
+      {/* ===== HEADER (only for active dashboard) ===== */}
+      {showHeaderAndBanner && (
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {getGreeting()}, {firstName} 👋
+            </h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {getFormattedDate()} · Here&apos;s your business overview
+            </p>
           </div>
 
-          <Link
-            href="/invoices/new"
-            className="flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-md focus:outline-none"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            New Invoice
-          </Link>
-        </div>
-      </div>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 bg-white p-1 shadow-sm">
+              {periods.map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => setSelectedPeriod(p.value as Period)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
+                    selectedPeriod === p.value
+                      ? 'bg-orange-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
 
-      {/* ===== AI PRICING COACH BANNER ===== */}
-      <div
-        className="mb-5 overflow-hidden rounded-2xl"
-        style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 50%, #c2410c 100%)' }}
-      >
-        <div className="relative flex flex-col items-center justify-between gap-4 px-6 py-4 sm:flex-row">
-          <div className="absolute right-0 top-0 h-full w-64 opacity-10">
-            <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white" />
-            <div className="absolute right-12 bottom-0 h-24 w-24 rounded-full bg-white" />
-          </div>
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20">
-              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            <Link
+              href="/invoices/new"
+              className="flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-md focus:outline-none"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-white">AI Pricing Coach</p>
-              <p className="text-sm text-white/80">
-                Freelancers using AI Pricing earn <span className="font-bold text-white">30-40% more</span>. See what you should charge.
-              </p>
-            </div>
+              New Invoice
+            </Link>
           </div>
-          <Link
-            href="/ai-pricing"
-            className="relative flex shrink-0 items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-orange-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none"
-          >
-            Check My Rates
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </Link>
         </div>
-      </div>
+      )}
 
-      {/* ===== MAIN CONTENT: New user onboarding vs full dashboard ===== */}
+      {/* ===== AI PRICING COACH BANNER (only for active dashboard) ===== */}
+      {showHeaderAndBanner && (
+        <div
+          className="mb-5 overflow-hidden rounded-2xl"
+          style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 50%, #c2410c 100%)' }}
+        >
+          <div className="relative flex flex-col items-center justify-between gap-4 px-6 py-4 sm:flex-row">
+            <div className="absolute right-0 top-0 h-full w-64 opacity-10">
+              <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white" />
+              <div className="absolute right-12 bottom-0 h-24 w-24 rounded-full bg-white" />
+            </div>
+            <div className="relative flex items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20">
+                <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">AI Pricing Coach</p>
+                <p className="text-sm text-white/80">
+                  Freelancers using AI Pricing earn <span className="font-bold text-white">30-40% more</span>. See what you should charge.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/ai-pricing"
+              className="relative flex shrink-0 items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-orange-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none"
+            >
+              Check My Rates
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* ===== MAIN CONTENT: Empty / Activation / Active dashboard ===== */}
       {!isLoading && overview !== null && (overview?.counts?.totalInvoices ?? 0) === 0 && (overview?.counts?.totalClients ?? 0) === 0 ? (
         <NewUserDashboard firstName={firstName} />
+      ) : !isLoading && overview !== null && (overview?.revenue?.total ?? 0) === 0 && pendingAmount === 0 && (overview?.counts?.totalClients ?? 0) === 0 && (overview?.counts?.totalInvoices ?? 0) > 0 ? (
+        <ActivationDashboard firstName={firstName} />
       ) : (
         <>
       {/* ===== STAT CARDS ===== */}

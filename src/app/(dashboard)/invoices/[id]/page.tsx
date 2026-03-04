@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { reportInvoiceFetchError } from '@/lib/reporting';
 import { useAuthStore } from '@/store/authStore';
 import type { ApiInvoice } from '@/types/api.types';
 import Button from '@/components/UI/Button';
@@ -15,6 +16,8 @@ import DropdownMenu, {
 } from '@/components/UI/DropdownMenu';
 import Modal, { ModalHeader, ModalBody, ModalFooter } from '@/components/UI/Modal';
 import { useToast } from '@/components/UI/Toast';
+
+type DetailErrorState = 'not_found' | 'forbidden' | 'server_error' | 'retrying';
 
 function Skeleton({ className = '' }: { className?: string }) {
   return (
@@ -77,19 +80,85 @@ export default function InvoiceDetailPage() {
   const user = useAuthStore((s) => s.user);
   const [invoice, setInvoice] = useState<ApiInvoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const [errorState, setErrorState] = useState<DetailErrorState | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const id = params?.id as string;
+  const searchParams = useSearchParams();
+  const retryCountRef = useRef(0);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchInvoice = useCallback(() => {
+    if (!id) {
+      setIsLoading(false);
+      setErrorState('not_found');
+      return;
+    }
+    setErrorState(null);
+    setIsLoading(true);
+    api
+      .get<{ data: { invoice: ApiInvoice } }>(`/invoices/${id}`)
+      .then((res) => {
+        const invoice = res.data?.data?.invoice;
+        if (invoice) {
+          setInvoice(invoice);
+          setErrorState(null);
+          retryCountRef.current = 0;
+        } else {
+          setErrorState('server_error');
+        }
+      })
+      .catch((err: unknown) => {
+        console.error('Invoice detail error:', err);
+        const status = (err as { response?: { status?: number }; message?: string })?.response?.status;
+        const justCreated = searchParams.get('created') === '1';
+        const retriesLeft = retryCountRef.current < 2;
+
+        if (status === 404 && justCreated && retriesLeft) {
+          retryCountRef.current += 1;
+          setErrorState('retrying');
+          const delay = 500 * retryCountRef.current;
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[InvoiceDetail] GET 404 after create, retry %s in %sms', retryCountRef.current, delay);
+          }
+          if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+          retryTimeoutRef.current = setTimeout(() => {
+            retryTimeoutRef.current = null;
+            setErrorState(null);
+            fetchInvoice();
+          }, delay);
+          return;
+        }
+
+        if (status === 404) {
+          setErrorState('not_found');
+        } else if (status === 401 || status === 403) {
+          setErrorState('forbidden');
+        } else {
+          setErrorState('server_error');
+        }
+        reportInvoiceFetchError({
+          invoiceId: id,
+          status,
+          message: (err as { message?: string })?.message,
+        });
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[InvoiceDetail] GET /invoices/%s failed', id, { status, err });
+        }
+      })
+      .finally(() => setIsLoading(false));
+  }, [id, searchParams]);
 
   useEffect(() => {
-    if (!id) return;
-    api
-      .get(`/invoices/${id}`)
-      .then((res) => setInvoice(res.data.data.invoice))
-      .catch(() => setNotFound(true))
-      .finally(() => setIsLoading(false));
-  }, [id]);
+    retryCountRef.current = 0;
+    fetchInvoice();
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, [fetchInvoice]);
 
   const businessName =
     (user as { businessName?: string })?.businessName ||
@@ -113,9 +182,9 @@ export default function InvoiceDetailPage() {
     if (!invoice) return;
     setActionLoading('send');
     try {
-      const res = await api.post(`/invoices/${id}/send`);
-      setInvoice(res.data.data.invoice);
+      await api.post(`/invoices/${id}/send`);
       showToast('Invoice sent successfully', 'success');
+      fetchInvoice();
     } catch (err: unknown) {
       const ax = err as { response?: { data?: { message?: string } } };
       showToast(ax?.response?.data?.message || 'Failed to send invoice', 'error');
@@ -190,7 +259,7 @@ export default function InvoiceDetailPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || errorState === 'retrying') {
     return (
       <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
         <nav className="mb-6 flex items-center gap-2">
@@ -222,7 +291,7 @@ export default function InvoiceDetailPage() {
     );
   }
 
-  if (notFound || !invoice) {
+  if (errorState === 'not_found') {
     return (
       <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
         <Card>
@@ -238,6 +307,52 @@ export default function InvoiceDetailPage() {
         </Card>
       </div>
     );
+  }
+
+  if (errorState === 'forbidden') {
+    return (
+      <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
+        <Card>
+          <CardBody padding="lg">
+            <p className="text-gray-700 dark:text-gray-300">
+              You don&apos;t have access to this invoice.
+            </p>
+            <Link
+              href="/invoices"
+              className="mt-2 inline-block text-sm text-orange-600 hover:underline"
+            >
+              Back to Invoices
+            </Link>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
+  if (errorState === 'server_error') {
+    return (
+      <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
+        <Card>
+          <CardBody padding="lg">
+            <p className="text-gray-700 dark:text-gray-300">
+              Something went wrong loading this invoice. Please try again.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button variant="primary" className="bg-orange-600 hover:bg-orange-700" onClick={fetchInvoice}>
+                Retry
+              </Button>
+              <Link href="/invoices">
+                <Button variant="outline">Back to Invoices</Button>
+              </Link>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!invoice) {
+    return null;
   }
 
   const showPaymentSection = ['SENT', 'OVERDUE', 'PARTIALLY_PAID'].includes(
@@ -400,25 +515,29 @@ export default function InvoiceDetailPage() {
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     Bill To
                   </h3>
-                  <p className="mt-2 font-medium text-gray-900 dark:text-white">
-                    {invoice.client.companyName}
-                  </p>
-                  {invoice.client.contactName && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {invoice.client.contactName}
-                    </p>
-                  )}
-                  {invoice.client.email && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {invoice.client.email}
-                    </p>
-                  )}
-                  {invoice.client.billingAddress &&
-                    formatAddress(invoice.client.billingAddress) && (
-                      <p className="mt-1 whitespace-pre-line text-sm text-gray-600 dark:text-gray-400">
-                        {formatAddress(invoice.client.billingAddress)}
+                  {invoice.client && (
+                    <>
+                      <p className="mt-2 font-medium text-gray-900 dark:text-white">
+                        {invoice.client.companyName}
                       </p>
-                    )}
+                      {invoice.client.contactName && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {invoice.client.contactName}
+                        </p>
+                      )}
+                      {invoice.client.email && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {invoice.client.email}
+                        </p>
+                      )}
+                      {invoice.client.billingAddress != null &&
+                        formatAddress(invoice.client.billingAddress) && (
+                          <p className="mt-1 whitespace-pre-line text-sm text-gray-600 dark:text-gray-400">
+                            {formatAddress(invoice.client.billingAddress)}
+                          </p>
+                        )}
+                    </>
+                  )}
                 </div>
 
                 <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
@@ -440,7 +559,7 @@ export default function InvoiceDetailPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {invoice.lineItems.map((item) => (
+                      {(invoice.lineItems ?? []).map((item) => (
                         <tr
                           key={item.id}
                           className="border-t border-gray-100 dark:border-gray-700/50"
@@ -536,13 +655,13 @@ export default function InvoiceDetailPage() {
                     Payment link will appear here when generated.
                   </p>
                 </div>
-                {invoice.payments && invoice.payments.length > 0 && (
+                {(invoice.payments ?? []).length > 0 ? (
                   <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-700">
                     <h4 className="mb-2 text-xs font-semibold uppercase text-gray-500">
                       Payment history
                     </h4>
                     <div className="space-y-2">
-                      {invoice.payments.map((pay) => (
+                      {(invoice.payments ?? []).map((pay) => (
                         <div
                           key={pay.id}
                           className="flex justify-between text-sm text-gray-700 dark:text-gray-300"
@@ -557,6 +676,13 @@ export default function InvoiceDetailPage() {
                         </div>
                       ))}
                     </div>
+                  </div>
+                ) : (
+                  <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-700">
+                    <h4 className="mb-2 text-xs font-semibold uppercase text-gray-500">
+                      Payment history
+                    </h4>
+                    <p className="text-sm text-gray-500">No payments yet.</p>
                   </div>
                 )}
               </CardBody>
@@ -573,22 +699,22 @@ export default function InvoiceDetailPage() {
                     Created on {formatDate(invoice.createdAt)}
                   </span>
                 </li>
-                {invoice.sentAt && (
-                  <li className="flex gap-3 text-sm">
-                    <span className="text-gray-400">•</span>
-                    <span className="text-gray-700 dark:text-gray-300">
-                      Sent on {formatDate(invoice.sentAt)}
-                    </span>
-                  </li>
-                )}
-                {invoice.paidAt && (
-                  <li className="flex gap-3 text-sm">
-                    <span className="text-gray-400">•</span>
-                    <span className="text-gray-700 dark:text-gray-300">
-                      Paid on {formatDate(invoice.paidAt)}
-                    </span>
-                  </li>
-                )}
+                <li className="flex gap-3 text-sm">
+                  <span className="text-gray-400">•</span>
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {invoice.sentAt != null
+                      ? `Sent on ${formatDate(invoice.sentAt)}`
+                      : 'Not sent yet'}
+                  </span>
+                </li>
+                <li className="flex gap-3 text-sm">
+                  <span className="text-gray-400">•</span>
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {invoice.paidAt != null
+                      ? `Paid on ${formatDate(invoice.paidAt)}`
+                      : 'Unpaid'}
+                  </span>
+                </li>
               </ul>
             </CardBody>
           </Card>
