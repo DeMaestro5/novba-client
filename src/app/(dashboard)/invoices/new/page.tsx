@@ -49,7 +49,12 @@ export default function NewInvoicePage() {
       };
 
       const createRes = await api.post('/invoices', payload);
-      const newInvoice = createRes.data.data.invoice;
+      const newInvoice = createRes.data?.data?.invoice as { id: string; invoiceNumber: string } | undefined;
+
+      if (!newInvoice?.id || typeof newInvoice.id !== 'string') {
+        showToast('Invoice created but invalid response from server.', 'error');
+        return;
+      }
 
       if (action === 'send') {
         try {
@@ -69,7 +74,7 @@ export default function NewInvoicePage() {
         );
       }
 
-      router.push(`/invoices/${newInvoice.id}`);
+      router.push(`/invoices/${newInvoice.id}?created=1`);
     } catch (err: unknown) {
       const ax = err as { response?: { status?: number; data?: { message?: string } } };
       if (ax?.response?.status === 403) {
