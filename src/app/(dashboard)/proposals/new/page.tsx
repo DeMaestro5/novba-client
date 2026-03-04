@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/UI/Button';
@@ -12,7 +12,8 @@ import TextArea from '@/components/UI/TextArea';
 import { useToast } from '@/components/UI/Toast';
 import ProposalLineItems, { type LineItem } from '@/components/ProposalLineItems';
 import ProposalPreview from '@/components/ProposalPreview';
-import { mockClients } from '@/lib/mock-clients';
+import api from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 const CURRENCY_OPTIONS = [
   { value: 'USD', label: 'USD — US Dollar' },
@@ -20,8 +21,6 @@ const CURRENCY_OPTIONS = [
   { value: 'GBP', label: 'GBP — British Pound' },
   { value: 'NGN', label: 'NGN — Nigerian Naira' },
 ];
-
-const CLIENT_OPTIONS = mockClients.map(c => ({ value: c.id, label: c.companyName }));
 
 const defaultLineItem = (): LineItem => ({
   id: `temp-${Date.now()}`,
@@ -32,10 +31,17 @@ const defaultLineItem = (): LineItem => ({
   order: 0,
 });
 
+type ClientOption = { id: string; companyName: string; contactName: string | null; email: string | null };
+
 export default function NewProposalPage() {
   const router = useRouter();
   const { showToast } = useToast();
+  const user = useAuthStore((s) => s.user);
   const [showPreview, setShowPreview] = useState(true);
+
+  const [clients, setClients] = useState<ClientOption[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     clientId: '',
@@ -48,29 +54,44 @@ export default function NewProposalPage() {
   const [lineItems, setLineItems] = useState<LineItem[]>([defaultLineItem()]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const update = (patch: Partial<typeof form>) => setForm(prev => ({ ...prev, ...patch }));
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const res = await api.get('/clients', { params: { limit: 100 } });
+        setClients(res.data.data.clients);
+      } catch {
+        showToast('Failed to load clients', 'error');
+      } finally {
+        setClientsLoading(false);
+      }
+    };
+    fetchClients();
+  }, [showToast]);
 
-  const selectedClient = mockClients.find(c => c.id === form.clientId);
+  const CLIENT_OPTIONS = clients.map((c) => ({ value: c.id, label: c.companyName }));
+  const update = (patch: Partial<typeof form>) => setForm((prev) => ({ ...prev, ...patch }));
+  const selectedClient = clients.find((c) => c.id === form.clientId);
 
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.clientId) e.clientId = 'Please select a client';
     if (!form.title.trim()) e.title = 'Title is required';
-    if (lineItems.some(i => !i.description.trim())) e.lineItems = 'All line items need a description';
+    if (lineItems.some((i) => !i.description.trim())) e.lineItems = 'All line items need a description';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = (isDraft = true) => {
+  const handleSave = async (isDraft = true) => {
     if (!validate()) return;
+    setIsSubmitting(true);
 
     const payload = {
       clientId: form.clientId,
       title: form.title.trim(),
-      scope: form.scope || undefined,
-      terms: form.terms || undefined,
+      scope: form.scope.trim() || undefined,
+      terms: form.terms.trim() || undefined,
       currency: form.currency,
-      validUntil: form.validUntil ? form.validUntil.toISOString().split('T')[0] : undefined,
+      validUntil: form.validUntil ? form.validUntil.toISOString() : undefined,
       lineItems: lineItems.map((item, idx) => ({
         description: item.description,
         quantity: Number(item.quantity),
@@ -79,10 +100,31 @@ export default function NewProposalPage() {
         order: idx,
       })),
     };
-    console.log(`=== POST /api/v1/proposals ${isDraft ? '(DRAFT)' : '(SEND)'} ===`);
-    console.log(JSON.stringify(payload, null, 2));
-    showToast(isDraft ? 'Proposal saved as draft' : 'Proposal created and sent', 'success');
-    router.push('/proposals');
+
+    console.log('Proposal payload:', JSON.stringify(payload, null, 2));
+
+    try {
+      const res = await api.post('/proposals', payload);
+      const createdId = res.data.data.proposal.id;
+
+      if (!isDraft) {
+        try {
+          await api.post(`/proposals/${createdId}/send`);
+          showToast('Proposal created and sent to client', 'success');
+        } catch {
+          showToast('Proposal saved but failed to send — send it manually', 'error');
+        }
+      } else {
+        showToast('Proposal saved as draft', 'success');
+      }
+
+      router.push('/proposals');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create proposal';
+      showToast(msg, 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -128,7 +170,10 @@ export default function NewProposalPage() {
               <div className="space-y-4">
                 <Select
                   label="Client *"
-                  options={[{ value: '', label: 'Select a client...' }, ...CLIENT_OPTIONS]}
+                  options={[
+                    { value: '', label: clientsLoading ? 'Loading clients...' : 'Select a client...' },
+                    ...CLIENT_OPTIONS,
+                  ]}
                   value={form.clientId}
                   onChange={(v) => update({ clientId: v })}
                   fullWidth
@@ -214,17 +259,30 @@ export default function NewProposalPage() {
               Cancel
             </Button>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => handleSave(true)}>
+              <Button
+                variant="outline"
+                onClick={() => handleSave(true)}
+                disabled={isSubmitting}
+                className={isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
+              >
                 Save as Draft
               </Button>
               <button
                 type="button"
                 onClick={() => handleSave(false)}
-                className="inline-flex items-center rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors"
+                disabled={isSubmitting || clientsLoading}
+                className="inline-flex items-center rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                </svg>
+                {isSubmitting ? (
+                  <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4a8 8 0 018-8z" />
+                  </svg>
+                ) : (
+                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                  </svg>
+                )}
                 Create & Send
               </button>
             </div>
@@ -240,8 +298,8 @@ export default function NewProposalPage() {
                 title={form.title}
                 clientName={selectedClient?.companyName || ''}
                 clientContact={selectedClient?.contactName || undefined}
-                businessName="Novba Studio"
-                businessEmail="billing@novba.com"
+                businessName={user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email : 'Your Business'}
+                businessEmail={user?.email || undefined}
                 scope={form.scope}
                 terms={form.terms}
                 currency={form.currency}

@@ -357,15 +357,33 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            {isLoading ? <Skeleton className="h-5 w-24" /> : (
-              <>
-                <span className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold ${getChangeBg(overview?.activeClients?.percentageChange ?? 0)} ${getChangeColor(overview?.activeClients?.percentageChange ?? 0)}`}>
-                  {(overview?.activeClients?.percentageChange ?? 0) >= 0 ? '↑' : '↓'}
-                  {Math.abs(overview?.activeClients?.percentageChange ?? 0)}%
-                </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">vs last period</span>
-              </>
-            )}
+            {isLoading ? <Skeleton className="h-5 w-24" /> : (() => {
+              const prevCount = overview?.activeClients?.previousCount ?? 0;
+              const currCount = overview?.activeClients?.count ?? 0;
+              if (prevCount === 0 && currCount > 0) {
+                return (
+                  <>
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-600">
+                      New
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">this period</span>
+                  </>
+                );
+              }
+              if (prevCount === 0 && currCount === 0) {
+                return <></>;
+              }
+              const activeChange = overview?.activeClients?.percentageChange ?? 0;
+              return (
+                <>
+                  <span className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold ${getChangeBg(activeChange)} ${getChangeColor(activeChange)}`}>
+                    {activeChange >= 0 ? '↑' : '↓'}
+                    {Math.abs(activeChange)}%
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">vs last period</span>
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>

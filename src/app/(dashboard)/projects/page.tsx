@@ -15,7 +15,7 @@ import Table, {
 } from '@/components/UI/Table';
 import DropdownMenu, { DropdownMenuItem } from '@/components/UI/DropdownMenu';
 import TableActionsTrigger from '@/components/UI/TableActionsTrigger';
-import EmptyState from '@/components/UI/EmptyState';
+import EmptyPageState from '@/components/EmptyPageState';
 import Input from '@/components/UI/Input';
 import Pagination from '@/components/UI/Pagination';
 import Select from '@/components/UI/Select';
@@ -139,9 +139,11 @@ export default function ProjectsPage() {
     setDeleteModal({ open: false, projectId: '', projectName: '' });
   };
 
+  const isEmpty = projects.length === 0;
+
   return (
     <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
-      {/* Page header */}
+      {/* Page header — always visible */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -162,6 +164,90 @@ export default function ProjectsPage() {
         </div>
       </div>
 
+      {isEmpty ? (
+        <div className="w-full min-h-[520px]">
+          <EmptyPageState
+            icon={
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            }
+            badge="Projects"
+            headline={"Keep every project on\ntrack and on budget"}
+            subtext="Link clients, proposals, and contracts under one project. Track milestones, budgets, and payments in one place."
+            benefits={[
+              {
+                icon: (
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V5a2 2 0 00-2-2M5 11V5a2 2 0 012-2m0 0V5h14m-7 14v-6m0 0l-3 3m3-3l3 3" />
+                  </svg>
+                ),
+                label: "Everything connected — proposal, contract, invoices",
+                description: "One project view ties together your entire client workflow.",
+              },
+              {
+                icon: (
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ),
+                label: "Payment milestones — know what's paid vs outstanding",
+                description: "Set a payment plan and track it automatically as invoices are paid.",
+              },
+              {
+                icon: (
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ),
+                label: "Budget health at a glance",
+                description: "See exactly how much you've billed vs the total project budget.",
+              },
+            ]}
+            ctaLabel="Start First Project"
+            ctaHref="/projects/new"
+            stat={{ value: "40%", label: "less scope creep", context: "reported by freelancers who track projects with defined budgets" }}
+            preview={
+              <div className="mx-auto w-full max-w-sm space-y-3">
+                <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Sample project tracker</p>
+                <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                  <div className="mb-3 flex items-start justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">E-commerce Redesign</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">TechStart Inc</p>
+                    </div>
+                    <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">Active</span>
+                  </div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Budget used</p>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white">$7,500 / $12,400</p>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-gray-700">
+                    <div className="h-2 rounded-full bg-orange-500 transition-all" style={{ width: '60%' }} />
+                  </div>
+                  <p className="mt-1 text-right text-xs text-gray-400">60% complete</p>
+                  <div className="mt-4 space-y-1.5">
+                    {[
+                      { label: 'Upfront (50%)', amount: '$6,200', paid: true },
+                      { label: 'On delivery (50%)', amount: '$6,200', paid: false },
+                    ].map((m) => (
+                      <div key={m.label} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <div className={`h-2 w-2 rounded-full ${m.paid ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                          <span className="text-gray-600 dark:text-gray-400">{m.label}</span>
+                        </div>
+                        <span className={`font-semibold ${m.paid ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>{m.amount}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            }
+          />
+        </div>
+      ) : (
+        <>
       {/* Stats row */}
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Card>
@@ -321,22 +407,16 @@ export default function ProjectsPage() {
         />
         <CardBody padding="lg" className="overflow-visible">
           {displayProjects.length === 0 ? (
-            <EmptyState
-              title="No projects found"
-              description={
-                searchQuery || statusFilter
-                  ? 'Try adjusting your search or filters.'
-                  : 'Create a project to track budgets, milestones, and invoices.'
-              }
-              primaryAction={
-                searchQuery || statusFilter
-                  ? undefined
-                  : {
-                      label: 'New Project',
-                      onClick: () => router.push('/projects/new'),
-                    }
-              }
-            />
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-sm text-gray-400 dark:text-gray-500">No projects match your current filter.</p>
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(''); setStatusFilter(''); }}
+                className="mt-2 text-sm text-orange-600 hover:underline dark:text-orange-500"
+              >
+                Clear filters
+              </button>
+            </div>
           ) : (
             <>
               <Table>
@@ -474,6 +554,8 @@ export default function ProjectsPage() {
           )}
         </CardBody>
       </Card>
+        </>
+      )}
 
       {/* Delete confirmation modal */}
       <Modal

@@ -20,6 +20,7 @@ import Modal, {
   ModalFooter,
 } from '@/components/UI/Modal';
 import Button from '@/components/UI/Button';
+import EmptyPageState from '@/components/EmptyPageState';
 import { useToast } from '@/components/UI/Toast';
 import {
   mockPayments,
@@ -297,9 +298,11 @@ export default function PaymentsPage() {
     year: 'numeric',
   });
 
+  const isEmpty = payments.length === 0;
+
   return (
     <div className='mx-auto max-w-[1400px] p-6 lg:p-8'>
-      {/* Header */}
+      {/* Header — always visible */}
       <div className='mb-6 flex items-start justify-between'>
         <div>
           <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>Payments</h1>
@@ -309,6 +312,79 @@ export default function PaymentsPage() {
         </div>
       </div>
 
+      {isEmpty ? (
+        <div className='w-full min-h-[520px]'>
+          <EmptyPageState
+            icon={
+              <svg className='h-6 w-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' />
+              </svg>
+            }
+            badge='Payments'
+            headline={'Get paid faster,\nevery single time'}
+            subtext='Generate payment links, automate overdue reminders, and keep a full audit trail across every client.'
+            benefits={[
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M13 10V3L4 14h7v7l9-11h-7z' />
+                  </svg>
+                ),
+                label: 'Payment link from any invoice — clients pay in seconds',
+                description: 'No bank details, no manual follow-up. One link, done.',
+              },
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' />
+                  </svg>
+                ),
+                label: 'Automated overdue reminders — never chase again',
+                description: 'Reminders go out automatically so you never have to ask awkwardly.',
+              },
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' />
+                  </svg>
+                ),
+                label: 'Full payment history — always audit-ready',
+                description: 'Every payment logged with date, method, and amount.',
+              },
+            ]}
+            ctaLabel='View Outstanding Invoices'
+            ctaHref='/invoices'
+            stat={{ value: '8 days', label: 'faster payment', context: 'average for freelancers using online payment links vs bank transfer only' }}
+            preview={
+              <div className='mx-auto w-full max-w-sm space-y-2'>
+                <p className='mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500'>Sample payment activity</p>
+                {[
+                  { client: 'Acme Corp', invoice: 'INV-0003', amount: '+$8,500', time: '2 days ago', type: 'received' as const },
+                  { client: 'TechStart Inc', invoice: 'INV-0002', amount: '$3,600', time: '5 days ago', type: 'overdue' as const },
+                  { client: 'Design Studio', invoice: 'INV-0001', amount: '+$2,200', time: '1 week ago', type: 'received' as const },
+                ].map((p, i) => (
+                  <div key={i} className='flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm dark:border-gray-700 dark:bg-gray-800'>
+                    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${p.type === 'received' ? 'bg-green-50 dark:bg-green-950/30' : 'bg-red-50 dark:bg-red-950/30'}`}>
+                      <svg className={`h-3.5 w-3.5 ${p.type === 'received' ? 'text-green-600' : 'text-red-500'}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        {p.type === 'received' ? <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 13l4 4L19 7' /> : <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />}
+                      </svg>
+                    </div>
+                    <div className='min-w-0 flex-1'>
+                      <p className='truncate text-sm font-medium text-gray-900 dark:text-white'>{p.client}</p>
+                      <p className='text-xs text-gray-400 dark:text-gray-500'>{p.time}</p>
+                    </div>
+                    <div className='shrink-0 text-right'>
+                      <p className={`text-sm font-bold ${p.type === 'received' ? 'text-green-600' : 'text-red-500'}`}>{p.amount}</p>
+                      <p className='text-xs text-gray-400'>{p.invoice}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            }
+          />
+        </div>
+      ) : (
+        <>
       {/* Stats row */}
       <div className='mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4'>
         {/* Total Collected — Hero card */}
@@ -519,30 +595,17 @@ export default function PaymentsPage() {
             </div>
           </div>
 
-          {/* Empty state */}
+          {/* Empty state — filtered empty only */}
           {filtered.length === 0 ? (
             <div className='flex flex-col items-center justify-center py-16 text-center'>
-              <div className='mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800'>
-                <svg
-                  className='h-7 w-7 text-gray-400 dark:text-gray-600'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-                  />
-                </svg>
-              </div>
-              <p className='font-semibold text-gray-900 dark:text-white'>No payments found</p>
-              <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-                {search
-                  ? 'Try a different search term'
-                  : 'Payments are recorded from invoice pages'}
-              </p>
+              <p className='text-sm text-gray-400 dark:text-gray-500'>No payments match your current filter.</p>
+              <button
+                type='button'
+                onClick={() => setSearch('')}
+                className='mt-2 text-sm text-orange-600 hover:underline dark:text-orange-500'
+              >
+                Clear filters
+              </button>
             </div>
           ) : (
             /* Month-grouped table */
@@ -704,6 +767,7 @@ export default function PaymentsPage() {
           )}
         </CardBody>
       </Card>
+      </> )}
 
       {/* Delete modal */}
       <Modal

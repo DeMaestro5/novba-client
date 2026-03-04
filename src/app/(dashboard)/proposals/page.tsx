@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/UI/Button';
@@ -22,21 +22,50 @@ import Modal, {
 } from '@/components/UI/Modal';
 import { useToast } from '@/components/UI/Toast';
 import UpgradeModal from '@/components/UI/UpgradeModal';
-import {
-  mockProposals,
-  formatCurrency,
-  type MockProposal,
-  type ProposalStatus,
-} from '@/lib/mock-proposals';
+import EmptyPageState from '@/components/EmptyPageState';
+import api from '@/lib/api';
 
-const MOCK_USAGE = {
-  invoices: { used: 10, limit: 10 },
-  clients: { used: 3, limit: 3 },
-  proposals: { used: 5, limit: 5 },
-  projects: { used: 3, limit: 3 },
-  portfolio: { used: 3, limit: 3 },
-};
-const IS_FREE_TIER = true;
+type ProposalStatus =
+  | 'DRAFT'
+  | 'SENT'
+  | 'VIEWED'
+  | 'APPROVED'
+  | 'DECLINED'
+  | 'EXPIRED';
+
+interface ProposalClient {
+  id: string;
+  companyName: string;
+  contactName: string | null;
+  email: string | null;
+}
+
+interface Proposal {
+  id: string;
+  proposalNumber: string;
+  title: string;
+  status: ProposalStatus;
+  totalAmount: number;
+  currency: string;
+  validUntil: string | null;
+  sentAt: string | null;
+  createdAt: string;
+  client: ProposalClient;
+}
+
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+function formatCurrency(amount: number, currency: string) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+  }).format(amount);
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -65,76 +94,157 @@ const FILTER_TABS: { label: string; value: ProposalStatus | 'ALL' }[] = [
 export default function ProposalsPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const [proposals, setProposals] = useState(mockProposals);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+  });
+  const [allProposals, setAllProposals] = useState<Proposal[]>([]);
   const [activeFilter, setActiveFilter] = useState<ProposalStatus | 'ALL'>(
     'ALL',
   );
   const [search, setSearch] = useState('');
-  const [deleteTarget, setDeleteTarget] = useState<MockProposal | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Proposal | null>(null);
+  const [sendingId, setSendingId] = useState<string | null>(null);
   const [upgradeModal, setUpgradeModal] = useState(false);
 
-  // Stats
+  const fetchTable = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params: Record<string, unknown> = { page: 1, limit: 20 };
+      if (activeFilter !== 'ALL') params.status = activeFilter;
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+      const res = await api.get<{
+        data: { proposals: Proposal[]; pagination: PaginationMeta };
+      }>('/proposals', { params });
+      setProposals(res.data.data.proposals);
+      setPagination(res.data.data.pagination);
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Failed to load proposals';
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeFilter, debouncedSearch]);
+
+  const fetchStats = useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      const res = await api.get<{
+        data: { proposals: Proposal[]; pagination: PaginationMeta };
+      }>('/proposals', { params: { page: 1, limit: 100 } });
+      setAllProposals(res.data.data.proposals);
+    } catch {
+      // keep existing allProposals on stats fetch failure
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([fetchTable(), fetchStats()]);
+  }, [fetchTable, fetchStats]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    fetchTable();
+  }, [fetchTable]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
   const stats = useMemo(
     () => ({
-      total: proposals.length,
-      totalValue: proposals.reduce((s, p) => s + p.totalAmount, 0),
-      pendingResponse: proposals.filter(
+      total: pagination.total,
+      totalValue: allProposals
+        .filter((p) => ['SENT', 'VIEWED', 'APPROVED'].includes(p.status))
+        .reduce((s, p) => s + p.totalAmount, 0),
+      awaitingResponse: allProposals.filter(
         (p) => p.status === 'SENT' || p.status === 'VIEWED',
       ).length,
-      approved: proposals.filter((p) => p.status === 'APPROVED').length,
-      approvedValue: proposals
+      approved: allProposals.filter((p) => p.status === 'APPROVED').length,
+      approvedValue: allProposals
         .filter((p) => p.status === 'APPROVED')
         .reduce((s, p) => s + p.totalAmount, 0),
     }),
-    [proposals],
+    [allProposals, pagination.total],
   );
 
-  // Threshold for "expiring within 7 days" — stable for the session
+  const tabCounts = useMemo(
+    () => ({
+      ALL: pagination.total,
+      DRAFT: allProposals.filter((p) => p.status === 'DRAFT').length,
+      SENT: allProposals.filter((p) => p.status === 'SENT').length,
+      VIEWED: allProposals.filter((p) => p.status === 'VIEWED').length,
+      APPROVED: allProposals.filter((p) => p.status === 'APPROVED').length,
+      DECLINED: allProposals.filter((p) => p.status === 'DECLINED').length,
+      EXPIRED: allProposals.filter((p) => p.status === 'EXPIRED').length,
+    }),
+    [allProposals, pagination.total],
+  );
+
   const sevenDaysFromNow = useMemo(
     () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     [],
   );
 
-  // Filtered list
-  const filtered = useMemo(() => {
-    return proposals.filter((p) => {
-      const matchesFilter = activeFilter === 'ALL' || p.status === activeFilter;
-      const matchesSearch =
-        !search ||
-        p.title.toLowerCase().includes(search.toLowerCase()) ||
-        p.proposalNumber.toLowerCase().includes(search.toLowerCase()) ||
-        p.clientName.toLowerCase().includes(search.toLowerCase());
-      return matchesFilter && matchesSearch;
-    });
-  }, [proposals, activeFilter, search]);
+  const handleSend = async (id: string) => {
+    setSendingId(id);
+    try {
+      await api.post(`/proposals/${id}/send`);
+      showToast('Proposal sent to client', 'success');
+      await refreshAll();
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Failed to send proposal';
+      showToast(msg, 'error');
+    } finally {
+      setSendingId(null);
+    }
+  };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return;
-    setProposals((prev) => prev.filter((p) => p.id !== deleteTarget.id));
-    showToast(`${deleteTarget.proposalNumber} deleted`, 'success');
-    setDeleteTarget(null);
+    try {
+      await api.delete(`/proposals/${deleteTarget.id}`);
+      showToast(`${deleteTarget.proposalNumber} deleted`, 'success');
+      setDeleteTarget(null);
+      await refreshAll();
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Failed to delete proposal';
+      showToast(msg, 'error');
+      setDeleteTarget(null);
+    }
   };
 
-  const handleDuplicate = (proposal: MockProposal) => {
-    const newNum = `PROP-${String(proposals.length + 1).padStart(4, '0')}`;
-    const dup = {
-      ...proposal,
-      id: `p${Date.now()}`,
-      proposalNumber: newNum,
-      status: 'DRAFT' as ProposalStatus,
-      title: `${proposal.title} (Copy)`,
-      sentAt: undefined,
-      viewedAt: undefined,
-      respondedAt: undefined,
-      createdAt: new Date().toISOString(),
-    };
-    setProposals((prev) => [dup, ...prev]);
-    showToast(`Proposal duplicated as ${newNum}`, 'success');
+  const clearFilters = () => {
+    setActiveFilter('ALL');
+    setSearch('');
+    setDebouncedSearch('');
   };
+
+  const isEmpty = !isLoading && pagination.total === 0;
 
   return (
     <div className='mx-auto max-w-[1400px] p-6 lg:p-8'>
-      {/* Header */}
+      {/* Header — always visible */}
       <div className='mb-6 flex items-start justify-between'>
         <div>
           <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
@@ -147,16 +257,7 @@ export default function ProposalsPage() {
         <Button
           variant='primary'
           className='bg-orange-600 hover:bg-orange-700'
-          onClick={() => {
-            if (
-              IS_FREE_TIER &&
-              MOCK_USAGE.proposals.used >= MOCK_USAGE.proposals.limit
-            ) {
-              setUpgradeModal(true);
-            } else {
-              router.push('/proposals/new');
-            }
-          }}
+          onClick={() => router.push('/proposals/new')}
         >
           <svg
             className='mr-2 h-4 w-4'
@@ -175,8 +276,114 @@ export default function ProposalsPage() {
         </Button>
       </div>
 
+      {isLoading ? (
+        <>
+          <div className='mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4'>
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className='animate-pulse rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 h-28'
+              />
+            ))}
+          </div>
+          <Card>
+            <CardBody className='p-0'>
+              <div className='px-4 py-3 border-b border-gray-200 dark:border-gray-700'>
+                <div className='animate-pulse h-10 rounded bg-gray-100 dark:bg-gray-700 w-48' />
+              </div>
+              <div className='p-4'>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className='animate-pulse h-12 rounded bg-gray-100 dark:bg-gray-700 my-2' />
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+        </>
+      ) : isEmpty ? (
+        <div className='w-full min-h-[520px]'>
+          <EmptyPageState
+            icon={
+              <svg className='h-6 w-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
+              </svg>
+            }
+            badge='Proposals'
+            headline={'Win more clients with\nstandout proposals'}
+            subtext='Create professional proposals in minutes. Track when clients open them. Convert approvals to invoices in one click.'
+            benefits={[
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' />
+                  </svg>
+                ),
+                label: 'Know the moment a client opens your proposal',
+                description: 'Real-time view notifications so you follow up at exactly the right time.',
+              },
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M17 8l4 4m0 0l-4 4m4-4H3' />
+                  </svg>
+                ),
+                label: 'Zero double entry — proposal to invoice in one click',
+                description: 'Approved proposals convert directly into invoices with all line items intact.',
+              },
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
+                  </svg>
+                ),
+                label: 'Track your win rate and pipeline value',
+                description: 'See which proposals convert and which clients are most valuable.',
+              },
+            ]}
+            ctaLabel='Create First Proposal'
+            ctaHref='/proposals/new'
+            stat={{ value: '3×', label: 'more projects won', context: 'by freelancers who send proposals within 24 hours of an inquiry' }}
+            preview={
+              <div className='mx-auto w-full max-w-sm space-y-2'>
+                <p className='mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500'>Sample proposal pipeline</p>
+                {[
+                  { num: 'PROP-0003', client: 'Acme Corp', amount: '$8,500', status: 'Approved', statusColor: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' },
+                  { num: 'PROP-0002', client: 'TechStart Inc', amount: '$12,400', status: 'Viewed', statusColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
+                  { num: 'PROP-0001', client: 'Design Studio', amount: '$3,600', status: 'Sent', statusColor: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' },
+                ].map((p, i) => (
+                  <div key={p.num} className='flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm dark:border-gray-700 dark:bg-gray-800' style={{ opacity: 1 - i * 0.15 }}>
+                    <div>
+                      <p className='text-xs font-semibold text-orange-600'>{p.num}</p>
+                      <p className='text-sm font-medium text-gray-900 dark:text-white'>{p.client}</p>
+                    </div>
+                    <div className='flex flex-col items-end gap-1'>
+                      <span className='text-sm font-bold text-gray-900 dark:text-white'>{p.amount}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.statusColor}`}>{p.status}</span>
+                    </div>
+                  </div>
+                ))}
+                <div className='mt-4 flex items-center justify-between rounded-xl border border-orange-100 bg-orange-50 px-3 py-2.5 dark:border-orange-900/40 dark:bg-orange-950/30'>
+                  <span className='text-xs font-semibold text-gray-500 dark:text-gray-400'>Pipeline value</span>
+                  <span className='text-sm font-bold text-orange-600'>$24,500</span>
+                </div>
+              </div>
+            }
+          />
+        </div>
+      ) : (
+        <>
       {/* Stats */}
       <div className='mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4'>
+        {statsLoading ? (
+          <>
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className='animate-pulse rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 h-28'
+              />
+            ))}
+          </>
+        ) : (
+          <>
         <Card>
           <CardBody padding='lg'>
             <div className='flex items-start justify-between'>
@@ -231,7 +438,7 @@ export default function ProposalsPage() {
               </div>
             </div>
             <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
-              {formatCurrency(stats.totalValue)}
+              {formatCurrency(stats.totalValue, 'USD')}
             </p>
             <p className='mt-1 text-sm text-green-600 font-medium'>
               pipeline value
@@ -246,10 +453,10 @@ export default function ProposalsPage() {
                 Awaiting Response
               </p>
               <div
-                className={`flex h-9 w-9 items-center justify-center rounded-lg ${stats.pendingResponse > 0 ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-gray-50 dark:bg-gray-700'}`}
+                className={`flex h-9 w-9 items-center justify-center rounded-lg ${stats.awaitingResponse > 0 ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-gray-50 dark:bg-gray-700'}`}
               >
                 <svg
-                  className={`h-5 w-5 ${stats.pendingResponse > 0 ? 'text-amber-600' : 'text-gray-400'}`}
+                  className={`h-5 w-5 ${stats.awaitingResponse > 0 ? 'text-amber-600' : 'text-gray-400'}`}
                   fill='none'
                   stroke='currentColor'
                   viewBox='0 0 24 24'
@@ -264,14 +471,14 @@ export default function ProposalsPage() {
               </div>
             </div>
             <p
-              className={`mt-3 text-3xl font-bold ${stats.pendingResponse > 0 ? 'text-amber-600' : 'text-gray-900 dark:text-white'}`}
+              className={`mt-3 text-3xl font-bold ${stats.awaitingResponse > 0 ? 'text-amber-600' : 'text-gray-900 dark:text-white'}`}
             >
-              {stats.pendingResponse}
+              {stats.awaitingResponse}
             </p>
             <p
-              className={`mt-1 text-sm font-medium ${stats.pendingResponse > 0 ? 'text-amber-500' : 'text-gray-400 dark:text-gray-600'}`}
+              className={`mt-1 text-sm font-medium ${stats.awaitingResponse > 0 ? 'text-amber-500' : 'text-gray-400 dark:text-gray-600'}`}
             >
-              {stats.pendingResponse > 0 ? 'needs follow-up' : 'all clear'}
+              {stats.awaitingResponse > 0 ? 'needs follow-up' : 'all clear'}
             </p>
           </CardBody>
         </Card>
@@ -302,10 +509,12 @@ export default function ProposalsPage() {
               {stats.approved}
             </p>
             <p className='mt-1 text-sm text-green-600 font-medium'>
-              {formatCurrency(stats.approvedValue)} won
+              {formatCurrency(stats.approvedValue, 'USD')} won
             </p>
           </CardBody>
         </Card>
+          </>
+        )}
       </div>
 
       {/* Filter tabs + search */}
@@ -314,10 +523,7 @@ export default function ProposalsPage() {
           {/* Filter tabs */}
           <div className='flex items-center gap-1 overflow-x-auto border-b border-gray-200 px-4 pt-4 pb-0 scrollbar-hide'>
             {FILTER_TABS.map((tab) => {
-              const count =
-                tab.value === 'ALL'
-                  ? proposals.length
-                  : proposals.filter((p) => p.status === tab.value).length;
+              const count = tabCounts[tab.value] ?? 0;
               return (
                 <button
                   key={tab.value}
@@ -349,7 +555,7 @@ export default function ProposalsPage() {
           {/* Search + count */}
           <div className='flex items-center justify-between px-4 py-3'>
             <p className='text-sm text-gray-500 dark:text-gray-400'>
-              {filtered.length} proposal{filtered.length !== 1 ? 's' : ''}
+              {proposals.length} proposal{proposals.length !== 1 ? 's' : ''}
             </p>
             <div className='relative w-64'>
               <svg
@@ -375,41 +581,51 @@ export default function ProposalsPage() {
             </div>
           </div>
 
-          {/* Table */}
-          {filtered.length === 0 ? (
+          {error ? (
             <div className='flex flex-col items-center justify-center py-16 text-center'>
-              <div className='mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800'>
-                <svg
-                  className='h-7 w-7 text-gray-400 dark:text-gray-600'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-                  />
-                </svg>
-              </div>
-              <p className='font-semibold text-gray-900 dark:text-white'>
-                No proposals found
+              <p className='text-sm text-red-500 font-medium'>{error}</p>
+              <button
+                type='button'
+                onClick={() => refreshAll()}
+                className='mt-3 text-sm text-orange-600 hover:underline'
+              >
+                Try again
+              </button>
+            </div>
+          ) : isLoading ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Proposal</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Valid Until</TableHead>
+                  <TableHead className='text-right'>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <TableRow key={i}>
+                    <td colSpan={6} className='px-4 py-3'>
+                      <div className='animate-pulse h-12 rounded bg-gray-100 dark:bg-gray-700 my-1' />
+                    </td>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : proposals.length === 0 ? (
+            <div className='flex flex-col items-center justify-center py-16 text-center'>
+              <p className='text-sm text-gray-400 dark:text-gray-500'>
+                No proposals match your current filter.
               </p>
-              <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-                {search
-                  ? 'Try a different search term'
-                  : 'Create your first proposal to get started'}
-              </p>
-              {!search && (
-                <Button
-                  variant='primary'
-                  className='mt-4 bg-orange-600 hover:bg-orange-700'
-                  onClick={() => router.push('/proposals/new')}
-                >
-                  New Proposal
-                </Button>
-              )}
+              <button
+                type='button'
+                onClick={clearFilters}
+                className='mt-2 text-sm text-orange-600 hover:underline dark:text-orange-500'
+              >
+                Clear filters
+              </button>
             </div>
           ) : (
             <Table>
@@ -424,14 +640,23 @@ export default function ProposalsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((proposal) => {
+                {proposals.map((proposal) => {
                   const sc = STATUS_CONFIG[proposal.status];
+                  const validUntilDate = proposal.validUntil
+                    ? new Date(proposal.validUntil)
+                    : null;
                   const isExpiringSoon =
-                    proposal.validUntil &&
-                    new Date(proposal.validUntil) < sevenDaysFromNow &&
-                    proposal.status !== 'APPROVED' &&
-                    proposal.status !== 'DECLINED' &&
-                    proposal.status !== 'EXPIRED';
+                    validUntilDate &&
+                    validUntilDate < sevenDaysFromNow &&
+                    validUntilDate >= new Date() &&
+                    !['APPROVED', 'DECLINED', 'EXPIRED'].includes(
+                      proposal.status,
+                    );
+                  const isOverdue =
+                    validUntilDate &&
+                    validUntilDate < new Date() &&
+                    ['SENT', 'VIEWED'].includes(proposal.status);
+                  const isSending = sendingId === proposal.id;
 
                   return (
                     <TableRow
@@ -456,11 +681,11 @@ export default function ProposalsPage() {
                       <TableCell>
                         <div>
                           <p className='font-medium text-gray-900 dark:text-white'>
-                            {proposal.clientName}
+                            {proposal.client.companyName}
                           </p>
-                          {proposal.clientContact && (
+                          {proposal.client.contactName && (
                             <p className='text-xs text-gray-500 dark:text-gray-400'>
-                              {proposal.clientContact}
+                              {proposal.client.contactName}
                             </p>
                           )}
                         </div>
@@ -490,54 +715,144 @@ export default function ProposalsPage() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p
-                            className={`text-sm ${isExpiringSoon ? 'font-semibold text-amber-600' : 'text-gray-600 dark:text-gray-300'}`}
-                          >
-                            {new Date(proposal.validUntil).toLocaleDateString()}
-                          </p>
-                          {isExpiringSoon && (
-                            <p className='text-xs text-amber-500'>
-                              Expiring soon
-                            </p>
+                          {!proposal.validUntil ? (
+                            <p className='text-sm text-gray-500'>—</p>
+                          ) : (
+                            <>
+                              <p
+                                className={`text-sm ${
+                                  isOverdue
+                                    ? 'font-semibold text-red-600'
+                                    : isExpiringSoon
+                                      ? 'font-semibold text-amber-600'
+                                      : 'text-gray-600 dark:text-gray-300'
+                                }`}
+                              >
+                                {validUntilDate
+                                  ? validUntilDate.toLocaleDateString(
+                                      'en-GB',
+                                      {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                      },
+                                    )
+                                  : '—'}
+                              </p>
+                              {isExpiringSoon && (
+                                <p className='text-xs text-amber-500'>
+                                  Expiring soon
+                                </p>
+                              )}
+                              {isOverdue && (
+                                <p className='text-xs text-red-500'>
+                                  Overdue
+                                </p>
+                              )}
+                            </>
                           )}
                         </div>
                       </TableCell>
                       <TableCell className='text-right'>
                         <div onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenu trigger={<TableActionsTrigger />}>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                router.push(`/proposals/${proposal.id}/edit`)
-                              }
-                            >
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDuplicate(proposal)}
-                            >
-                              Duplicate
-                            </DropdownMenuItem>
+                          <DropdownMenu
+                            trigger={
+                              isSending ? (
+                                <span className='inline-flex h-8 w-8 items-center justify-center'>
+                                  <svg
+                                    className='h-4 w-4 animate-spin text-gray-500'
+                                    fill='none'
+                                    viewBox='0 0 24 24'
+                                  >
+                                    <circle
+                                      className='opacity-25'
+                                      cx='12'
+                                      cy='12'
+                                      r='10'
+                                      stroke='currentColor'
+                                      strokeWidth='4'
+                                    />
+                                    <path
+                                      className='opacity-75'
+                                      fill='currentColor'
+                                      d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                                    />
+                                  </svg>
+                                </span>
+                              ) : (
+                                <TableActionsTrigger />
+                              )
+                            }
+                          >
+                            {proposal.status === 'DRAFT' && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    router.push(
+                                      `/proposals/${proposal.id}/edit`,
+                                    )
+                                  }
+                                >
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleSend(proposal.id)}
+                                >
+                                  Send
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className='text-red-600'
+                                  onClick={() => setDeleteTarget(proposal)}
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {(proposal.status === 'SENT' ||
+                              proposal.status === 'VIEWED') && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    router.push(`/proposals/${proposal.id}`)
+                                  }
+                                >
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className='text-red-600'
+                                  onClick={() => setDeleteTarget(proposal)}
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                              </>
+                            )}
                             {proposal.status === 'APPROVED' && (
                               <DropdownMenuItem
-                                onClick={() => {
-                                  console.log(
-                                    'POST /api/v1/proposals/:id/convert-to-contract',
-                                  );
-                                  showToast(
-                                    'Convert to contract coming soon',
-                                    'info',
-                                  );
-                                }}
+                                onClick={() =>
+                                  router.push(`/proposals/${proposal.id}`)
+                                }
                               >
-                                Convert to Contract
+                                View Details
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem
-                              className='text-red-600'
-                              onClick={() => setDeleteTarget(proposal)}
-                            >
-                              Delete
-                            </DropdownMenuItem>
+                            {(proposal.status === 'DECLINED' ||
+                              proposal.status === 'EXPIRED') && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    router.push(`/proposals/${proposal.id}`)
+                                  }
+                                >
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className='text-red-600'
+                                  onClick={() => setDeleteTarget(proposal)}
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenu>
                         </div>
                       </TableCell>
@@ -549,6 +864,8 @@ export default function ProposalsPage() {
           )}
         </CardBody>
       </Card>
+        </>
+      )}
 
       {/* Delete modal */}
       <Modal
@@ -603,8 +920,8 @@ export default function ProposalsPage() {
         isOpen={upgradeModal}
         onClose={() => setUpgradeModal(false)}
         feature='proposals'
-        used={MOCK_USAGE.proposals.used}
-        limit={MOCK_USAGE.proposals.limit}
+        used={0}
+        limit={0}
       />
     </div>
   );

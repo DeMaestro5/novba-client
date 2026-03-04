@@ -191,17 +191,18 @@ export default function DatePicker({
   const calendarGrid = getCalendarGrid(viewYear, viewMonth);
 
   const inputContainerClasses = `
+    relative
     flex
     items-center
     min-w-0
+    h-10
     rounded-lg
     border
-    px-4
-    py-2.5
+    px-3
     transition-colors
     duration-200
-    ${error ? 'border-red-500 focus-within:ring-2 focus-within:ring-red-500 focus-within:border-red-500' : 'border-gray-300 dark:border-gray-600 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500'}
-    ${disabled ? 'bg-gray-50 cursor-not-allowed opacity-50' : 'bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white cursor-text'}
+    ${error ? 'border-red-500 focus-within:ring-2 focus-within:ring-red-500 focus-within:border-red-500' : 'border-gray-200 dark:border-gray-700 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500'}
+    ${disabled ? 'bg-gray-50 cursor-not-allowed opacity-50' : 'bg-white dark:bg-gray-800/50 cursor-text'}
     ${className}
   `
     .trim()
@@ -258,15 +259,15 @@ export default function DatePicker({
           value={displayValue}
           placeholder={placeholder}
           disabled={disabled}
-          className='flex-1 min-w-0 bg-transparent text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none cursor-pointer'
+          className='flex-1 min-w-0 bg-transparent text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none cursor-pointer pr-20'
           aria-label={label || 'Date'}
         />
-        <div className='flex items-center gap-1 shrink-0'>
+        <div className='absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0 pointer-events-none'>
           {value && (
             <button
               type='button'
               onClick={handleClear}
-              className='p-0.5 rounded text-gray-400 dark:text-gray-500 dark:hover:text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1'
+              className='pointer-events-auto p-0.5 rounded text-gray-400 dark:text-gray-500 dark:hover:text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1'
               aria-label='Clear date'
             >
               <svg className='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
