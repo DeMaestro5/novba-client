@@ -21,6 +21,7 @@ import Modal, {
   ModalFooter,
 } from '@/components/UI/Modal';
 import { useToast } from '@/components/UI/Toast';
+import EmptyPageState from '@/components/EmptyPageState';
 import {
   mockContracts,
   formatCurrency,
@@ -137,9 +138,11 @@ export default function ContractsPage() {
     showToast(`Contract duplicated as ${newNum}`, 'success');
   };
 
+  const isEmpty = contracts.length === 0;
+
   return (
     <div className='mx-auto max-w-[1400px] p-6 lg:p-8'>
-      {/* Header */}
+      {/* Header — always visible */}
       <div className='mb-6 flex items-start justify-between'>
         <div>
           <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
@@ -171,6 +174,89 @@ export default function ContractsPage() {
         </Button>
       </div>
 
+      {isEmpty ? (
+        <div className='w-full min-h-[520px]'>
+          <EmptyPageState
+            icon={
+              <svg className='h-6 w-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' />
+              </svg>
+            }
+            badge='Contracts'
+            headline={'Protect every project\nwith a signed contract'}
+            subtext='Use professionally drafted templates. Get legally binding e-signatures from clients — no printing, no scanning.'
+            benefits={[
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
+                  </svg>
+                ),
+                label: 'Service agreements, NDAs, SOWs — ready to use',
+                description: 'Professional templates built for freelancers, fully customizable.',
+              },
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l2.122 2.122m-5.657 5.656l-2.12-2.122m0 0L11.7 2.7m2.122 2.122L13.95 4.05' />
+                  </svg>
+                ),
+                label: 'Clients sign from a link on any device',
+                description: 'No PDF back-and-forth. No printing. Signed and sealed in minutes.',
+              },
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1' />
+                  </svg>
+                ),
+                label: 'Convert approved proposals to contracts instantly',
+                description: 'One click — all project details carry over automatically.',
+              },
+            ]}
+            ctaLabel='Create First Contract'
+            ctaHref='/contracts/new'
+            stat={{ value: '2×', label: 'faster payments', context: 'for freelancers who use signed contracts vs verbal agreements' }}
+            preview={
+              <div className='mx-auto w-full max-w-sm space-y-4'>
+                <p className='mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500'>Sample contract lifecycle</p>
+                <div className='rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800'>
+                  <div className='mb-3 flex items-start justify-between'>
+                    <div>
+                      <p className='text-xs font-semibold text-orange-600'>CON-0001</p>
+                      <p className='text-sm font-semibold text-gray-900 dark:text-white'>Brand Identity Project</p>
+                      <p className='text-xs text-gray-500 dark:text-gray-400'>Acme Corp</p>
+                    </div>
+                    <span className='rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400'>Signed</span>
+                  </div>
+                  <div className='mt-3 flex items-center gap-0'>
+                    {['Draft', 'Sent', 'Signed'].map((step, i) => (
+                      <div key={step} className='flex flex-1 items-center'>
+                        <div className='flex flex-col items-center'>
+                          <div className='flex h-6 w-6 items-center justify-center rounded-full bg-green-500'>
+                            <svg className='h-3 w-3 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={3} d='M5 13l4 4L19 7' />
+                            </svg>
+                          </div>
+                          <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>{step}</p>
+                        </div>
+                        {i < 2 && <div className='mb-4 mx-1 h-0.5 flex-1 bg-green-400' />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className='flex items-center gap-3 rounded-xl border border-green-100 bg-green-50 px-3 py-2.5 dark:border-green-900/30 dark:bg-green-950/20'>
+                  <svg className='h-5 w-5 shrink-0 text-green-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' />
+                  </svg>
+                  <p className='text-xs font-medium text-green-800 dark:text-green-300'>Signed digitally · No PDF back-and-forth</p>
+                </div>
+              </div>
+            }
+          />
+        </div>
+      ) : (
+        <>
       {/* Stats */}
       <div className='mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4'>
         {/* Total Contracts */}
@@ -373,41 +459,17 @@ export default function ContractsPage() {
             </div>
           </div>
 
-          {/* Empty state */}
+          {/* Empty state — filtered empty only (has data but no results) */}
           {filtered.length === 0 ? (
             <div className='flex flex-col items-center justify-center py-16 text-center'>
-              <div className='mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800'>
-                <svg
-                  className='h-7 w-7 text-gray-400 dark:text-gray-600'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-                  />
-                </svg>
-              </div>
-              <p className='font-semibold text-gray-900 dark:text-white'>
-                No contracts found
-              </p>
-              <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-                {search
-                  ? 'Try a different search term'
-                  : 'Create your first contract to protect your work'}
-              </p>
-              {!search && (
-                <Button
-                  variant='primary'
-                  className='mt-4 bg-orange-600 hover:bg-orange-700'
-                  onClick={() => router.push('/contracts/new')}
-                >
-                  New Contract
-                </Button>
-              )}
+              <p className='text-sm text-gray-400 dark:text-gray-500'>No contracts match your current filter.</p>
+              <button
+                type='button'
+                onClick={() => { setSearch(''); setActiveFilter('ALL'); }}
+                className='mt-2 text-sm text-orange-600 hover:underline dark:text-orange-500'
+              >
+                Clear filters
+              </button>
             </div>
           ) : (
             <Table>
@@ -556,6 +618,8 @@ export default function ContractsPage() {
           )}
         </CardBody>
       </Card>
+        </>
+      )}
 
       {/* Delete modal */}
       <Modal
