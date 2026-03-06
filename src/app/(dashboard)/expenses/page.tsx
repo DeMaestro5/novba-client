@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import api from '@/lib/api';
 import Card, { CardBody, CardHeader } from '@/components/UI/Card';
 import Badge from '@/components/UI/Badge';
 import Table, {
@@ -24,15 +25,27 @@ import EmptyPageState from '@/components/EmptyPageState';
 import { useToast } from '@/components/UI/Toast';
 import DatePicker from '@/components/UI/DatePicker';
 import {
-  mockExpenses,
   formatCurrency,
   formatDate,
   formatDateShort,
   getCategoryTotals,
   CATEGORY_CONFIG,
-  type MockExpense,
   type ExpenseCategory,
 } from '@/lib/mock-expenses';
+
+// ─── Types ─────────────────────────────────────────────────────────────────
+
+type ExpenseItem = {
+  id: string;
+  date: string;
+  vendor: string;
+  amount: number;
+  currency: string;
+  category: ExpenseCategory;
+  description?: string;
+  taxDeductible: boolean;
+  createdAt: string;
+};
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -88,7 +101,7 @@ function TaxBadge({ deductible }: { deductible: boolean }) {
 
 // ─── Category Breakdown Bar ──────────────────────────────────────────────────
 
-function CategoryBreakdownBar({ expenses }: { expenses: MockExpense[] }) {
+function CategoryBreakdownBar({ expenses }: { expenses: ExpenseItem[] }) {
   const totals = getCategoryTotals(expenses);
   if (totals.length === 0) return null;
 
@@ -147,7 +160,7 @@ function CategoryBreakdownBar({ expenses }: { expenses: MockExpense[] }) {
 interface AddExpensePanelProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (expense: MockExpense) => void;
+  onAdd: (expense: ExpenseItem) => void;
 }
 
 function AddExpensePanel({ isOpen, onClose, onAdd }: AddExpensePanelProps) {
@@ -177,7 +190,7 @@ function AddExpensePanel({ isOpen, onClose, onAdd }: AddExpensePanelProps) {
 
   const handleSubmit = () => {
     if (!validate()) return;
-    const newExpense: MockExpense = {
+    const newExpense: ExpenseItem = {
       id: `exp${Date.now()}`,
       date: form.date!.toISOString().split('T')[0],
       vendor: form.vendor.trim(),
@@ -409,14 +422,45 @@ function AddExpensePanel({ isOpen, onClose, onAdd }: AddExpensePanelProps) {
 
 export default function ExpensesPage() {
   const { showToast } = useToast();
-  const [expenses, setExpenses] = useState(mockExpenses);
+  const [expenses, setExpenses] = useState<
+    Array<{
+      id: string;
+      date: string;
+      vendor: string;
+      amount: number;
+      currency: string;
+      category: ExpenseCategory;
+      description?: string;
+      taxDeductible: boolean;
+      createdAt: string;
+    }>
+  >([]);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<ExpenseCategory | 'ALL'>(
     'ALL',
   );
   const [search, setSearch] = useState('');
   const [showTaxOnly, setShowTaxOnly] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<MockExpense | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ExpenseItem | null>(null);
+
+  const fetchExpenses = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/expenses', {
+        params: { limit: 100 },
+      });
+      setExpenses(res.data.data.expenses ?? []);
+    } catch {
+      // silent — empty state handles it
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchExpenses();
+  }, [fetchExpenses]);
 
   // ─── Stats ──────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -455,25 +499,87 @@ export default function ExpensesPage() {
   }, [expenses, activeCategory, showTaxOnly, search]);
 
   // ─── Actions ─────────────────────────────────────────────────────────────
-  const handleAdd = (expense: MockExpense) => {
-    setExpenses((prev) => [expense, ...prev]);
-    showToast('Expense added', 'success');
+  const handleAdd = async (expense: {
+    id: string;
+    date: string;
+    vendor: string;
+    amount: number;
+    currency: string;
+    category: ExpenseCategory;
+    description?: string;
+    taxDeductible: boolean;
+    createdAt: string;
+  }) => {
+    try {
+      const payload = {
+        date: new Date(expense.date).toISOString(),
+        vendor: expense.vendor.trim(),
+        amount: Number(expense.amount),
+        currency: expense.currency || 'USD',
+        category: expense.category,
+        description: expense.description?.trim() || undefined,
+        taxDeductible: expense.taxDeductible,
+      };
+      await api.post('/expenses', payload);
+      showToast('Expense added', 'success');
+      fetchExpenses();
+    } catch {
+      showToast('Failed to add expense', 'error');
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return;
-    setExpenses((prev) => prev.filter((e) => e.id !== deleteTarget.id));
-    showToast('Expense deleted', 'success');
-    setDeleteTarget(null);
+    try {
+      await api.delete(`/expenses/${deleteTarget.id}`);
+      showToast('Expense deleted', 'success');
+      setDeleteTarget(null);
+      fetchExpenses();
+    } catch {
+      showToast('Failed to delete expense', 'error');
+    }
   };
 
-  const handleToggleTax = (id: string) => {
-    setExpenses((prev) =>
-      prev.map((e) =>
-        e.id === id ? { ...e, taxDeductible: !e.taxDeductible } : e,
-      ),
-    );
-    showToast('Updated', 'success');
+  const handleToggleTax = async (id: string) => {
+    const expense = expenses.find((e) => e.id === id);
+    if (!expense) return;
+    try {
+      await api.put(`/expenses/${id}`, {
+        taxDeductible: !expense.taxDeductible,
+      });
+      showToast('Updated', 'success');
+      fetchExpenses();
+    } catch {
+      showToast('Failed to update', 'error');
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const params: Record<string, unknown> = {};
+      if (activeCategory !== 'ALL') params.category = activeCategory;
+      if (showTaxOnly) params.taxDeductible = true;
+
+      const res = await api.get('/expenses/export/csv', {
+        params,
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute(
+        'download',
+        `expenses-${new Date().toISOString().split('T')[0]}.csv`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      showToast('Expenses exported', 'success');
+    } catch {
+      showToast('Failed to export expenses', 'error');
+    }
   };
 
   const currentMonthLabel = new Date().toLocaleDateString('en-US', {
@@ -481,8 +587,10 @@ export default function ExpensesPage() {
     year: 'numeric',
   });
 
-  const showEmptyPageState = expenses.length === 0 && !search && activeCategory === 'ALL';
-  const showInlineNoResults = expenses.length === 0 && (!!search || activeCategory !== 'ALL');
+  const showEmptyPageState =
+    !loading && expenses.length === 0 && !search && activeCategory === 'ALL';
+  const showInlineNoResults =
+    !loading && expenses.length === 0 && (!!search || activeCategory !== 'ALL');
 
   return (
     <>
@@ -498,26 +606,28 @@ export default function ExpensesPage() {
             </p>
           </div>
           <div className='flex items-center gap-3'>
-            <button
-              type='button'
-              onClick={() => showToast('CSV export coming soon', 'info')}
-              className='inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white px-3.5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors'
-            >
-              <svg
-                className='h-4 w-4'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
+            {expenses.length > 0 && !loading && (
+              <button
+                type='button'
+                onClick={handleExportCSV}
+                className='inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white px-3.5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors'
               >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4'
-                />
-              </svg>
-              Export CSV
-            </button>
+                <svg
+                  className='h-4 w-4'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4'
+                  />
+                </svg>
+                Export CSV
+              </button>
+            )}
             <button
               type='button'
               onClick={() => setPanelOpen(true)}
@@ -545,8 +655,18 @@ export default function ExpensesPage() {
           <div className='w-full min-h-[520px]'>
             <EmptyPageState
               icon={
-                <svg className='h-6 w-6' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' />
+                <svg
+                  className='h-6 w-6'
+                  fill='none'
+                  stroke='currentColor'
+                  strokeWidth={2}
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    d='M9 14l6-6m-5.5 3.5L21 3l-3 3-4.5 4.5L3 15l3 3 3-3 4.5-4.5L21 9l-3-3-6 6'
+                  />
                 </svg>
               }
               badge='Expenses'
@@ -555,51 +675,116 @@ export default function ExpensesPage() {
               benefits={[
                 {
                   icon: (
-                    <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
-                      <path strokeLinecap='round' strokeLinejoin='round' d='M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z' />
+                    <svg
+                      className='h-4 w-4'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth={2}
+                      viewBox='0 0 24 24'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        d='M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z'
+                      />
                     </svg>
                   ),
-                  label: 'Auto-categorized by type — software, travel, equipment',
-                  description: 'Expenses are organized into tax-ready categories automatically.',
+                  label:
+                    'Auto-categorized by type — software, travel, equipment',
+                  description:
+                    'Expenses are organized into tax-ready categories automatically.',
                 },
                 {
                   icon: (
-                    <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
-                      <path strokeLinecap='round' strokeLinejoin='round' d='M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4' />
+                    <svg
+                      className='h-4 w-4'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth={2}
+                      viewBox='0 0 24 24'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        d='M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4'
+                      />
                     </svg>
                   ),
                   label: 'Export to CSV for your accountant',
-                  description: 'One click gets you a clean spreadsheet covering any date range.',
+                  description:
+                    'One click gets you a clean spreadsheet covering any date range.',
                 },
                 {
                   icon: (
-                    <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
-                      <path strokeLinecap='round' strokeLinejoin='round' d='M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z' />
+                    <svg
+                      className='h-4 w-4'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth={2}
+                      viewBox='0 0 24 24'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        d='M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z'
+                      />
                     </svg>
                   ),
                   label: 'See your true profit, not just your revenue',
-                  description: 'Novba shows net income after expenses so you know what you actually keep.',
+                  description:
+                    'Novba shows net income after expenses so you know what you actually keep.',
                 },
               ]}
               ctaLabel='Log First Expense'
               ctaOnClick={() => setPanelOpen(true)}
-              stat={{ value: '$2,400', label: 'average annual savings', context: 'for freelancers who actively track and claim business expenses at tax time' }}
+              stat={{
+                value: '$2,400',
+                label: 'average annual savings',
+                context:
+                  'for freelancers who actively track and claim business expenses at tax time',
+              }}
               preview={
                 <div className='mx-auto w-full max-w-sm space-y-2'>
                   <div className='rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 overflow-hidden'>
                     {[
-                      { vendor: 'Figma Pro', category: 'Software', date: 'Mar 1', amount: '$15.00' },
-                      { vendor: 'Client Lunch', category: 'Meals', date: 'Feb 28', amount: '$64.00' },
-                      { vendor: 'MacBook Pro', category: 'Equipment', date: 'Feb 15', amount: '$1,299.00' },
+                      {
+                        vendor: 'Figma Pro',
+                        category: 'Software',
+                        date: 'Mar 1',
+                        amount: '$15.00',
+                      },
+                      {
+                        vendor: 'Client Lunch',
+                        category: 'Meals',
+                        date: 'Feb 28',
+                        amount: '$64.00',
+                      },
+                      {
+                        vendor: 'MacBook Pro',
+                        category: 'Equipment',
+                        date: 'Feb 15',
+                        amount: '$1,299.00',
+                      },
                     ].map((e) => (
-                      <div key={e.vendor} className='flex items-center justify-between border-b border-gray-100 px-3 py-2 last:border-0 dark:border-gray-700'>
+                      <div
+                        key={e.vendor}
+                        className='flex items-center justify-between border-b border-gray-100 px-3 py-2 last:border-0 dark:border-gray-700'
+                      >
                         <div>
-                          <p className='text-sm font-medium text-gray-900 dark:text-white'>{e.vendor}</p>
-                          <p className='text-xs text-gray-500 dark:text-gray-400'>{e.category} · {e.date}</p>
+                          <p className='text-sm font-medium text-gray-900 dark:text-white'>
+                            {e.vendor}
+                          </p>
+                          <p className='text-xs text-gray-500 dark:text-gray-400'>
+                            {e.category} · {e.date}
+                          </p>
                         </div>
                         <div className='flex items-center gap-2'>
-                          <span className='text-sm font-semibold text-gray-900 dark:text-white'>{e.amount}</span>
-                          <span className='rounded px-1.5 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400'>Deductible</span>
+                          <span className='text-sm font-semibold text-gray-900 dark:text-white'>
+                            {e.amount}
+                          </span>
+                          <span className='rounded px-1.5 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400'>
+                            Deductible
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -613,362 +798,387 @@ export default function ExpensesPage() {
           </div>
         ) : (
           <>
-        {/* Stats row */}
-        <div className='mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4'>
-          {/* Total Spent */}
-          <Card>
-            <CardBody padding='lg'>
-              <div className='flex items-start justify-between'>
-                <div>
-                  <p className='text-xs font-bold uppercase tracking-wider text-gray-500'>
-                    Total Spent
-                  </p>
-                  <p className='mt-2 text-3xl font-black text-gray-900 dark:text-white'>
-                    {formatCurrency(stats.totalSpent)}
-                  </p>
-                  <p className='mt-1.5 text-sm text-gray-400 dark:text-gray-500'>
-                    all time
-                  </p>
-                </div>
-                <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-700'>
-                  <svg
-                    className='h-5 w-5 text-gray-400 dark:text-gray-500'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'
-                    />
-                  </svg>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Tax Deductible — hero green, this is money back in pocket */}
-          <Card className='border-green-200 bg-gradient-to-br from-green-50 to-emerald-50'>
-            <CardBody padding='lg'>
-              <div className='flex items-start justify-between'>
-                <div>
-                  <p className='text-xs font-bold uppercase tracking-wider text-green-700'>
-                    Tax Deductible
-                  </p>
-                  <p className='mt-2 text-3xl font-black text-green-700'>
-                    {formatCurrency(stats.taxDeductible)}
-                  </p>
-                  <p className='mt-1.5 text-sm font-semibold text-green-600'>
-                    claimable this year
-                  </p>
-                </div>
-                <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-green-100'>
-                  <svg
-                    className='h-5 w-5 text-green-600'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
-                    />
-                  </svg>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* This Month */}
-          <Card>
-            <CardBody padding='lg'>
-              <div className='flex items-start justify-between'>
-                <div>
-                  <p className='text-xs font-bold uppercase tracking-wider text-gray-500'>
-                    This Month
-                  </p>
-                  <p className='mt-2 text-3xl font-black text-gray-900 dark:text-white'>
-                    {formatCurrency(stats.thisMonth)}
-                  </p>
-                  <p className='mt-1.5 text-sm text-gray-400 dark:text-gray-500'>
-                    {currentMonthLabel}
-                  </p>
-                </div>
-                <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-700'>
-                  <svg
-                    className='h-5 w-5 text-gray-400 dark:text-gray-500'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'
-                    />
-                  </svg>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Top Category */}
-          <Card>
-            <CardBody padding='lg'>
-              <div className='flex items-start justify-between'>
-                <div className='min-w-0 flex-1'>
-                  <p className='text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
-                    Top Category
-                  </p>
-                  {stats.topCategory ? (
-                    <>
-                      <p className='mt-2 text-3xl font-black text-gray-900 dark:text-white'>
-                        {formatCurrency(stats.topCategory.total)}
+            {/* Stats row */}
+            <div className='mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4'>
+              {/* Total Spent */}
+              <Card>
+                <CardBody padding='lg'>
+                  <div className='flex items-start justify-between'>
+                    <div>
+                      <p className='text-xs font-bold uppercase tracking-wider text-gray-500'>
+                        Total Spent
                       </p>
-                      <div className='mt-1.5 flex items-center gap-1.5'>
-                        <div
-                          className={`h-2 w-2 rounded-full ${CATEGORY_CONFIG[stats.topCategory.category].color}`}
+                      <p className='mt-2 text-3xl font-black text-gray-900 dark:text-white'>
+                        {formatCurrency(stats.totalSpent)}
+                      </p>
+                      <p className='mt-1.5 text-sm text-gray-400 dark:text-gray-500'>
+                        all time
+                      </p>
+                    </div>
+                    <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-700'>
+                      <svg
+                        className='h-5 w-5 text-gray-400 dark:text-gray-500'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'
                         />
-                        <p className='text-sm text-gray-500 dark:text-gray-400 truncate'>
-                          {CATEGORY_CONFIG[stats.topCategory.category].label}
+                      </svg>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+
+              {/* Tax Deductible — hero green, this is money back in pocket */}
+              <Card className='border-green-200 bg-gradient-to-br from-green-50 to-emerald-50'>
+                <CardBody padding='lg'>
+                  <div className='flex items-start justify-between'>
+                    <div>
+                      <p className='text-xs font-bold uppercase tracking-wider text-green-700'>
+                        Tax Deductible
+                      </p>
+                      <p className='mt-2 text-3xl font-black text-green-700'>
+                        {formatCurrency(stats.taxDeductible)}
+                      </p>
+                      <p className='mt-1.5 text-sm font-semibold text-green-600'>
+                        claimable this year
+                      </p>
+                    </div>
+                    <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-green-100'>
+                      <svg
+                        className='h-5 w-5 text-green-600'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+
+              {/* This Month */}
+              <Card>
+                <CardBody padding='lg'>
+                  <div className='flex items-start justify-between'>
+                    <div>
+                      <p className='text-xs font-bold uppercase tracking-wider text-gray-500'>
+                        This Month
+                      </p>
+                      <p className='mt-2 text-3xl font-black text-gray-900 dark:text-white'>
+                        {formatCurrency(stats.thisMonth)}
+                      </p>
+                      <p className='mt-1.5 text-sm text-gray-400 dark:text-gray-500'>
+                        {currentMonthLabel}
+                      </p>
+                    </div>
+                    <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-700'>
+                      <svg
+                        className='h-5 w-5 text-gray-400 dark:text-gray-500'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+
+              {/* Top Category */}
+              <Card>
+                <CardBody padding='lg'>
+                  <div className='flex items-start justify-between'>
+                    <div className='min-w-0 flex-1'>
+                      <p className='text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
+                        Top Category
+                      </p>
+                      {stats.topCategory ? (
+                        <>
+                          <p className='mt-2 text-3xl font-black text-gray-900 dark:text-white'>
+                            {formatCurrency(stats.topCategory.total)}
+                          </p>
+                          <div className='mt-1.5 flex items-center gap-1.5'>
+                            <div
+                              className={`h-2 w-2 rounded-full ${CATEGORY_CONFIG[stats.topCategory.category].color}`}
+                            />
+                            <p className='text-sm text-gray-500 dark:text-gray-400 truncate'>
+                              {
+                                CATEGORY_CONFIG[stats.topCategory.category]
+                                  .label
+                              }
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <p className='mt-2 text-2xl font-bold text-gray-400'>
+                          —
                         </p>
-                      </div>
-                    </>
-                  ) : (
-                    <p className='mt-2 text-2xl font-bold text-gray-400'>—</p>
-                  )}
-                </div>
-                <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50'>
-                  <svg
-                    className='h-5 w-5 text-orange-500'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
-                    />
-                  </svg>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
+                      )}
+                    </div>
+                    <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50'>
+                      <svg
+                        className='h-5 w-5 text-orange-500'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
 
-        {/* Category breakdown bar */}
-        <CategoryBreakdownBar expenses={expenses} />
+            {/* Category breakdown bar */}
+            <CategoryBreakdownBar expenses={expenses} />
 
-        {/* Table card */}
-        <Card>
-          <CardBody className='p-0'>
-            {/* Category filter tabs */}
-            <div className='flex items-center gap-1 overflow-x-auto border-b border-gray-200 dark:border-gray-700 px-4 pt-4 pb-0 scrollbar-hide'>
-              {(['ALL', ...USED_CATEGORIES] as (ExpenseCategory | 'ALL')[]).map(
-                (cat) => {
-                  const count =
-                    cat === 'ALL'
-                      ? expenses.length
-                      : expenses.filter((e) => e.category === cat).length;
-                  const label =
-                    cat === 'ALL' ? 'All' : CATEGORY_CONFIG[cat].label;
-                  return (
-                    <button
-                      key={cat}
-                      type='button'
-                      onClick={() => setActiveCategory(cat)}
-                      className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 pb-3 text-sm font-medium transition-colors ${
-                        activeCategory === cat
-                          ? 'border-orange-600 text-orange-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                      }`}
-                    >
-                      {label}
-                      <span
-                        className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${
+            {/* Table card */}
+            <Card>
+              <CardBody className='p-0'>
+                {/* Category filter tabs */}
+                <div className='flex items-center gap-1 overflow-x-auto border-b border-gray-200 dark:border-gray-700 px-4 pt-4 pb-0 scrollbar-hide'>
+                  {(
+                    ['ALL', ...USED_CATEGORIES] as (ExpenseCategory | 'ALL')[]
+                  ).map((cat) => {
+                    const count =
+                      cat === 'ALL'
+                        ? expenses.length
+                        : expenses.filter((e) => e.category === cat).length;
+                    const label =
+                      cat === 'ALL' ? 'All' : CATEGORY_CONFIG[cat].label;
+                    return (
+                      <button
+                        key={cat}
+                        type='button'
+                        onClick={() => setActiveCategory(cat)}
+                        className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 pb-3 text-sm font-medium transition-colors ${
                           activeCategory === cat
-                            ? 'bg-orange-100 text-orange-700'
-                            : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300'
+                            ? 'border-orange-600 text-orange-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                         }`}
                       >
-                        {count}
-                      </span>
-                    </button>
-                  );
-                },
-              )}
-            </div>
+                        {label}
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${
+                            activeCategory === cat
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300'
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-            {/* Toolbar */}
-            <div className='flex items-center justify-between px-4 py-3'>
-              <div className='flex items-center gap-3'>
-                <p className='text-sm text-gray-500 dark:text-gray-400'>
-                  {filtered.length} expense{filtered.length !== 1 ? 's' : ''}
-                  {filtered.length > 0 && (
-                    <span className='ml-1 font-semibold text-gray-700 dark:text-gray-300'>
-                      ·{' '}
-                      {formatCurrency(
-                        filtered.reduce((s, e) => s + e.amount, 0),
+                {/* Toolbar */}
+                <div className='flex items-center justify-between px-4 py-3'>
+                  <div className='flex items-center gap-3'>
+                    <p className='text-sm text-gray-500 dark:text-gray-400'>
+                      {filtered.length} expense
+                      {filtered.length !== 1 ? 's' : ''}
+                      {filtered.length > 0 && (
+                        <span className='ml-1 font-semibold text-gray-700 dark:text-gray-300'>
+                          ·{' '}
+                          {formatCurrency(
+                            filtered.reduce((s, e) => s + e.amount, 0),
+                          )}
+                        </span>
                       )}
-                    </span>
-                  )}
-                </p>
-                {/* Tax deductible toggle */}
-                <button
-                  type='button'
-                  onClick={() => setShowTaxOnly(!showTaxOnly)}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${
-                    showTaxOnly
-                      ? 'border-green-300 bg-green-50 text-green-700'
-                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 dark:hover:border-gray-600'
-                  }`}
-                >
-                  <svg
-                    className='h-3 w-3'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2.5}
-                      d='M5 13l4 4L19 7'
-                    />
-                  </svg>
-                  Tax Deductible Only
-                </button>
-              </div>
-              <div className='relative w-64'>
-                <svg
-                  className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
-                  />
-                </svg>
-                <input
-                  type='text'
-                  placeholder='Search expenses...'
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className='w-full rounded-lg border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-orange-500 py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20'
-                />
-              </div>
-            </div>
-
-            {/* Empty state — filtered empty only */}
-            {filtered.length === 0 ? (
-              <div className='flex flex-col items-center justify-center py-16 px-4'>
-                <p className='text-sm font-medium text-gray-900 dark:text-white'>No expenses match your filters</p>
-                <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>Try adjusting your search or category filter.</p>
-                <button
-                  type='button'
-                  onClick={() => { setSearch(''); setActiveCategory('ALL'); }}
-                  className='mt-4 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-                >
-                  Clear filters
-                </button>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className='pl-6'>Date</TableHead>
-                    <TableHead>Vendor</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead className='hidden lg:table-cell'>
-                      Description
-                    </TableHead>
-                    <TableHead>Tax</TableHead>
-                    <TableHead className='text-right'>Amount</TableHead>
-                    <TableHead className='text-right pr-4'>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((expense) => (
-                    <TableRow
-                      key={expense.id}
-                      className='group hover:bg-gray-50 transition-colors'
+                    </p>
+                    {/* Tax deductible toggle */}
+                    <button
+                      type='button'
+                      onClick={() => setShowTaxOnly(!showTaxOnly)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${
+                        showTaxOnly
+                          ? 'border-green-300 bg-green-50 text-green-700'
+                          : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 dark:hover:border-gray-600'
+                      }`}
                     >
-                      {/* Date */}
-                      <TableCell className='w-24 py-4 pl-6'>
-                        <span className='text-xs font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap'>
-                          {formatDateShort(expense.date)}
-                        </span>
-                      </TableCell>
+                      <svg
+                        className='h-3 w-3'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2.5}
+                          d='M5 13l4 4L19 7'
+                        />
+                      </svg>
+                      Tax Deductible Only
+                    </button>
+                  </div>
+                  <div className='relative w-64'>
+                    <svg
+                      className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
+                      />
+                    </svg>
+                    <input
+                      type='text'
+                      placeholder='Search expenses...'
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className='w-full rounded-lg border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-orange-500 py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20'
+                    />
+                  </div>
+                </div>
 
-                      {/* Vendor */}
-                      <TableCell className='py-4 min-w-[140px]'>
-                        <p className='text-sm font-semibold text-gray-900 dark:text-white'>
-                          {expense.vendor}
-                        </p>
-                      </TableCell>
+                {/* Empty state — filtered empty only */}
+                {loading ? (
+                  <div className='p-6 space-y-3'>
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className='flex items-center gap-4 py-3 border-b border-gray-100 dark:border-gray-800 last:border-0'
+                      >
+                        <div className='h-3 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+                        <div className='h-3 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+                        <div className='h-6 w-20 animate-pulse rounded-md bg-gray-200 dark:bg-gray-700' />
+                        <div className='flex-1' />
+                        <div className='h-3 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+                        <div className='h-3 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+                      </div>
+                    ))}
+                  </div>
+                ) : filtered.length === 0 ? (
+                  <div className='flex flex-col items-center justify-center py-16 text-center'>
+                    <p className='text-sm text-gray-400 dark:text-gray-500'>
+                      No expenses match your current filter.
+                    </p>
+                    <button
+                      type='button'
+                      onClick={() => setSearch('')}
+                      className='mt-2 text-sm text-orange-600 hover:underline dark:text-orange-500'
+                    >
+                      Clear filters
+                    </button>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className='pl-6'>Date</TableHead>
+                        <TableHead>Vendor</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead className='hidden lg:table-cell'>
+                          Description
+                        </TableHead>
+                        <TableHead>Tax</TableHead>
+                        <TableHead className='text-right'>Amount</TableHead>
+                        <TableHead className='text-right pr-4'>
+                          Actions
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filtered.map((expense) => (
+                        <TableRow
+                          key={expense.id}
+                          className='group hover:bg-gray-50 transition-colors'
+                        >
+                          {/* Date */}
+                          <TableCell className='w-24 py-4 pl-6'>
+                            <span className='text-xs font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap'>
+                              {formatDateShort(expense.date)}
+                            </span>
+                          </TableCell>
 
-                      {/* Category */}
-                      <TableCell className='py-4'>
-                        <CategoryBadge category={expense.category} />
-                      </TableCell>
+                          {/* Vendor */}
+                          <TableCell className='py-4 min-w-[140px]'>
+                            <p className='text-sm font-semibold text-gray-900 dark:text-white'>
+                              {expense.vendor}
+                            </p>
+                          </TableCell>
 
-                      {/* Description */}
-                      <TableCell className='hidden lg:table-cell py-4 max-w-[200px]'>
-                        {expense.description && (
-                          <p className='truncate text-xs text-gray-400 dark:text-gray-500 italic'>
-                            {expense.description}
-                          </p>
-                        )}
-                      </TableCell>
+                          {/* Category */}
+                          <TableCell className='py-4'>
+                            <CategoryBadge category={expense.category} />
+                          </TableCell>
 
-                      {/* Tax deductible */}
-                      <TableCell className='py-4'>
-                        <TaxBadge deductible={expense.taxDeductible} />
-                      </TableCell>
+                          {/* Description */}
+                          <TableCell className='hidden lg:table-cell py-4 max-w-[200px]'>
+                            {expense.description && (
+                              <p className='truncate text-xs text-gray-400 dark:text-gray-500 italic'>
+                                {expense.description}
+                              </p>
+                            )}
+                          </TableCell>
 
-                      {/* Amount */}
-                      <TableCell className='py-4 text-right'>
-                        <span className='text-base font-black text-gray-900 dark:text-white'>
-                          {formatCurrency(expense.amount, expense.currency)}
-                        </span>
-                      </TableCell>
+                          {/* Tax deductible */}
+                          <TableCell className='py-4'>
+                            <TaxBadge deductible={expense.taxDeductible} />
+                          </TableCell>
 
-                      {/* Actions */}
-                      <TableCell className='py-4 pr-4 text-right'>
-                        <DropdownMenu trigger={<TableActionsTrigger />}>
-                          <DropdownMenuItem
-                            onClick={() => handleToggleTax(expense.id)}
-                          >
-                            {expense.taxDeductible
-                              ? 'Mark Not Deductible'
-                              : 'Mark as Deductible'}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className='text-red-600'
-                            onClick={() => setDeleteTarget(expense)}
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardBody>
-        </Card>
+                          {/* Amount */}
+                          <TableCell className='py-4 text-right'>
+                            <span className='text-base font-black text-gray-900 dark:text-white'>
+                              {formatCurrency(expense.amount, expense.currency)}
+                            </span>
+                          </TableCell>
+
+                          {/* Actions */}
+                          <TableCell className='py-4 pr-4 text-right'>
+                            <DropdownMenu trigger={<TableActionsTrigger />}>
+                              <DropdownMenuItem
+                                onClick={() => handleToggleTax(expense.id)}
+                              >
+                                {expense.taxDeductible
+                                  ? 'Mark Not Deductible'
+                                  : 'Mark as Deductible'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className='text-red-600'
+                                onClick={() => setDeleteTarget(expense)}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardBody>
+            </Card>
           </>
         )}
       </div>
