@@ -155,6 +155,7 @@ export default function EditClientPage() {
         onSave={handleSave}
         onCancel={() => router.push(`/clients/${id}`)}
         isEdit
+        isSubmitting={isSaving}
       />
     </div>
   );

@@ -316,69 +316,70 @@ export default function PaymentsPage() {
         <div className='w-full min-h-[520px]'>
           <EmptyPageState
             icon={
-              <svg className='h-6 w-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' />
+              <svg className='h-6 w-6' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                <path strokeLinecap='round' strokeLinejoin='round' d='M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' />
               </svg>
             }
             badge='Payments'
-            headline={'Get paid faster,\nevery single time'}
-            subtext='Generate payment links, automate overdue reminders, and keep a full audit trail across every client.'
+            headline={'Your payment history\nlives here'}
+            subtext='Payments are recorded automatically when you mark an invoice as paid. Send your first invoice to get started.'
             benefits={[
               {
                 icon: (
-                  <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M13 10V3L4 14h7v7l9-11h-7z' />
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' />
                   </svg>
                 ),
-                label: 'Payment link from any invoice — clients pay in seconds',
-                description: 'No bank details, no manual follow-up. One link, done.',
+                label: 'Every payment tied to the invoice it came from',
+                description: 'Full audit trail — who paid, how much, and when.',
               },
               {
                 icon: (
-                  <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' />
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z' />
                   </svg>
                 ),
-                label: 'Automated overdue reminders — never chase again',
-                description: 'Reminders go out automatically so you never have to ask awkwardly.',
+                label: 'Revenue trends across months and clients',
+                description: 'See your busiest periods and highest-value client relationships.',
               },
               {
                 icon: (
-                  <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' />
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' />
                   </svg>
                 ),
-                label: 'Full payment history — always audit-ready',
-                description: 'Every payment logged with date, method, and amount.',
+                label: 'Multiple payment methods supported',
+                description: 'Bank transfer, Stripe, mobile money, cash — all tracked in one place.',
               },
             ]}
-            ctaLabel='View Outstanding Invoices'
-            ctaHref='/invoices'
-            stat={{ value: '8 days', label: 'faster payment', context: 'average for freelancers using online payment links vs bank transfer only' }}
+            ctaLabel='Create an Invoice'
+            ctaHref='/invoices/new'
+            secondaryLabel='View existing invoices'
+            secondaryHref='/invoices'
+            stat={{ value: '$0', label: 'collected so far', context: 'Send your first invoice and your payment history will appear here automatically' }}
             preview={
               <div className='mx-auto w-full max-w-sm space-y-2'>
-                <p className='mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500'>Sample payment activity</p>
+                <p className='mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500'>Sample payment history</p>
                 {[
-                  { client: 'Acme Corp', invoice: 'INV-0003', amount: '+$8,500', time: '2 days ago', type: 'received' as const },
-                  { client: 'TechStart Inc', invoice: 'INV-0002', amount: '$3,600', time: '5 days ago', type: 'overdue' as const },
-                  { client: 'Design Studio', invoice: 'INV-0001', amount: '+$2,200', time: '1 week ago', type: 'received' as const },
-                ].map((p, i) => (
-                  <div key={i} className='flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm dark:border-gray-700 dark:bg-gray-800'>
-                    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${p.type === 'received' ? 'bg-green-50 dark:bg-green-950/30' : 'bg-red-50 dark:bg-red-950/30'}`}>
-                      <svg className={`h-3.5 w-3.5 ${p.type === 'received' ? 'text-green-600' : 'text-red-500'}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        {p.type === 'received' ? <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 13l4 4L19 7' /> : <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />}
-                      </svg>
+                  { invoice: 'INV-0003', client: 'Design Studio', date: 'Mar 1', amount: '$3,200' },
+                  { invoice: 'INV-0001', client: 'Acme Corp', date: 'Feb 14', amount: '$8,500' },
+                ].map((p) => (
+                  <div key={p.invoice} className='flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm dark:border-gray-700 dark:bg-gray-800'>
+                    <div>
+                      <p className='text-sm font-medium text-gray-900 dark:text-white'>{p.invoice}</p>
+                      <p className='text-xs text-gray-500 dark:text-gray-400'>{p.client}</p>
                     </div>
-                    <div className='min-w-0 flex-1'>
-                      <p className='truncate text-sm font-medium text-gray-900 dark:text-white'>{p.client}</p>
-                      <p className='text-xs text-gray-400 dark:text-gray-500'>{p.time}</p>
+                    <div className='text-right'>
+                      <p className='text-sm font-bold text-gray-900 dark:text-white'>{p.amount}</p>
+                      <p className='text-xs text-gray-500 dark:text-gray-400'>{p.date}</p>
                     </div>
-                    <div className='shrink-0 text-right'>
-                      <p className={`text-sm font-bold ${p.type === 'received' ? 'text-green-600' : 'text-red-500'}`}>{p.amount}</p>
-                      <p className='text-xs text-gray-400'>{p.invoice}</p>
-                    </div>
+                    <span className='rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-400'>Paid</span>
                   </div>
                 ))}
+                <div className='rounded-xl border border-orange-100 bg-orange-50 px-4 py-2.5 dark:border-orange-900/40 dark:bg-orange-950/30'>
+                  <p className='text-xs font-semibold text-gray-500 dark:text-gray-400'>Total collected</p>
+                  <p className='text-lg font-bold text-orange-600 dark:text-orange-400'>$11,700</p>
+                </div>
               </div>
             }
           />

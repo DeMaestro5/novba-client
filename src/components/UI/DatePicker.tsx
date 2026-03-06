@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { DatePickerProps } from '@/types/ui.types';
 
 const MONTH_NAMES = [
@@ -105,6 +106,7 @@ export default function DatePicker({
     value ? value.getFullYear() : new Date().getFullYear()
   );
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const CALENDAR_WIDTH = 280;
   const CALENDAR_HEIGHT = 340;
@@ -129,10 +131,10 @@ export default function DatePicker({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      const inTrigger = containerRef.current?.contains(target);
+      const inDropdown = dropdownRef.current?.contains(target);
+      if (!inTrigger && !inDropdown) {
         setIsOpen(false);
       }
     };
@@ -196,94 +198,49 @@ export default function DatePicker({
     items-center
     min-w-0
     h-10
+    py-2
     rounded-lg
-    border
+    border-2
+    border-gray-300
+    dark:border-gray-600
     px-3
     transition-colors
     duration-200
-    ${error ? 'border-red-500 focus-within:ring-2 focus-within:ring-red-500 focus-within:border-red-500' : 'border-gray-200 dark:border-gray-700 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500'}
-    ${disabled ? 'bg-gray-50 cursor-not-allowed opacity-50' : 'bg-white dark:bg-gray-800/50 cursor-text'}
+    focus-within:border-orange-500
+    focus-within:outline-none
+    focus-within:ring-2
+    focus-within:ring-orange-500/20
+    ${error ? '!border-red-500 !focus-within:ring-red-500 !focus-within:border-red-500' : ''}
+    ${disabled ? 'bg-gray-50 cursor-not-allowed opacity-50' : 'bg-white dark:bg-gray-800 cursor-text'}
     ${className}
   `
     .trim()
     .replace(/\s+/g, ' ');
 
-  const dropdownClasses = `
-    absolute
-    min-w-[280px]
-    w-[280px]
-    ${alignRight ? 'right-0' : 'left-0'}
-    ${openUpward ? 'bottom-full mb-2' : 'top-full mt-2'}
-    z-[9999]
-    bg-white
-    dark:bg-gray-800
-    dark:border-gray-700
-    rounded-lg
-    border
-    border-gray-200
-    shadow-lg
-    p-4
-    transition-all
-    duration-150
-    ${openUpward ? 'origin-bottom' : 'origin-top'}
-    ${isOpen ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible pointer-events-none'}
-  `
-    .trim()
-    .replace(/\s+/g, ' ');
+  // Position dropdown via portal so it never creates a dark overlay inside the form/card
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const gap = 4;
+      const top = openUpward ? rect.top - CALENDAR_HEIGHT - gap : rect.bottom + gap;
+      const left = alignRight ? rect.right - CALENDAR_WIDTH : rect.left;
+      setDropdownPosition({ top, left });
+    }
+  }, [isOpen, alignRight, openUpward]);
 
-  return (
-    <div ref={containerRef} className='relative w-full'>
-      {label && (
-        <label className='mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300'>
-          {label}
-        </label>
-      )}
-      <div
-        className={inputContainerClasses}
-        onClick={openCalendar}
-        role='button'
-        tabIndex={disabled ? undefined : 0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openCalendar();
-          }
-        }}
-        aria-haspopup='dialog'
-        aria-expanded={isOpen}
-        aria-label={label || 'Select date'}
-      >
-        <input
-          type='text'
-          readOnly
-          value={displayValue}
-          placeholder={placeholder}
-          disabled={disabled}
-          className='flex-1 min-w-0 bg-transparent text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none cursor-pointer pr-20'
-          aria-label={label || 'Date'}
-        />
-        <div className='absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0 pointer-events-none'>
-          {value && (
-            <button
-              type='button'
-              onClick={handleClear}
-              className='pointer-events-auto p-0.5 rounded text-gray-400 dark:text-gray-500 dark:hover:text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1'
-              aria-label='Clear date'
-            >
-              <svg className='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
-                <path strokeLinecap='round' strokeLinejoin='round' d='M6 18L18 6M6 6l12 12' />
-              </svg>
-            </button>
-          )}
-          <span className='text-gray-400 dark:text-gray-500' aria-hidden>
-            <svg className='w-5 h-5' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={1.5}>
-              <path strokeLinecap='round' strokeLinejoin='round' d='M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5' />
-            </svg>
-          </span>
-        </div>
-      </div>
-
-      <div className={dropdownClasses} role='dialog' aria-modal='true' aria-label='Calendar'>
+  const dropdownPanel = (
+    <div
+      ref={dropdownRef}
+      role='dialog'
+      aria-modal='true'
+      aria-label='Calendar'
+      className='fixed z-[100] min-w-[280px] w-[280px] rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900 p-4 transition-all duration-150'
+      style={{
+        top: dropdownPosition.top,
+        left: dropdownPosition.left,
+      }}
+    >
         <div className='flex items-center justify-between gap-2 mb-4'>
           <button
             type='button'
@@ -359,7 +316,62 @@ export default function DatePicker({
             );
           })}
         </div>
+    </div>
+  );
+
+  return (
+    <div ref={containerRef} className='relative w-full'>
+      {label && (
+        <label className='mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300'>
+          {label}
+        </label>
+      )}
+      <div
+        className={inputContainerClasses}
+        onClick={openCalendar}
+        role='button'
+        tabIndex={disabled ? undefined : 0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openCalendar();
+          }
+        }}
+        aria-haspopup='dialog'
+        aria-expanded={isOpen}
+        aria-label={label || 'Select date'}
+      >
+        <input
+          type='text'
+          readOnly
+          value={displayValue}
+          placeholder={placeholder}
+          disabled={disabled}
+          className='flex-1 min-w-0 bg-transparent text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none cursor-pointer pr-20'
+          aria-label={label || 'Date'}
+        />
+        <div className='absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0 pointer-events-none'>
+          {value && (
+            <button
+              type='button'
+              onClick={handleClear}
+              className='pointer-events-auto p-0.5 rounded text-gray-400 dark:text-gray-500 dark:hover:text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1'
+              aria-label='Clear date'
+            >
+              <svg className='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
+                <path strokeLinecap='round' strokeLinejoin='round' d='M6 18L18 6M6 6l12 12' />
+              </svg>
+            </button>
+          )}
+          <span className='text-gray-400 dark:text-gray-500' aria-hidden>
+            <svg className='w-5 h-5' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={1.5}>
+              <path strokeLinecap='round' strokeLinejoin='round' d='M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5' />
+            </svg>
+          </span>
+        </div>
       </div>
+
+      {typeof document !== 'undefined' && isOpen && createPortal(dropdownPanel, document.body)}
 
       {error && (
         <p className='mt-1.5 text-xs text-red-600' role='alert'>

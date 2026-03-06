@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Button from '@/components/UI/Button';
 import Card, { CardHeader, CardBody } from '@/components/UI/Card';
 import Badge from '@/components/UI/Badge';
@@ -13,12 +13,59 @@ import DropdownMenu, {
 } from '@/components/UI/DropdownMenu';
 import EmptyState from '@/components/UI/EmptyState';
 import { useToast } from '@/components/UI/Toast';
-import {
-  MOCK_PROJECTS,
-  type MockProject,
-  type ProjectStatus,
-  type PaymentPlanItem,
-} from '@/lib/mock-projects';
+import api from '@/lib/api';
+
+type ProjectStatus = 'ACTIVE' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED';
+
+interface PaymentPlanItem {
+  milestone: string;
+  amount: number;
+  dueDate?: string | null;
+  status?: string;
+}
+
+interface ProjectDetail {
+  id: string;
+  name: string;
+  description: string | null;
+  status: ProjectStatus;
+  startDate: string;
+  endDate: string | null;
+  totalBudget: number;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+  paymentPlan: PaymentPlanItem[] | null;
+  client: {
+    id: string;
+    companyName: string;
+    contactName: string | null;
+    email: string | null;
+  };
+  proposal?: {
+    id: string;
+    title: string;
+    proposalNumber: string;
+    totalAmount: number;
+  } | null;
+  contract?: {
+    id: string;
+    title: string;
+    contractNumber: string;
+    status: string;
+  } | null;
+  invoices?: Array<{
+    id: string;
+    invoiceNumber: string;
+    issueDate: string;
+    dueDate: string;
+    total: number;
+    currency: string;
+    status: string;
+  }>;
+  _count?: { invoices: number };
+  totalInvoiced?: number;
+}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function formatCurrency(amount: number, currency: string): string {
@@ -100,7 +147,7 @@ function milestoneStatusVariant(status?: string): 'default' | 'success' | 'warni
 }
 
 // ─── Derived stats (matches backend getStats) ────────────────────────────────
-function deriveStats(project: MockProject) {
+function deriveStats(project: ProjectDetail) {
   const totalBudget = project.totalBudget;
   const invoices = project.invoices ?? [];
   const totalInvoiced = project.totalInvoiced ?? invoices.reduce((sum, inv) => sum + inv.total, 0);
@@ -132,12 +179,26 @@ export default function ProjectDetailPage() {
   const { showToast } = useToast();
   const id = params?.id as string;
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [project, setProject] = useState<ProjectDetail | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [pageError, setPageError] = useState(false);
 
-  const project = useMemo(() => MOCK_PROJECTS.find((p) => p.id === id) ?? null, [id]);
+  useEffect(() => {
+    if (!id) return;
+    setPageLoading(true);
+    api.get(`/projects/${id}`)
+      .then((res) => {
+        const data = res.data.data.project ?? res.data.data;
+        setProject(data);
+      })
+      .catch(() => setPageError(true))
+      .finally(() => setPageLoading(false));
+  }, [id]);
+
   const stats = useMemo(() => (project ? deriveStats(project) : null), [project]);
   const invoices = project?.invoices ?? [];
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(async () => {
     if (!project) return;
     if ((project._count?.invoices ?? 0) > 0) {
       showToast(
@@ -147,10 +208,17 @@ export default function ProjectDetailPage() {
       setShowDeleteModal(false);
       return;
     }
-    showToast(`${project.name} deleted`, 'success');
-    router.push('/projects');
+    try {
+      await api.delete(`/projects/${id}`);
+      showToast(`${project.name} deleted`, 'success');
+      router.push('/projects');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message || 'Failed to delete project';
+      showToast(msg, 'error');
+    }
     setShowDeleteModal(false);
-  };
+  }, [project, id, router, showToast]);
 
   if (!id) {
     return (
@@ -163,6 +231,24 @@ export default function ProjectDetailPage() {
             </Link>
           </CardBody>
         </Card>
+      </div>
+    );
+  }
+
+  if (pageLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <svg className="h-8 w-8 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      </div>
+    );
+  }
+  if (pageError) {
+    return (
+      <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
+        <p className="text-gray-500">Failed to load project.</p>
       </div>
     );
   }

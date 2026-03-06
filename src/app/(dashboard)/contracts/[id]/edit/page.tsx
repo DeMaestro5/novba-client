@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/UI/Button';
@@ -9,29 +9,74 @@ import Card, { CardHeader, CardBody } from '@/components/UI/Card';
 import Select from '@/components/UI/Select';
 import DatePicker from '@/components/UI/DatePicker';
 import { useToast } from '@/components/UI/Toast';
-import { TEMPLATES } from '@/components/ContractTemplateCard';
-import { mockContracts } from '@/lib/mock-contracts';
-import { mockClients } from '@/lib/mock-clients';
-
-const CLIENT_OPTIONS = mockClients.map(c => ({ value: c.id, label: c.companyName }));
+import { TEMPLATES, type TemplateType } from '@/components/ContractTemplateCard';
+import api from '@/lib/api';
 
 export default function EditContractPage() {
   const params = useParams();
   const router = useRouter();
   const { showToast } = useToast();
 
-  const contract = mockContracts.find(c => c.id === params.id);
-
+  const [contract, setContract] = useState<{
+    id: string;
+    contractNumber: string;
+    title: string;
+    status: string;
+    templateType: string;
+    content: string;
+    startDate: string | null;
+    endDate: string | null;
+    client: { id: string; companyName: string };
+  } | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [pageError, setPageError] = useState(false);
+  const [clients, setClients] = useState<Array<{ id: string; companyName: string }>>([]);
   const [form, setForm] = useState({
-    clientId: contract?.clientId || '',
-    title: contract?.title || '',
-    startDate: contract?.startDate ? new Date(contract.startDate) : null as Date | null,
-    endDate: contract?.endDate ? new Date(contract.endDate) : null as Date | null,
+    clientId: '',
+    title: '',
+    startDate: null as Date | null,
+    endDate: null as Date | null,
   });
-  const [content, setContent] = useState(contract?.content || '');
+  const [content, setContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const update = (patch: Partial<typeof form>) => setForm(prev => ({ ...prev, ...patch }));
 
-  if (!contract) {
+  useEffect(() => {
+    if (!params.id) return;
+    Promise.all([
+      api.get(`/contracts/${params.id}`),
+      api.get('/clients', { params: { limit: 100 } }),
+    ])
+      .then(([contractRes, clientsRes]) => {
+        const c = contractRes.data.data.contract ?? contractRes.data.data;
+        setContract(c);
+        setClients(clientsRes.data.data.clients ?? []);
+        setForm({
+          clientId: c.client?.id || '',
+          title: c.title || '',
+          startDate: c.startDate ? new Date(c.startDate) : null,
+          endDate: c.endDate ? new Date(c.endDate) : null,
+        });
+        setContent(c.content || '');
+      })
+      .catch(() => setPageError(true))
+      .finally(() => setPageLoading(false));
+  }, [params.id]);
+
+  const CLIENT_OPTIONS = clients.map(c => ({ value: c.id, label: c.companyName }));
+
+  if (pageLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <svg className="h-8 w-8 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (pageError || !contract) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-gray-500">Contract not found</p>
@@ -39,23 +84,26 @@ export default function EditContractPage() {
     );
   }
 
-  // Temporary debug — verify clientId matches CLIENT_OPTIONS values
-  console.log('contract clientId:', contract.clientId);
-  console.log('CLIENT_OPTIONS:', CLIENT_OPTIONS);
+  const templateMeta = TEMPLATES.find(t => t.key === (contract.templateType as TemplateType));
 
-  const templateMeta = TEMPLATES.find(t => t.key === contract.templateType);
-
-  const handleSave = () => {
+  const handleSave = async () => {
+    setIsSubmitting(true);
     const payload = {
       title: form.title,
       content,
       startDate: form.startDate ? form.startDate.toISOString() : undefined,
       endDate: form.endDate ? form.endDate.toISOString() : undefined,
     };
-    console.log(`=== PUT /api/v1/contracts/${params.id} ===`);
-    console.log(JSON.stringify(payload, null, 2));
-    showToast('Contract updated', 'success');
-    router.push(`/contracts/${contract.id}`);
+    try {
+      await api.put(`/contracts/${params.id}`, payload);
+      showToast('Contract updated', 'success');
+      router.push(`/contracts/${params.id}`);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update contract';
+      showToast(msg, 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -132,13 +180,20 @@ export default function EditContractPage() {
             <Button variant="outline" onClick={() => router.push(`/contracts/${params.id}`)}>
               Cancel
             </Button>
-            <Button
-              variant="primary"
-              className="bg-orange-600 hover:bg-orange-700"
+            <button
+              type="button"
               onClick={handleSave}
+              disabled={isSubmitting}
+              className="inline-flex items-center rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Save Changes
-            </Button>
+              {isSubmitting ? (
+                <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : null}
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
+            </button>
           </div>
         </div>
 

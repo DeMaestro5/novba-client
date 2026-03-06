@@ -481,7 +481,8 @@ export default function ExpensesPage() {
     year: 'numeric',
   });
 
-  const isEmpty = expenses.length === 0;
+  const showEmptyPageState = expenses.length === 0 && !search && activeCategory === 'ALL';
+  const showInlineNoResults = expenses.length === 0 && (!!search || activeCategory !== 'ALL');
 
   return (
     <>
@@ -540,71 +541,71 @@ export default function ExpensesPage() {
           </div>
         </div>
 
-        {isEmpty ? (
+        {showEmptyPageState ? (
           <div className='w-full min-h-[520px]'>
             <EmptyPageState
               icon={
-                <svg className='h-6 w-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' />
+                <svg className='h-6 w-6' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                  <path strokeLinecap='round' strokeLinejoin='round' d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' />
                 </svg>
               }
               badge='Expenses'
-              headline={'Stop leaving tax\ndeductions on the table'}
-              subtext='Log expenses as you go. Know your true profit margin. Export everything your accountant needs at tax time.'
+              headline={'Track every expense.\nMaximize your deductions.'}
+              subtext='Log business expenses as you go. Come tax time, everything is organized, categorized, and ready to export.'
               benefits={[
                 {
                   icon: (
-                    <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z' />
+                    <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                      <path strokeLinecap='round' strokeLinejoin='round' d='M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z' />
                     </svg>
                   ),
-                  label: 'Categorize by type — software, travel, equipment',
-                  description: 'Every expense tagged and searchable, always ready for tax season.',
+                  label: 'Auto-categorized by type — software, travel, equipment',
+                  description: 'Expenses are organized into tax-ready categories automatically.',
                 },
                 {
                   icon: (
-                    <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z' />
+                    <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                      <path strokeLinecap='round' strokeLinejoin='round' d='M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4' />
                     </svg>
                   ),
-                  label: 'True profit after expenses on every project',
-                  description: 'See what you actually made, not just what you invoiced.',
+                  label: 'Export to CSV for your accountant',
+                  description: 'One click gets you a clean spreadsheet covering any date range.',
                 },
                 {
                   icon: (
-                    <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4' />
+                    <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                      <path strokeLinecap='round' strokeLinejoin='round' d='M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z' />
                     </svg>
                   ),
-                  label: 'One-click CSV export for your accountant',
-                  description: 'All expenses formatted and ready — no manual spreadsheets.',
+                  label: 'See your true profit, not just your revenue',
+                  description: 'Novba shows net income after expenses so you know what you actually keep.',
                 },
               ]}
               ctaLabel='Log First Expense'
-              ctaHref='/expenses/new'
-              stat={{ value: '$3,200', label: 'missed per year', context: 'the average freelancer misses in tax deductions by not tracking expenses' }}
+              ctaOnClick={() => setPanelOpen(true)}
+              stat={{ value: '$2,400', label: 'average annual savings', context: 'for freelancers who actively track and claim business expenses at tax time' }}
               preview={
                 <div className='mx-auto w-full max-w-sm space-y-2'>
-                  <p className='mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500'>Sample expense breakdown</p>
-                  {[
-                    { category: 'Software & Tools', amount: '$340', pct: 85, color: 'bg-orange-500' },
-                    { category: 'Equipment', amount: '$180', pct: 45, color: 'bg-amber-500' },
-                    { category: 'Travel', amount: '$95', pct: 24, color: 'bg-yellow-500' },
-                    { category: 'Marketing', amount: '$60', pct: 15, color: 'bg-orange-300' },
-                  ].map((e) => (
-                    <div key={e.category}>
-                      <div className='mb-1 flex items-center justify-between'>
-                        <span className='text-xs font-medium text-gray-700 dark:text-gray-300'>{e.category}</span>
-                        <span className='text-xs font-semibold text-gray-900 dark:text-white'>{e.amount}</span>
+                  <div className='rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 overflow-hidden'>
+                    {[
+                      { vendor: 'Figma Pro', category: 'Software', date: 'Mar 1', amount: '$15.00' },
+                      { vendor: 'Client Lunch', category: 'Meals', date: 'Feb 28', amount: '$64.00' },
+                      { vendor: 'MacBook Pro', category: 'Equipment', date: 'Feb 15', amount: '$1,299.00' },
+                    ].map((e) => (
+                      <div key={e.vendor} className='flex items-center justify-between border-b border-gray-100 px-3 py-2 last:border-0 dark:border-gray-700'>
+                        <div>
+                          <p className='text-sm font-medium text-gray-900 dark:text-white'>{e.vendor}</p>
+                          <p className='text-xs text-gray-500 dark:text-gray-400'>{e.category} · {e.date}</p>
+                        </div>
+                        <div className='flex items-center gap-2'>
+                          <span className='text-sm font-semibold text-gray-900 dark:text-white'>{e.amount}</span>
+                          <span className='rounded px-1.5 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400'>Deductible</span>
+                        </div>
                       </div>
-                      <div className='h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700'>
-                        <div className={`h-1.5 rounded-full ${e.color}`} style={{ width: `${e.pct}%` }} />
-                      </div>
+                    ))}
+                    <div className='border-t border-gray-100 px-3 py-2 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400'>
+                      Total logged: $1,378.00 · 3 deductible
                     </div>
-                  ))}
-                  <div className='mt-4 flex items-center justify-between rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 dark:border-orange-900/40 dark:bg-orange-950/30'>
-                    <span className='text-xs font-medium text-gray-600 dark:text-gray-400'>Est. tax deductions</span>
-                    <span className='text-sm font-bold text-orange-600'>$675.00</span>
                   </div>
                 </div>
               }
@@ -871,12 +872,13 @@ export default function ExpensesPage() {
 
             {/* Empty state — filtered empty only */}
             {filtered.length === 0 ? (
-              <div className='flex flex-col items-center justify-center py-16 text-center'>
-                <p className='text-sm text-gray-400 dark:text-gray-500'>No expenses match your current filter.</p>
+              <div className='flex flex-col items-center justify-center py-16 px-4'>
+                <p className='text-sm font-medium text-gray-900 dark:text-white'>No expenses match your filters</p>
+                <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>Try adjusting your search or category filter.</p>
                 <button
                   type='button'
-                  onClick={() => setSearch('')}
-                  className='mt-2 text-sm text-orange-600 hover:underline dark:text-orange-500'
+                  onClick={() => { setSearch(''); setActiveCategory('ALL'); }}
+                  className='mt-4 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                 >
                   Clear filters
                 </button>

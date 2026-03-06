@@ -17,6 +17,7 @@ import Table, {
 import DropdownMenu, { DropdownMenuItem } from '@/components/UI/DropdownMenu';
 import TableActionsTrigger from '@/components/UI/TableActionsTrigger';
 import EmptyState from '@/components/UI/EmptyState';
+import EmptyPageState from '@/components/EmptyPageState';
 import Input from '@/components/UI/Input';
 import Pagination from '@/components/UI/Pagination';
 import Modal, {
@@ -142,6 +143,8 @@ export default function ClientsPage() {
 
   const totalPages = pagination?.totalPages ?? 1;
   const effectivePage = Math.min(currentPage, Math.max(1, totalPages));
+  const showEmptyPageState = !isLoading && clients.length === 0 && !searchQuery;
+  const showInlineNoResults = !isLoading && clients.length === 0 && !!searchQuery;
 
   return (
     <div className='mx-auto max-w-[1400px] p-6 lg:p-8'>
@@ -165,6 +168,71 @@ export default function ClientsPage() {
         </div>
       </div>
 
+      {showEmptyPageState ? (
+        <div className='w-full min-h-[520px]'>
+          <EmptyPageState
+            icon={
+              <svg className='h-6 w-6' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                <path strokeLinecap='round' strokeLinejoin='round' d='M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' />
+              </svg>
+            }
+            badge='Clients'
+            headline={'Build your client\nroster in minutes'}
+            subtext='Add clients once. Use them everywhere — proposals, contracts, invoices, and projects all link back to a client.'
+            benefits={[
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z' />
+                  </svg>
+                ),
+                label: 'One client profile — used across your whole workflow',
+                description: 'Add a client and instantly use them in proposals, invoices, and contracts.',
+              },
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' />
+                  </svg>
+                ),
+                label: 'All communication history in one place',
+                description: 'See every invoice, proposal, and contract sent to each client.',
+              },
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' />
+                  </svg>
+                ),
+                label: 'See your most valuable clients at a glance',
+                description: 'Know your top-earning relationships and where to focus.',
+              },
+            ]}
+            ctaLabel='Add First Client'
+            ctaHref='/clients/new'
+            stat={{ value: '3×', label: 'higher LTV', context: 'for freelancers who maintain organized client records vs those who don\'t' }}
+            preview={
+              <div className='mx-auto w-full max-w-sm space-y-2'>
+                <div className='rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800'>
+                  <p className='font-medium text-gray-900 dark:text-white'>Acme Corp</p>
+                  <p className='text-xs text-gray-500 dark:text-gray-400'>Sarah Johnson</p>
+                  <p className='text-xs text-gray-500 dark:text-gray-400'>sarah@acmecorp.com</p>
+                  <div className='mt-3 flex flex-wrap gap-1.5'>
+                    <span className='rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300'>4 Invoices</span>
+                    <span className='rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300'>$12,400 billed</span>
+                    <span className='rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300'>2 Projects</span>
+                  </div>
+                </div>
+                <div className='rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-sm opacity-75 dark:border-gray-700 dark:bg-gray-800'>
+                  <p className='text-sm font-medium text-gray-900 dark:text-white'>TechStart Inc</p>
+                  <p className='text-xs text-gray-500 dark:text-gray-400'>$8,500 billed</p>
+                </div>
+              </div>
+            }
+          />
+        </div>
+      ) : (
+        <>
       <div className='mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4'>
         <Card>
           <CardBody padding='lg'>
@@ -368,23 +436,18 @@ export default function ClientsPage() {
                 </TableBody>
               </Table>
             </>
-          ) : clients.length === 0 ? (
-            <EmptyState
-              title='No clients found'
-              description={
-                searchQuery
-                  ? 'Try adjusting your search.'
-                  : 'Add your first client to get started.'
-              }
-              primaryAction={
-                searchQuery
-                  ? undefined
-                  : {
-                      label: 'Add Client',
-                      onClick: () => router.push('/clients/new'),
-                    }
-              }
-            />
+          ) : showInlineNoResults ? (
+            <div className='flex flex-col items-center justify-center py-16 px-4'>
+              <p className='text-sm font-medium text-gray-900 dark:text-white'>No clients match your search</p>
+              <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>Try adjusting your search.</p>
+              <button
+                type='button'
+                onClick={() => setSearchQuery('')}
+                className='mt-4 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+              >
+                Clear search
+              </button>
+            </div>
           ) : (
             <>
               <Table>
@@ -486,6 +549,8 @@ export default function ClientsPage() {
           )}
         </CardBody>
       </Card>
+        </>
+      )}
 
       <Modal
         isOpen={deleteModal.open}
