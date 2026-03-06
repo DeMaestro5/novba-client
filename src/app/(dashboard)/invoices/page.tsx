@@ -18,6 +18,7 @@ import Table, {
 import DropdownMenu, { DropdownMenuItem } from '@/components/UI/DropdownMenu';
 import TableActionsTrigger from '@/components/UI/TableActionsTrigger';
 import EmptyState from '@/components/UI/EmptyState';
+import EmptyPageState from '@/components/EmptyPageState';
 import Input from '@/components/UI/Input';
 import Modal, {
   ModalHeader,
@@ -180,6 +181,8 @@ export default function InvoicesPage() {
 
   const totalPages = pagination?.totalPages ?? 1;
   const effectivePage = Math.min(currentPage, Math.max(1, totalPages));
+  const showEmptyPageState = !isLoading && invoices.length === 0 && !searchQuery && !statusFilter;
+  const showInlineNoResults = !isLoading && invoices.length === 0 && (!!searchQuery || !!statusFilter);
 
   return (
     <div className='mx-auto max-w-[1400px] p-6 lg:p-8'>
@@ -203,6 +206,71 @@ export default function InvoicesPage() {
         </div>
       </div>
 
+      {showEmptyPageState ? (
+        <div className='w-full min-h-[520px]'>
+          <EmptyPageState
+            icon={
+              <svg className='h-6 w-6' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                <path strokeLinecap='round' strokeLinejoin='round' d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
+              </svg>
+            }
+            badge='Invoices'
+            headline={'Get paid faster with\nprofessional invoices'}
+            subtext='Create and send invoices in seconds. Automatic payment reminders mean you spend less time chasing and more time working.'
+            benefits={[
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' />
+                  </svg>
+                ),
+                label: 'Automatic payment reminders — set and forget',
+                description: 'Novba follows up on overdue invoices so you never have to.',
+              },
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M13 10V3L4 14h7v7l9-11h-7z' />
+                  </svg>
+                ),
+                label: 'From proposal to invoice in one click',
+                description: 'Approved proposals convert with all line items intact.',
+              },
+              {
+                icon: (
+                  <svg className='h-4 w-4' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
+                  </svg>
+                ),
+                label: 'See what\'s paid, overdue, and outstanding',
+                description: 'Your full revenue picture at a glance, always up to date.',
+              },
+            ]}
+            ctaLabel='Create First Invoice'
+            ctaHref='/invoices/new'
+            stat={{ value: '72%', label: 'get paid on time', context: 'when freelancers send invoices with automatic payment reminders enabled' }}
+            preview={
+              <div className='mx-auto w-full max-w-sm space-y-2'>
+                <div className='rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800'>
+                  <p className='text-xs font-semibold text-gray-500 dark:text-gray-400'>INV-0001</p>
+                  <p className='mt-0.5 text-lg font-bold text-gray-900 dark:text-white'>$3,200.00</p>
+                  <p className='text-xs text-gray-500 dark:text-gray-400'>Design Studio</p>
+                  <span className='mt-2 inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-400'>Sent</span>
+                  <div className='mt-3 flex items-center gap-2'>
+                    <span className='text-xs text-gray-500 dark:text-gray-400'>Due in 14 days</span>
+                    <span className='rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700 dark:bg-orange-900/40 dark:text-orange-400'>Countdown</span>
+                  </div>
+                  <div className='mt-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
+                    <span className='rounded bg-orange-100 px-1.5 py-0.5 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400'>Draft</span>
+                    <span className='rounded bg-orange-100 px-1.5 py-0.5 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400'>Sent</span>
+                    <span className='rounded bg-gray-100 px-1.5 py-0.5 text-gray-500 dark:bg-gray-700 dark:text-gray-400'>Paid</span>
+                  </div>
+                </div>
+              </div>
+            }
+          />
+        </div>
+      ) : (
       <Card>
         <CardHeader
           title='All invoices'
@@ -276,23 +344,18 @@ export default function InvoicesPage() {
                 </TableBody>
               </Table>
             </>
-          ) : invoices.length === 0 ? (
-            <EmptyState
-              title='No invoices found'
-              description={
-                searchQuery || statusFilter
-                  ? 'Try adjusting your search or filters.'
-                  : 'Create your first invoice to get started.'
-              }
-              primaryAction={
-                searchQuery || statusFilter
-                  ? undefined
-                  : {
-                      label: 'Create Invoice',
-                      onClick: () => router.push('/invoices/new'),
-                    }
-              }
-            />
+          ) : showInlineNoResults ? (
+            <div className='flex flex-col items-center justify-center py-16 px-4'>
+              <p className='text-sm font-medium text-gray-900 dark:text-white'>No invoices match your filters</p>
+              <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>Try adjusting your search or status filter.</p>
+              <button
+                type='button'
+                onClick={() => { setSearchQuery(''); setStatusFilter(''); }}
+                className='mt-4 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+              >
+                Clear filters
+              </button>
+            </div>
           ) : (
             <>
               <Table>
@@ -399,6 +462,7 @@ export default function InvoicesPage() {
           )}
         </CardBody>
       </Card>
+      )}
 
       <Modal
         isOpen={deleteModal.open}

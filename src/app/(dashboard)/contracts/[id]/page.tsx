@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/UI/Button';
@@ -10,7 +10,42 @@ import Modal, { ModalHeader, ModalBody, ModalFooter } from '@/components/UI/Moda
 import DropdownMenu, { DropdownMenuItem } from '@/components/UI/DropdownMenu';
 import { useToast } from '@/components/UI/Toast';
 import ContractDocument from '@/components/ContractDocument';
-import { mockContracts, formatCurrency, type ContractStatus, type TemplateType } from '@/lib/mock-contracts';
+import api from '@/lib/api';
+
+type ContractStatus = 'DRAFT' | 'SENT' | 'SIGNED' | 'EXPIRED' | 'TERMINATED';
+type TemplateType = 'service_agreement' | 'nda' | 'sow' | 'freelance' | 'consulting' | 'custom';
+
+interface ContractDetail {
+  id: string;
+  contractNumber: string;
+  title: string;
+  status: ContractStatus;
+  templateType: TemplateType;
+  content: string;
+  startDate: string | null;
+  endDate: string | null;
+  signedAt: string | null;
+  sentAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  terms: { amount?: number; currency?: string } | null;
+  proposalId: string | null;
+  client: {
+    id: string;
+    companyName: string;
+    contactName: string | null;
+    email: string | null;
+  };
+}
+
+function formatCurrency(amount: number, currency = 'USD'): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
 
 const STATUS_CONFIG: Record<ContractStatus, { label: string; variant: string }> = {
   DRAFT:      { label: 'Draft',      variant: 'default' },
@@ -131,11 +166,38 @@ export default function ContractDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { showToast } = useToast();
+  const [contract, setContract] = useState<ContractDetail | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [pageError, setPageError] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [isSigning, setIsSigning] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const contract = mockContracts.find(c => c.id === params.id);
+  useEffect(() => {
+    if (!params.id) return;
+    setPageLoading(true);
+    api.get(`/contracts/${params.id}`)
+      .then(res => {
+        const data = res.data.data.contract ?? res.data.data;
+        setContract(data);
+      })
+      .catch(() => setPageError(true))
+      .finally(() => setPageLoading(false));
+  }, [params.id]);
 
-  if (!contract) {
+  if (pageLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <svg className="h-8 w-8 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (pageError || !contract) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
         <p className="text-gray-500">Contract not found</p>
@@ -148,20 +210,49 @@ export default function ContractDetailPage() {
 
   const sc = STATUS_CONFIG[contract.status];
 
-  const handleSend = () => {
-    console.log(`=== POST /api/v1/contracts/${params.id}/send ===`);
-    showToast('Contract sent to client', 'success');
+  const handleSend = async () => {
+    setIsSending(true);
+    try {
+      await api.post(`/contracts/${params.id}/send`);
+      const res = await api.get(`/contracts/${params.id}`);
+      setContract(res.data.data.contract ?? res.data.data);
+      showToast('Contract sent to client', 'success');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to send contract';
+      showToast(msg, 'error');
+    } finally {
+      setIsSending(false);
+    }
   };
 
-  const handleMarkSigned = () => {
-    console.log(`=== POST /api/v1/contracts/${params.id}/sign ===`);
-    showToast('Contract marked as signed', 'success');
+  const handleMarkSigned = async () => {
+    setIsSigning(true);
+    try {
+      await api.post(`/contracts/${params.id}/sign`);
+      const res = await api.get(`/contracts/${params.id}`);
+      setContract(res.data.data.contract ?? res.data.data);
+      showToast('Contract marked as signed', 'success');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to mark as signed';
+      showToast(msg, 'error');
+    } finally {
+      setIsSigning(false);
+    }
   };
 
-  const handleDelete = () => {
-    console.log(`=== DELETE /api/v1/contracts/${params.id} ===`);
-    showToast(`${contract.contractNumber} deleted`, 'success');
-    router.push('/contracts');
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await api.delete(`/contracts/${params.id}`);
+      showToast(`${contract.contractNumber} deleted`, 'success');
+      setDeleteModal(false);
+      router.push('/contracts');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to delete contract';
+      showToast(msg, 'error');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleDuplicate = () => {
@@ -195,7 +286,7 @@ export default function ContractDetailPage() {
               <div className="mt-1 flex items-center gap-3 flex-wrap">
                 <span className="text-sm text-gray-500 dark:text-gray-400">{contract.contractNumber}</span>
                 <span className="text-gray-300 dark:text-gray-600">·</span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">{contract.clientName}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{contract.client.companyName}</span>
                 {contract.terms?.amount && (
                   <>
                     <span className="text-gray-300 dark:text-gray-600">·</span>
@@ -211,24 +302,40 @@ export default function ContractDetailPage() {
                 <button
                   type="button"
                   onClick={handleSend}
-                  className="inline-flex items-center rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors"
+                  disabled={isSending}
+                  className="inline-flex items-center rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                  </svg>
-                  Send to Client
+                  {isSending ? (
+                    <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : (
+                    <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                    </svg>
+                  )}
+                  {isSending ? 'Sending...' : 'Send to Client'}
                 </button>
               )}
               {contract.status === 'SENT' && (
                 <button
                   type="button"
                   onClick={handleMarkSigned}
-                  className="inline-flex items-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+                  disabled={isSigning}
+                  className="inline-flex items-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                  Mark as Signed
+                  {isSigning ? (
+                    <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : (
+                    <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  )}
+                  {isSigning ? 'Signing...' : 'Mark as Signed'}
                 </button>
               )}
               <Button variant="outline" onClick={() => router.push(`/contracts/${contract.id}/edit`)}>
@@ -288,18 +395,26 @@ export default function ContractDetailPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <p className="text-sm font-medium text-blue-800">
-              Awaiting signature from {contract.clientName}. Sent {formatDate(contract.sentAt)}.
+              Awaiting signature from {contract.client.companyName}. Sent {formatDate(contract.sentAt)}.
             </p>
           </div>
           <button
             type="button"
             onClick={handleMarkSigned}
-            className="inline-flex items-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors shrink-0"
+            disabled={isSigning}
+            className="inline-flex items-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-            Mark as Signed →
+            {isSigning ? (
+              <svg className="mr-1.5 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : (
+              <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            )}
+            {isSigning ? 'Signing...' : 'Mark as Signed →'}
           </button>
         </div>
       )}
@@ -313,7 +428,7 @@ export default function ContractDetailPage() {
           <p className="text-sm text-orange-700">
             Based on{' '}
             <Link href={`/proposals/${contract.proposalId}`} className="font-semibold underline hover:text-orange-900">
-              {contract.proposalNumber}
+              View proposal
             </Link>
           </p>
         </div>
@@ -325,8 +440,8 @@ export default function ContractDetailPage() {
           <p className="mb-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Contract Status</p>
           <StatusTimeline
             status={contract.status}
-            sentAt={contract.sentAt}
-            signedAt={contract.signedAt}
+            sentAt={contract.sentAt ?? undefined}
+            signedAt={contract.signedAt ?? undefined}
           />
         </CardBody>
       </Card>
@@ -351,20 +466,20 @@ export default function ContractDetailPage() {
               <div className="space-y-3">
                 <div>
                   <Link
-                    href={`/clients/${contract.clientId}`}
+                    href={`/clients/${contract.client.id}`}
                     className="font-semibold text-orange-600 hover:underline"
                   >
-                    {contract.clientName}
+                    {contract.client.companyName}
                   </Link>
-                  {contract.clientContact && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{contract.clientContact}</p>
+                  {contract.client.contactName && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{contract.client.contactName}</p>
                   )}
                 </div>
-                {contract.clientEmail && (
+                {contract.client.email && (
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Email</p>
-                    <a href={`mailto:${contract.clientEmail}`} className="text-sm text-gray-700 hover:text-orange-600 dark:text-gray-300 transition-colors">
-                      {contract.clientEmail}
+                    <a href={`mailto:${contract.client.email}`} className="text-sm text-gray-700 hover:text-orange-600 dark:text-gray-300 transition-colors">
+                      {contract.client.email}
                     </a>
                   </div>
                 )}
@@ -432,24 +547,26 @@ export default function ContractDetailPage() {
                   <button
                     type="button"
                     onClick={handleSend}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors text-left"
+                    disabled={isSending}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg className="h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                     </svg>
-                    Send to Client
+                    {isSending ? 'Sending...' : 'Send to Client'}
                   </button>
                 )}
                 {contract.status === 'SENT' && (
                   <button
                     type="button"
                     onClick={handleMarkSigned}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors text-left"
+                    disabled={isSigning}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
-                    Mark as Signed
+                    {isSigning ? 'Signing...' : 'Mark as Signed'}
                   </button>
                 )}
                 <button
@@ -523,9 +640,16 @@ export default function ContractDetailPage() {
           <button
             type="button"
             onClick={handleDelete}
-            className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
+            disabled={isDeleting}
+            className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
           >
-            Delete Contract
+            {isDeleting && (
+              <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {isDeleting ? 'Deleting...' : 'Delete Contract'}
           </button>
         </ModalFooter>
       </Modal>

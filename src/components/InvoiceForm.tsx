@@ -482,18 +482,24 @@ export default function InvoiceForm({
           </Card>
 
           <div className='mt-6 flex flex-col gap-3'>
-            <Button
-              variant='primary'
-              className='bg-orange-600 hover:bg-orange-700'
+            <button
+              type='button'
               onClick={handleSaveAndSend}
               disabled={isSaving}
+              className='inline-flex items-center rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
             >
-              Save & Send
+              {isSaving ? (
+                <svg className='mr-2 h-4 w-4 animate-spin' fill='none' viewBox='0 0 24 24'>
+                  <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4' />
+                  <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z' />
+                </svg>
+              ) : null}
+              {isSaving ? 'Sending...' : 'Save & Send'}
+            </button>
+            <Button variant='outline' className={isSaving ? 'opacity-50 cursor-not-allowed' : 'dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'} onClick={handleSaveDraft} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save as Draft'}
             </Button>
-            <Button variant='outline' className="dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700" onClick={handleSaveDraft} disabled={isSaving}>
-              Save as Draft
-            </Button>
-            <Button variant='secondary' className="dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700" onClick={onCancel} disabled={isSaving}>
+            <Button variant='secondary' className="dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700" onClick={onCancel}>
               Cancel
             </Button>
           </div>

@@ -74,6 +74,7 @@ export default function NewClientPage() {
       <ClientForm
         onSave={handleSave}
         onCancel={() => router.push('/clients')}
+        isSubmitting={isSaving}
       />
     </div>
   );

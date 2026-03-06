@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/UI/Button';
@@ -10,9 +10,7 @@ import Select from '@/components/UI/Select';
 import DatePicker from '@/components/UI/DatePicker';
 import { useToast } from '@/components/UI/Toast';
 import ContractTemplateCard, { TEMPLATES, type TemplateType } from '@/components/ContractTemplateCard';
-import { mockClients } from '@/lib/mock-clients';
-
-const CLIENT_OPTIONS = mockClients.map(c => ({ value: c.id, label: c.companyName }));
+import api from '@/lib/api';
 
 // Template content pre-fills
 const TEMPLATE_CONTENT: Record<TemplateType, string> = {
@@ -261,6 +259,18 @@ export default function NewContractPage() {
   });
   const [content, setContent] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [clients, setClients] = useState<Array<{ id: string; companyName: string }>>([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    api.get('/clients', { params: { limit: 100 } })
+      .then(res => setClients(res.data.data.clients ?? []))
+      .catch(() => setClients([]))
+      .finally(() => setClientsLoading(false));
+  }, []);
+
+  const CLIENT_OPTIONS = clients.map(c => ({ value: c.id, label: c.companyName }));
 
   const update = (patch: Partial<typeof form>) => setForm(prev => ({ ...prev, ...patch }));
 
@@ -288,8 +298,9 @@ export default function NewContractPage() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = (sendImmediately = false) => {
+  const handleSave = async (sendImmediately = false) => {
     if (!validate()) return;
+    setIsSubmitting(true);
     const payload = {
       clientId: form.clientId,
       title: form.title,
@@ -298,10 +309,22 @@ export default function NewContractPage() {
       startDate: form.startDate ? form.startDate.toISOString() : undefined,
       endDate: form.endDate ? form.endDate.toISOString() : undefined,
     };
-    console.log(`=== POST /api/v1/contracts ${sendImmediately ? '(SEND)' : '(DRAFT)'} ===`);
-    console.log(JSON.stringify(payload, null, 2));
-    showToast(sendImmediately ? 'Contract sent to client' : 'Contract saved as draft', 'success');
-    router.push('/contracts');
+    try {
+      const res = await api.post('/contracts', payload);
+      const id = (res?.data as { data?: { id?: string; contract?: { id?: string } } })?.data?.id
+        ?? (res?.data as { data?: { contract?: { id?: string } } })?.data?.contract?.id;
+      if (sendImmediately && id) {
+        await api.post(`/contracts/${id}/send`);
+      }
+      showToast(sendImmediately ? 'Contract sent to client' : 'Contract saved as draft', 'success');
+      router.push('/contracts');
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      const message = ax?.response?.data?.message ?? (sendImmediately ? 'Failed to send contract' : 'Failed to save contract');
+      showToast(message, 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // ─── STEP 1: Template selection ────────────────────────────────────────────
@@ -358,7 +381,7 @@ export default function NewContractPage() {
           <button
             type="button"
             onClick={handleContinue}
-            disabled={!selectedTemplate}
+            disabled={!selectedTemplate || clientsLoading}
             className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors"
           >
             Continue
@@ -430,7 +453,10 @@ export default function NewContractPage() {
               <div className="space-y-4">
                 <Select
                   label="Client *"
-                  options={[{ value: '', label: 'Select a client...' }, ...CLIENT_OPTIONS]}
+                  options={[
+                    { value: '', label: clientsLoading ? 'Loading clients...' : 'Select a client...' },
+                    ...CLIENT_OPTIONS,
+                  ]}
                   value={form.clientId}
                   onChange={v => update({ clientId: v })}
                   fullWidth
@@ -473,18 +499,31 @@ export default function NewContractPage() {
               Cancel
             </Button>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => handleSave(false)}>
-                Save as Draft
+              <Button
+                variant="outline"
+                onClick={() => handleSave(false)}
+                disabled={isSubmitting}
+                className={isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
+              >
+                {isSubmitting ? 'Saving...' : 'Save as Draft'}
               </Button>
               <button
                 type="button"
                 onClick={() => handleSave(true)}
-                className="inline-flex items-center rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors"
+                disabled={isSubmitting}
+                className="inline-flex items-center rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                </svg>
-                Send to Client
+                {isSubmitting ? (
+                  <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                  </svg>
+                )}
+                {isSubmitting ? 'Sending...' : 'Send to Client'}
               </button>
             </div>
           </div>

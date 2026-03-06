@@ -46,32 +46,37 @@ export default function NewProjectPage() {
     }
     setIsSaving(true);
     try {
-      // TODO: replace with api.post('/projects', payload) when backend is ready
+      // Build payload to match backend schema exactly: no status (create), no order in paymentPlan, amount must be positive
+      const paymentPlan = data.paymentPlan
+        .filter((row) => row.milestone.trim() && Number(row.amount) > 0)
+        .map((row) => ({
+          milestone: row.milestone.trim(),
+          amount: Number(row.amount),
+          dueDate: row.dueDate.trim() ? row.dueDate.trim() : undefined,
+          status: row.status,
+        }));
+
       const payload = {
-        name: data.name,
+        name: data.name.trim(),
         description: data.description.trim() || undefined,
-        status: data.status,
         startDate: data.startDate,
         endDate: data.endDate.trim() || undefined,
-        totalBudget: data.totalBudget,
+        totalBudget: Number(data.totalBudget),
         currency: data.currency,
         clientId: data.clientId.trim(),
-        paymentPlan: data.paymentPlan
-          .filter((row) => row.milestone.trim() || row.amount > 0)
-          .map((row, index) => ({
-            milestone: row.milestone.trim(),
-            amount: Number(row.amount) || 0,
-            dueDate: row.dueDate.trim() || undefined,
-            status: row.status,
-            order: index,
-          })),
+        ...(paymentPlan.length > 0 && { paymentPlan }),
       };
-      await new Promise((r) => setTimeout(r, 500));
-      // TODO: use createRes.data.data.project.id to redirect to /projects/${id} when API exists
+
+      const res = await api.post('/projects', payload);
+      const newId = res.data.data.project?.id ?? res.data.data?.id;
       showToast(`"${data.name}" created successfully`, 'success');
-      router.push('/projects');
-    } catch {
-      showToast('Failed to create project', 'error');
+      router.push(newId ? `/projects/${newId}` : '/projects');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number; data?: { message?: string } } };
+      const message =
+        axiosErr.response?.data?.message ||
+        (axiosErr.response?.status === 400 ? 'Invalid data. Check required fields and payment plan amounts (must be positive).' : 'Failed to create project.');
+      showToast(message, 'error');
     } finally {
       setIsSaving(false);
     }

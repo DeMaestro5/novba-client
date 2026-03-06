@@ -56,9 +56,10 @@ interface ClientFormProps {
   onSave: (data: ClientFormData) => void;
   onCancel: () => void;
   isEdit?: boolean;
+  isSubmitting?: boolean;
 }
 
-export default function ClientForm({ initialData, onSave, onCancel, isEdit = false }: ClientFormProps) {
+export default function ClientForm({ initialData, onSave, onCancel, isEdit = false, isSubmitting = false }: ClientFormProps) {
   const [formData, setFormData] = useState<ClientFormData>(initialData ?? initialClientFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -260,13 +261,20 @@ export default function ClientForm({ initialData, onSave, onCancel, isEdit = fal
 
           {/* Actions */}
           <div className="flex flex-col gap-3">
-            <Button
-              variant="primary"
-              className="bg-orange-600 hover:bg-orange-700"
+            <button
+              type="button"
               onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="inline-flex items-center rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isEdit ? 'Save Changes' : 'Add Client'}
-            </Button>
+              {isSubmitting ? (
+                <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : null}
+              {isSubmitting ? 'Saving...' : (isEdit ? 'Save Changes' : 'Add Client')}
+            </button>
             <Button variant="outline" onClick={onCancel} className="dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
               Cancel
             </Button>

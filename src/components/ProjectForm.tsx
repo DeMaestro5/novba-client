@@ -251,86 +251,95 @@ export default function ProjectForm({
                   No milestones yet. Add at least one to define payment schedule.
                 </p>
               ) : (
-                <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {formData.paymentPlan.map((row, index) => (
-                    <li
-                      key={row.id}
-                      className="flex flex-col gap-3 py-4 first:pt-0 sm:flex-row sm:flex-wrap sm:items-end"
-                    >
-                      <div className="flex-1 min-w-[140px]">
-                        <Input
-                          label={index === 0 ? 'Milestone' : undefined}
-                          placeholder="e.g. Discovery & wireframes"
-                          value={row.milestone}
-                          onChange={(e) => updateMilestone(row.id, 'milestone', e.target.value)}
-                          fullWidth
-                        />
-                      </div>
-                      <div className="w-full sm:w-28">
-                        <Input
-                          label={index === 0 ? 'Amount' : undefined}
-                          type="number"
-                          min={0}
-                          step={1}
-                          value={row.amount === 0 ? '' : row.amount}
-                          onChange={(e) =>
-                            updateMilestone(
-                              row.id,
-                              'amount',
-                              e.target.value === '' ? 0 : Number(e.target.value),
-                            )
-                          }
-                          fullWidth
-                        />
-                      </div>
-                      <div className="w-full sm:w-36">
-                        <DatePicker
-                          label={index === 0 ? 'Due date' : undefined}
-                          value={row.dueDate ? new Date(row.dueDate + 'T12:00:00') : null}
-                          onChange={(d) =>
-                            updateMilestone(row.id, 'dueDate', d ? d.toISOString().slice(0, 10) : '')
-                          }
-                          placeholder="Due date"
-                        />
-                      </div>
-                      <div className="w-full sm:w-32">
-                        <Select
-                          label={index === 0 ? 'Status' : undefined}
-                          options={MILESTONE_STATUS_OPTIONS}
-                          value={row.status}
-                          onChange={(value) =>
-                            updateMilestone(row.id, 'status', value as MilestoneStatus)
-                          }
-                          fullWidth
-                        />
-                      </div>
-                      <div className="flex items-end">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeMilestone(row.id)}
-                          className="min-w-0 rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:border-gray-600 dark:bg-gray-800"
-                          aria-label="Remove milestone"
-                        >
-                          <svg
-                            className="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                <>
+                  {/* Single header row — no labels on data rows to avoid duplication */}
+                  <div className="grid grid-cols-[1fr_120px_160px_140px_40px] gap-3 pb-2">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Milestone</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Amount</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Due date</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</p>
+                    <div aria-hidden />
+                  </div>
+                  <div className="space-y-3">
+                    {formData.paymentPlan.map((row) => (
+                      <div
+                        key={row.id}
+                        className="grid grid-cols-[1fr_120px_160px_140px_40px] items-center gap-3"
+                      >
+                        <div className="min-w-0">
+                          <Input
+                            placeholder="e.g. Discovery & wireframes"
+                            value={row.milestone}
+                            onChange={(e) => updateMilestone(row.id, 'milestone', e.target.value)}
+                            fullWidth
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Input
+                            type="number"
+                            min={0}
+                            step={1}
+                            value={row.amount === 0 ? '' : row.amount}
+                            onChange={(e) =>
+                              updateMilestone(
+                                row.id,
+                                'amount',
+                                e.target.value === '' ? 0 : Number(e.target.value),
+                              )
+                            }
+                            fullWidth
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <DatePicker
+                            value={row.dueDate ? new Date(row.dueDate + 'T12:00:00') : null}
+                            onChange={(d) =>
+                              updateMilestone(row.id, 'dueDate', d ? d.toISOString().slice(0, 10) : '')
+                            }
+                            placeholder="Due date"
+                          />
+                        </div>
+                        <div>
+                          <Select
+                            options={MILESTONE_STATUS_OPTIONS}
+                            value={row.status}
+                            onChange={(value) =>
+                              updateMilestone(row.id, 'status', value as MilestoneStatus)
+                            }
+                            fullWidth
+                            containerClassName="[&_button]:h-10"
+                          />
+                        </div>
+                        <div className="flex items-center justify-center h-10">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeMilestone(row.id)}
+                            className="min-w-0 rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:border-gray-600 dark:bg-gray-800"
+                            aria-label="Remove milestone"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </Button>
+                            <svg
+                              className="h-5 w-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </Button>
+                        </div>
                       </div>
-                    </li>
-                  ))}
-                </ul>
+                    ))}
+                  </div>
+                </>
               )}
               <Button
                 type="button"
@@ -418,14 +427,20 @@ export default function ProjectForm({
             <CardHeader title="Actions" />
             <CardBody>
               <div className="flex flex-col gap-3">
-                <Button
-                  variant="primary"
-                  className="bg-orange-600 hover:bg-orange-700"
+                <button
+                  type="button"
                   onClick={handleSubmit}
                   disabled={isSaving}
+                  className="inline-flex items-center rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSaving ? 'Saving...' : isEdit ? 'Save changes' : 'Create project'}
-                </Button>
+                  {isSaving ? (
+                    <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : null}
+                  {isSaving ? 'Saving...' : isEdit ? 'Save Changes' : 'Create project'}
+                </button>
                 <Button
                   variant="outline"
                   onClick={onCancel}
