@@ -15,26 +15,37 @@ export interface EmptyPageStateStat {
 }
 
 export interface EmptyPageStateProps {
-  icon: React.ReactNode;
+  /** Simple mode: use title + description instead of headline/subtext/benefits/preview */
+  title?: string;
+  description?: string;
+  icon?: React.ReactNode;
   badge?: string;
-  headline: string;
-  subtext: string;
-  benefits: Benefit[];
+  headline?: string;
+  subtext?: string;
+  benefits?: Benefit[];
   ctaLabel: string;
   ctaHref?: string;
   ctaOnClick?: () => void;
   stat?: EmptyPageStateStat;
-  preview: React.ReactNode;
+  preview?: React.ReactNode;
   secondaryLabel?: string;
   secondaryHref?: string;
 }
 
+const defaultIcon = (
+  <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+  </svg>
+);
+
 export default function EmptyPageState({
+  title,
+  description,
   icon,
   badge,
   headline,
   subtext,
-  benefits,
+  benefits = [],
   ctaLabel,
   ctaHref,
   ctaOnClick,
@@ -46,15 +57,22 @@ export default function EmptyPageState({
   const ctaClassName =
     'inline-flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-md hover:shadow-orange-600/20 focus:outline-none w-full sm:w-auto';
 
+  const isSimple = Boolean(title && description);
+  const displayHeadline = (isSimple ? title : headline) ?? '';
+  const displaySubtext = (isSimple ? description : subtext) ?? '';
+  const displayIcon = icon ?? defaultIcon;
+  const hasPreview = Boolean(preview && !isSimple);
+
   return (
     <div className='h-[calc(100vh-160px)] max-h-[740px] min-h-[560px] w-full overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700/60 dark:bg-gray-900'>
-      <div className='grid h-full grid-cols-1 lg:grid-cols-2'>
+      <div className={`grid h-full grid-cols-1 ${hasPreview ? 'lg:grid-cols-2' : ''}`}>
         {/* Left column */}
         <div className='flex flex-col justify-center px-8 py-8 lg:px-10 lg:py-10'>
+          {!isSimple && (
           <div className='mb-4 flex items-center gap-3'>
             <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 ring-1 ring-orange-100 dark:bg-orange-950/40 dark:ring-orange-900/50'>
               <span className='flex h-5 w-5 items-center justify-center text-orange-600'>
-                {icon}
+                {displayIcon}
               </span>
             </div>
             {badge && (
@@ -63,15 +81,17 @@ export default function EmptyPageState({
               </span>
             )}
           </div>
+          )}
 
           <h2 className='whitespace-pre-line text-xl font-bold leading-tight text-gray-900 dark:text-white lg:text-2xl'>
-            {headline}
+            {displayHeadline}
           </h2>
 
           <p className='mt-2 max-w-md text-sm leading-relaxed text-gray-500 dark:text-gray-400'>
-            {subtext}
+            {displaySubtext}
           </p>
 
+          {benefits.length > 0 && (
           <div className='mt-5 space-y-2'>
             {benefits.map((benefit, i) => (
               <div
@@ -94,6 +114,7 @@ export default function EmptyPageState({
               </div>
             ))}
           </div>
+          )}
 
           <div className='mt-5 flex flex-col gap-3 sm:flex-row sm:items-center'>
             {ctaHref ? (
@@ -141,11 +162,13 @@ export default function EmptyPageState({
         </div>
 
         {/* Right column — preview */}
+        {hasPreview && (
         <div className='relative hidden h-full items-center justify-center overflow-hidden border-l border-gray-100 bg-gradient-to-br from-gray-50 to-gray-100/50 px-6 py-8 dark:border-gray-700/60 dark:from-gray-800/50 dark:to-gray-800/30 lg:flex'>
           <div className='absolute -right-16 -top-16 h-64 w-64 rounded-full bg-orange-100/40 blur-3xl dark:bg-orange-900/10' />
           <div className='absolute -bottom-16 -left-8 h-48 w-48 rounded-full bg-amber-100/40 blur-3xl dark:bg-amber-900/10' />
           <div className='relative z-10 w-full'>{preview}</div>
         </div>
+        )}
       </div>
     </div>
   );

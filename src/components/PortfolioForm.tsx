@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Input from '@/components/UI/Input';
 import Select from '@/components/UI/Select';
@@ -9,8 +9,10 @@ import DatePicker from '@/components/UI/DatePicker';
 import Card, { CardHeader, CardBody } from '@/components/UI/Card';
 import Button from '@/components/UI/Button';
 import Toggle from '@/components/UI/Toggle';
+import { useToast } from '@/components/UI/Toast';
 import { PORTFOLIO_CATEGORIES } from '@/lib/mock-portfolio';
 import type { PortfolioItem } from '@/lib/mock-portfolio';
+import api, { getErrorMessage } from '@/lib/api';
 
 export interface PortfolioFormData {
   title: string;
@@ -25,6 +27,7 @@ export interface PortfolioFormData {
   caseStudy: string;
   testimonial: string;
   isPublished: boolean;
+  imageUrl?: string;
 }
 
 function titleToSlug(title: string): string {
@@ -49,6 +52,7 @@ const emptyForm: PortfolioFormData = {
   caseStudy: '',
   testimonial: '',
   isPublished: true,
+  imageUrl: '',
 };
 
 function itemToForm(item: Partial<PortfolioItem>): PortfolioFormData {
@@ -65,6 +69,7 @@ function itemToForm(item: Partial<PortfolioItem>): PortfolioFormData {
     caseStudy: item.caseStudy ?? '',
     testimonial: item.testimonial ?? '',
     isPublished: item.isPublished ?? true,
+    imageUrl: item.imageUrl ?? '',
   };
 }
 
@@ -81,10 +86,15 @@ export default function PortfolioForm({
   isSaving,
   mode,
 }: PortfolioFormProps) {
+  const { showToast } = useToast();
   const [form, setForm] = useState<PortfolioFormData>(() =>
     initialData ? itemToForm(initialData) : emptyForm
   );
   const [techInput, setTechInput] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const update = useCallback((patch: Partial<PortfolioFormData>) => {
     setForm((prev) => ({ ...prev, ...patch }));
@@ -119,6 +129,37 @@ export default function PortfolioForm({
     }
   };
 
+  const handleImageFile = async (file: File) => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      showToast('Only JPEG, PNG, and WebP images are allowed', 'error');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image must be under 5MB', 'error');
+      return;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    setLocalPreview(objectUrl);
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await api.post('/upload/portfolio-image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const imageUrl = res.data?.data?.imageUrl;
+      update({ imageUrl });
+      setLocalPreview(null);
+      showToast('Cover image uploaded', 'success');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+      setLocalPreview(null);
+      update({ imageUrl: '' });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSave = (asDraft: boolean) => {
     const payload = {
       ...form,
@@ -137,6 +178,7 @@ export default function PortfolioForm({
       caseStudy: payload.caseStudy,
       testimonial: payload.testimonial,
       isPublished: payload.isPublished,
+      imageUrl: payload.imageUrl,
     });
     onSave(payload);
   };
@@ -373,30 +415,98 @@ export default function PortfolioForm({
           {/* Cover Image */}
           <Card>
             <CardBody>
-              <button
-                type="button"
-                onClick={() => {}}
-                onMouseDown={() => {}}
-                className="flex h-48 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-white text-gray-500 transition-colors hover:border-orange-300 hover:bg-orange-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400"
-              >
-                <svg
-                  className="mb-2 h-10 w-10 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+              <p className="mb-2 text-sm font-medium text-gray-700 dark:text-white">
+                Cover Image
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageFile(file);
+                  e.target.value = '';
+                }}
+              />
+
+              {/* Preview state — image already set */}
+              {(form.imageUrl || localPreview) ? (
+                <div className="relative h-48 w-full overflow-hidden rounded-xl">
+                  <img
+                    src={localPreview ?? form.imageUrl}
+                    alt="Cover"
+                    className="h-full w-full object-cover"
                   />
-                </svg>
-                <span className="text-sm font-medium">Add cover image</span>
-                <span className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-                  PNG, JPG up to 5MB
-                </span>
-              </button>
+                  {/* Upload spinner overlay */}
+                  {isUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                      <svg
+                        className="h-8 w-8 animate-spin text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                      </svg>
+                    </div>
+                  )}
+                  {/* Remove button — only when not uploading */}
+                  {!isUploading && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        update({ imageUrl: '' });
+                        setLocalPreview(null);
+                      }}
+                      className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
+                      aria-label="Remove image"
+                    >
+                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  )}
+                  {/* Replace button — only when not uploading */}
+                  {!isUploading && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute bottom-2 right-2 rounded-lg bg-black/50 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-black/70"
+                    >
+                      Replace
+                    </button>
+                  )}
+                </div>
+              ) : (
+                /* Empty upload area */
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handleImageFile(file);
+                  }}
+                  className={`flex h-48 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors ${
+                    isDragging
+                      ? 'border-orange-400 bg-orange-50/30 dark:bg-orange-950/10'
+                      : 'border-gray-300 hover:border-orange-400 hover:bg-orange-50/30 dark:border-gray-600 dark:hover:border-orange-500 dark:hover:bg-orange-950/10'
+                  }`}
+                >
+                  <svg className="h-8 w-8 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    {isDragging ? 'Drop to upload' : 'Add cover image'}
+                  </span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                    PNG, JPG, WebP up to 5MB
+                  </span>
+                </div>
+              )}
             </CardBody>
           </Card>
 

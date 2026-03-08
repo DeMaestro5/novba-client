@@ -1,34 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import api from '@/lib/api';
 import Card, { CardBody } from '@/components/UI/Card';
 import Select from '@/components/UI/Select';
-
-const IS_FREE_TIER = true;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type ExperienceLevel = 'JUNIOR' | 'MID' | 'SENIOR' | 'EXPERT';
 
-interface RateResult {
-  low: number;
-  mid: number;
-  high: number;
-  yourRate: number | null;
-  currency: string;
-  annualGap: number;
-  recommendation: string;
+type BackendExperienceLevel = 'BEGINNER' | 'INTERMEDIATE' | 'EXPERT';
+
+interface RateAnalysisResult {
+  isUndercharging: boolean;
+  percentBelow: number;
+  potentialIncrease: number;
   confidence: number;
+  marketMin: number;
+  marketMax: number;
+  marketMedian: number;
+  suggestedRate: number;
+  message: string;
+  category: string;
+  experienceLevel: string;
 }
 
-interface ProjectResult {
-  low: number;
-  recommended: number;
-  high: number;
-  confidence: number;
-  reasoning: string[];
-  breakdown: { label: string; hours: number; rate: number }[];
+interface ProjectEstimateResult {
+  minEstimate: number;
+  maxEstimate: number;
+  recommendedPrice: number;
+  rationale: string;
+  projectType: string;
+  breakdown?: Array<{
+    task: string;
+    hours?: number;
+    rate?: number;
+    amount: number;
+  }>;
+}
+
+interface PricingInsight {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  impact?: string;
+  actionLabel?: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  icon?: string;
 }
 
 interface InsightCard {
@@ -40,174 +60,25 @@ interface InsightCard {
   action: string;
 }
 
-// ─── Mock AI Generators ───────────────────────────────────────────────────────
+const EXPERIENCE_MAP: Record<string, BackendExperienceLevel> = {
+  Junior: 'BEGINNER',
+  Mid: 'INTERMEDIATE',
+  Senior: 'EXPERT',
+  Expert: 'EXPERT',
+};
 
-function generateRateResult(
-  role: string,
-  experience: ExperienceLevel,
-  location: string,
-  currentRate: string,
-): RateResult {
-  const basePrices: Record<string, Record<ExperienceLevel, [number, number, number]>> = {
-    'UI/UX Designer':       { JUNIOR: [45,65,85],   MID: [75,95,120],   SENIOR: [110,140,175], EXPERT: [150,190,240] },
-    'Frontend Developer':   { JUNIOR: [50,70,90],   MID: [80,105,130],  SENIOR: [120,155,190], EXPERT: [160,200,250] },
-    'Backend Developer':    { JUNIOR: [55,75,95],   MID: [85,110,140],  SENIOR: [125,160,200], EXPERT: [165,210,260] },
-    'Full-Stack Developer': { JUNIOR: [55,75,95],   MID: [90,115,145],  SENIOR: [130,165,205], EXPERT: [170,215,265] },
-    'Content Writer':       { JUNIOR: [30,45,60],   MID: [50,70,90],    SENIOR: [80,105,130],  EXPERT: [110,140,175] },
-    'Copywriter':           { JUNIOR: [40,55,70],   MID: [65,85,110],   SENIOR: [100,130,165], EXPERT: [140,175,220] },
-    'Brand Designer':       { JUNIOR: [45,60,80],   MID: [75,98,125],   SENIOR: [115,145,180], EXPERT: [155,195,245] },
-    'Motion Designer':      { JUNIOR: [50,68,88],   MID: [80,105,132],  SENIOR: [120,152,190], EXPERT: [158,198,248] },
-    'Video Editor':         { JUNIOR: [35,50,65],   MID: [60,80,100],   SENIOR: [90,118,148],  EXPERT: [125,158,198] },
-    'Social Media Manager': { JUNIOR: [30,42,55],   MID: [50,68,88],    SENIOR: [80,105,132],  EXPERT: [110,140,175] },
-  };
-
-  const locationMultiplier: Record<string, number> = {
-    'United States': 1.0, 'United Kingdom': 0.95, 'Canada': 0.85,
-    'Australia': 0.90, 'Germany': 0.88, 'Netherlands': 0.87,
-    'Remote (Global)': 0.92, 'Nigeria': 0.55, 'India': 0.45,
-    'Eastern Europe': 0.65, 'Southeast Asia': 0.50, 'Latin America': 0.60,
-  };
-
-  const [low, mid, high] = basePrices[role]?.[experience] ?? [60, 90, 120];
-  const mult = locationMultiplier[location] ?? 0.85;
-  const adjLow = Math.round(low * mult);
-  const adjMid = Math.round(mid * mult);
-  const adjHigh = Math.round(high * mult);
-  const yourRate = currentRate ? Number(currentRate) : null;
-  const annualGap = yourRate ? Math.max(0, (adjMid - yourRate) * 2000) : 0;
-  const confidence = experience === 'EXPERT' ? 94 : experience === 'SENIOR' ? 91 : 87;
-
-  let recommendation = '';
-  if (!yourRate) {
-    recommendation = `Based on your profile, the market supports $${adjMid}/hr for ${role}s at your level in ${location}. Aim for the mid-range to start and raise rates every 6 months.`;
-  } else if (yourRate < adjLow) {
-    recommendation = `You're significantly undercharging. At $${yourRate}/hr you're below the market floor. A ${role} with your experience typically charges $${adjMid}/hr. Raise your rate immediately — clients rarely leave over a $20–30/hr increase.`;
-  } else if (yourRate < adjMid) {
-    recommendation = `You're slightly below market. Moving from $${yourRate}/hr to $${adjMid}/hr is a realistic next step. Frame it as a rate review, not a raise. Most clients expect this annually.`;
-  } else if (yourRate <= adjHigh) {
-    recommendation = `You're priced well within market range. Focus on moving toward the top ($${adjHigh}/hr) by specializing further and positioning around outcomes, not hours.`;
-  } else {
-    recommendation = `You're above typical market rate — which means you're winning on reputation or specialization. Keep positioning around results, not time.`;
-  }
-
-  return { low: adjLow, mid: adjMid, high: adjHigh, yourRate, currency: 'USD', annualGap, recommendation, confidence };
-}
-
-function generateProjectResult(description: string): ProjectResult {
-  const desc = description.toLowerCase();
-
-  if (desc.includes('brand') || desc.includes('identity') || desc.includes('logo')) {
-    return {
-      low: 3500, recommended: 6500, high: 12000, confidence: 89,
-      reasoning: [
-        'Brand identity projects carry high strategic value — they define how a company presents itself for years.',
-        'Discovery and strategy phases are often underpriced; include 8–12 hours for research and positioning.',
-        'Deliverable scope (guidelines doc, file formats, usage rights) significantly affects ceiling — itemize these.',
-      ],
-      breakdown: [
-        { label: 'Discovery & Strategy', hours: 10, rate: 120 },
-        { label: 'Concept Development', hours: 16, rate: 120 },
-        { label: 'Refinement & Revisions', hours: 12, rate: 120 },
-        { label: 'Final Files & Guidelines', hours: 8, rate: 120 },
-      ],
-    };
-  } else if (desc.includes('website') || desc.includes('landing') || desc.includes('web')) {
-    return {
-      low: 4500, recommended: 8500, high: 18000, confidence: 91,
-      reasoning: [
-        'Website projects are routinely underpriced because scope creep is invisible at proposal stage — charge per page, not just design.',
-        'Development complexity (CMS, animations, integrations) should be scoped separately from design.',
-        'Include a content strategy phase — most projects stall waiting for client copy.',
-      ],
-      breakdown: [
-        { label: 'Strategy & Wireframes', hours: 12, rate: 130 },
-        { label: 'UI Design', hours: 24, rate: 130 },
-        { label: 'Development', hours: 32, rate: 130 },
-        { label: 'Testing & Launch', hours: 8, rate: 130 },
-      ],
-    };
-  } else if (desc.includes('app') || desc.includes('mobile') || desc.includes('saas')) {
-    return {
-      low: 8000, recommended: 18000, high: 45000, confidence: 86,
-      reasoning: [
-        'App and SaaS design engagements command premium rates because the work directly impacts product revenue.',
-        'Insist on a discovery phase before designing — it protects you from scope creep and educates the client.',
-        'Embedded design systems significantly increase value and price ceiling.',
-      ],
-      breakdown: [
-        { label: 'Discovery & UX Research', hours: 20, rate: 150 },
-        { label: 'Information Architecture', hours: 16, rate: 150 },
-        { label: 'UI Design & Prototyping', hours: 48, rate: 150 },
-        { label: 'Design System & Handoff', hours: 24, rate: 150 },
-      ],
-    };
-  } else if (desc.includes('content') || desc.includes('copy') || desc.includes('writing')) {
-    return {
-      low: 800, recommended: 2200, high: 5000, confidence: 85,
-      reasoning: [
-        'Content projects are often priced per word — pivot to per-project pricing for better margins.',
-        'Strategy and research phases are commonly given away free; charge for them explicitly.',
-        'Cap revision rounds in the proposal — unlimited revisions silently destroy margins.',
-      ],
-      breakdown: [
-        { label: 'Research & Strategy', hours: 6, rate: 95 },
-        { label: 'First Draft', hours: 10, rate: 95 },
-        { label: 'Revisions (2 rounds)', hours: 4, rate: 95 },
-        { label: 'Final Delivery', hours: 2, rate: 95 },
-      ],
-    };
-  } else {
-    return {
-      low: 2500, recommended: 5500, high: 10000, confidence: 82,
-      reasoning: [
-        'Without a specific project type, this estimate is based on a mid-complexity freelance engagement.',
-        'Add more detail about deliverables, timeline, and technology to get a sharper estimate.',
-        'Always anchor to deliverables and outcomes in proposals, never to hours alone.',
-      ],
-      breakdown: [
-        { label: 'Discovery & Planning', hours: 8, rate: 110 },
-        { label: 'Core Deliverable', hours: 24, rate: 110 },
-        { label: 'Revisions & Refinement', hours: 10, rate: 110 },
-        { label: 'Handoff & Support', hours: 6, rate: 110 },
-      ],
-    };
-  }
-}
-
-const STATIC_INSIGHTS: InsightCard[] = [
-  {
-    id: '1',
-    type: 'warning',
-    title: 'Your average invoice is below market',
-    metric: '$1,840 avg invoice',
-    body: 'Your average invoice sits at $1,840. Senior designers in comparable markets average $3,200 per engagement. Based on your invoice volume, this gap costs you an estimated $16,720 per year.',
-    action: 'Review your pricing on the next 3 proposals and add a 25% uplift.',
-  },
-  {
-    id: '2',
-    type: 'opportunity',
-    title: 'You have a high-value repeat client',
-    metric: 'Acme Corp — 3 invoices',
-    body: 'Acme Corp has paid 3 invoices totalling $14,950. Repeat clients like this are ideal candidates for a retainer agreement — predictable income for you, priority access for them.',
-    action: 'Propose a monthly retainer to Acme Corp at $3,500–$4,500/month.',
-  },
-  {
-    id: '3',
-    type: 'positive',
-    title: 'Your collection rate is excellent',
-    metric: '94% collected',
-    body: 'You\'ve collected 94% of invoiced revenue. The industry average for freelancers is 78%. Your payment terms and follow-up process is working — protect it as you scale.',
-    action: 'Keep NET 30 terms and consider requiring 50% upfront for new clients.',
-  },
-  {
-    id: '4',
-    type: 'tip',
-    title: 'Software is your biggest deductible category',
-    metric: '$935 in software',
-    body: 'You\'ve spent $935 on software tools this year — all tax deductible. Make sure you\'re also tracking subscriptions paid on personal cards. Many freelancers miss 20–30% of deductible software spend.',
-    action: 'Audit your personal card statements for any business software purchases.',
-  },
-];
+const ROLE_TO_CATEGORY_MAP: Record<string, string> = {
+  'UI/UX Designer':        'Design',
+  'Brand Designer':        'Design',
+  'Motion Designer':       'Design',
+  'Frontend Developer':    'Web Development',
+  'Backend Developer':     'Web Development',
+  'Full-Stack Developer':  'Web Development',
+  'Content Writer':        'Writing',
+  'Copywriter':            'Writing',
+  'Video Editor':          'Video Production',
+  'Social Media Manager':  'Marketing',
+};
 
 // ─── Helper Components ────────────────────────────────────────────────────────
 
@@ -286,12 +157,20 @@ export default function AIPricingPage() {
   const [location, setLocation] = useState('United States');
   const [currentRate, setCurrentRate] = useState('');
   const [rateLoading, setRateLoading] = useState(false);
-  const [rateResult, setRateResult] = useState<RateResult | null>(null);
+  const [rateResult, setRateResult] = useState<RateAnalysisResult | null>(null);
+  const [rateError, setRateError] = useState<string | null>(null);
 
   // Project Estimator state
   const [projectDesc, setProjectDesc] = useState('');
-  const [projectLoading, setProjectLoading] = useState(false);
-  const [projectResult, setProjectResult] = useState<ProjectResult | null>(null);
+  const [estimateLoading, setEstimateLoading] = useState(false);
+  const [estimateResult, setEstimateResult] = useState<ProjectEstimateResult | null>(null);
+  const [estimateError, setEstimateError] = useState<string | null>(null);
+
+  // Pricing Insights state
+  const [insightsLoading, setInsightsLoading] = useState(true);
+  const [insights, setInsights] = useState<PricingInsight[]>([]);
+  const [insightsError, setInsightsError] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   const ROLES = [
     'UI/UX Designer', 'Frontend Developer', 'Backend Developer', 'Full-Stack Developer',
@@ -312,22 +191,136 @@ export default function AIPricingPage() {
     EXPERT: { label: 'Expert', sub: '10+ yrs' },
   };
 
-  const handleRateAnalyze = async () => {
+  const handleAnalyzeRate = async () => {
+    const selectedExperienceLevel = EXPERIENCE_LABELS[experience].label;
+    const mappedLevel = EXPERIENCE_MAP[selectedExperienceLevel];
+    if (!role || !mappedLevel) return;
+
     setRateLoading(true);
+    setRateError(null);
     setRateResult(null);
-    await new Promise(r => setTimeout(r, 1800));
-    setRateResult(generateRateResult(role, experience, location, currentRate));
-    setRateLoading(false);
+
+    try {
+      const parsedRate = Number(currentRate);
+      if (!currentRate || isNaN(parsedRate) || parsedRate <= 0) {
+        setRateError('Please enter your current rate to get a personalized analysis.');
+        setRateLoading(false);
+        return;
+      }
+
+      const mappedCategory = ROLE_TO_CATEGORY_MAP[role] ?? role;
+
+      const payload: Record<string, unknown> = {
+        category: mappedCategory,
+        experienceLevel: mappedLevel,
+        rate: parsedRate,
+      };
+
+      const res = await api.post('/pricing/analyze-rate', payload);
+      const data = res.data?.data ?? res.data;
+      const raw = data?.analysis ?? data;
+      if (!raw) return;
+
+      const normalized: RateAnalysisResult = {
+        isUndercharging:   raw.isUndercharging ?? false,
+        percentBelow:      Number(raw.percentBelow ?? 0),
+        potentialIncrease: Number(raw.potentialAnnualIncrease ?? raw.potentialIncrease ?? 0),
+        confidence:        Number(raw.confidence ?? 0),
+        marketMin:         Number(raw.marketMin ?? 0),
+        marketMax:         Number(raw.marketMax ?? 0),
+        marketMedian:      Number(raw.marketMedian ?? raw.marketAverage ?? 0),
+        suggestedRate:     Number(raw.suggestedRate ?? raw.recommendedRate ?? raw.marketMedian ?? 0),
+        message:           raw.message ?? raw.alert ?? '',
+        category:          raw.category ?? '',
+        experienceLevel:   raw.experienceLevel ?? '',
+      };
+
+      setRateResult(normalized);
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? 'Analysis failed. Please try again.';
+      setRateError(message);
+    } finally {
+      setRateLoading(false);
+    }
   };
 
-  const handleProjectEstimate = async () => {
-    if (!projectDesc.trim()) return;
-    setProjectLoading(true);
-    setProjectResult(null);
-    await new Promise(r => setTimeout(r, 2000));
-    setProjectResult(generateProjectResult(projectDesc));
-    setProjectLoading(false);
+  const handleEstimateProject = async () => {
+    if (!projectDesc || projectDesc.trim().length < 10) return;
+
+    setEstimateLoading(true);
+    setEstimateError(null);
+    setEstimateResult(null);
+
+    try {
+      const res = await api.post('/pricing/estimate-project', {
+        description: projectDesc.trim(),
+        projectType: 'FIXED',
+      });
+      const data = res.data?.data ?? res.data;
+      const raw = data?.estimate ?? data;
+      if (!raw) return;
+
+      console.log('[ProjectEstimate raw response]', raw);
+
+      const normalized: ProjectEstimateResult = {
+        recommendedPrice:
+          Number(raw.recommendedPrice ?? raw.recommended ?? raw.recommendedRate
+            ?? raw.price ?? raw.midEstimate ?? 0),
+        minEstimate:
+          Number(raw.minEstimate ?? raw.min ?? raw.minPrice ?? raw.low ?? 0),
+        maxEstimate:
+          Number(raw.maxEstimate ?? raw.max ?? raw.maxPrice ?? raw.high ?? 0),
+        rationale:
+          raw.rationale ?? raw.reasoning ?? raw.explanation ?? raw.description ?? '',
+        projectType: raw.projectType ?? 'FIXED',
+        breakdown: Array.isArray(raw.breakdown)
+          ? raw.breakdown.map((item: Record<string, unknown>) => ({
+              task:
+                String(item.task ?? item.label ?? item.name ?? item.phase ?? ''),
+              hours: item.hours != null ? Number(item.hours) : undefined,
+              rate: item.rate != null ? Number(item.rate) : undefined,
+              amount: Number(item.amount ?? item.total ?? item.cost ?? 0),
+            }))
+          : undefined,
+      };
+
+      setEstimateResult(normalized);
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? 'Estimation failed. Please try again.';
+      setEstimateError(message);
+    } finally {
+      setEstimateLoading(false);
+    }
   };
+
+  const fetchInsights = useCallback(async () => {
+    setInsightsLoading(true);
+    setInsightsError(false);
+    try {
+      const res = await api.get('/pricing/insights');
+      const data = res.data?.data ?? res.data;
+      setInsights(data?.insights ?? data ?? []);
+      setIsPro(data?.isPro ?? data?.hasAccess ?? false);
+    } catch (err: unknown) {
+      const status =
+        (err as { response?: { status?: number } })?.response?.status;
+      if (status === 403) {
+        setIsPro(false);
+      } else {
+        setInsightsError(true);
+      }
+    } finally {
+      setInsightsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchInsights();
+  }, [fetchInsights]);
 
   return (
     <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
@@ -446,94 +439,92 @@ export default function AIPricingPage() {
 
               <button
                 type="button"
-                onClick={handleRateAnalyze}
+                onClick={handleAnalyzeRate}
                 disabled={rateLoading}
                 className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 disabled:opacity-60 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
               >
                 {rateLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Analyzing market data...
-                  </span>
+                  <svg className="h-5 w-5 animate-spin mx-auto" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
                 ) : 'Analyze My Rate'}
               </button>
             </div>
 
-            {/* Rate Results */}
-            {rateLoading && <div className="mt-6 border-t border-gray-100 dark:border-gray-700 pt-6"><RateResultSkeleton /></div>}
+            {rateError && (
+              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+                {rateError}
+              </div>
+            )}
 
-            {rateResult && !rateLoading && (
-              <div className="mt-6 border-t border-gray-100 dark:border-gray-700 pt-6">
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">Market Rate Analysis</h3>
-                  <ConfidencePill score={rateResult.confidence} />
+            {rateResult && (
+              <div className="mt-6 space-y-4">
+                <div className={`rounded-xl border-2 p-4 ${
+                  rateResult.isUndercharging
+                    ? 'border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-950/20'
+                    : 'border-green-200 bg-green-50 dark:border-green-800/50 dark:bg-green-950/20'
+                }`}>
+                  <p className={`text-sm font-semibold leading-relaxed ${
+                    rateResult.isUndercharging
+                      ? 'text-red-800 dark:text-red-300'
+                      : 'text-green-800 dark:text-green-300'
+                  }`}>
+                    {rateResult.message}
+                  </p>
                 </div>
 
-                {/* Rate range bar */}
-                <div className="mb-4">
-                  <div className="mb-2 flex justify-between text-xs text-gray-400 dark:text-gray-500">
-                    <span>Low <span className="font-semibold text-gray-600 dark:text-gray-300">${rateResult.low}/hr</span></span>
-                    <span>Mid <span className="font-semibold text-gray-600 dark:text-gray-300">${rateResult.mid}/hr</span></span>
-                    <span>High <span className="font-semibold text-gray-600 dark:text-gray-300">${rateResult.high}/hr</span></span>
-                  </div>
-
-                  {(() => {
-                    const contextMax = rateResult.high * 1.4;
-                    const lowPct = (rateResult.low / contextMax) * 100;
-                    const highPct = (rateResult.high / contextMax) * 100;
-                    const yourPct = rateResult.yourRate
-                      ? Math.min(100, (rateResult.yourRate / contextMax) * 100)
-                      : null;
-
-                    return (
-                      <div className="relative h-3 w-full rounded-full bg-gray-100 dark:bg-gray-700">
-                        {/* Market range band — only occupies the portion where market rates actually live */}
-                        <div
-                          className="absolute inset-y-0 rounded-full bg-gradient-to-r from-orange-300 to-orange-500"
-                          style={{ left: `${lowPct}%`, right: `${100 - highPct}%` }}
-                        />
-                        {/* Your rate marker */}
-                        {yourPct !== null && (
-                          <div
-                            className="absolute top-1/2 z-10 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-orange-600 bg-white shadow-md"
-                            style={{ left: `${yourPct}%` }}
-                            title={`Your rate: $${rateResult.yourRate}/hr`}
-                          />
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {rateResult.yourRate && (
-                    <p className="mt-1.5 text-center text-xs text-gray-500 dark:text-gray-400">
-                      Your rate: <span className="font-bold text-gray-800 dark:text-white">${rateResult.yourRate}/hr</span>
-                      {' · '}
-                      <span className="text-gray-500 dark:text-gray-400">Market range: ${rateResult.low}–${rateResult.high}/hr</span>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Market Min</p>
+                    <p className="mt-1 text-lg font-black text-gray-900 dark:text-white">
+                      ${Number(rateResult.marketMin ?? 0).toLocaleString()}/hr
                     </p>
-                  )}
+                  </div>
+                  <div className="rounded-lg bg-orange-50 dark:bg-orange-950/30 p-3 text-center border-2 border-orange-200 dark:border-orange-800/50">
+                    <p className="text-xs text-orange-600 dark:text-orange-400 font-bold uppercase tracking-wider">Suggested</p>
+                    <p className="mt-1 text-lg font-black text-orange-600 dark:text-orange-400">
+                      ${Number(rateResult.suggestedRate ?? 0).toLocaleString()}/hr
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Market Max</p>
+                    <p className="mt-1 text-lg font-black text-gray-900 dark:text-white">
+                      ${Number(rateResult.marketMax ?? 0).toLocaleString()}/hr
+                    </p>
+                  </div>
                 </div>
 
-                {/* Annual gap */}
-                {rateResult.annualGap > 0 && (
-                  <div className="mb-4 rounded-xl bg-red-50 border border-red-100 p-4 dark:bg-red-950/30 dark:border-red-900/40">
-                    <p className="text-xs font-bold uppercase tracking-wider text-red-600">Estimated Annual Gap</p>
-                    <p className="mt-1 text-2xl font-black text-red-700">{formatCurrency(rateResult.annualGap)}</p>
-                    <p className="mt-0.5 text-xs text-red-500">left on the table per year vs. market mid-rate</p>
+                {rateResult.isUndercharging && rateResult.potentialIncrease > 0 && (
+                  <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-4">
+                    <div>
+                      <p className="text-xs font-bold text-orange-100 uppercase tracking-wider">
+                        Annual Income Gap
+                      </p>
+                      <p className="mt-0.5 text-2xl font-black text-white">
+                        +${Number(rateResult.potentialIncrease ?? 0).toLocaleString()}/year
+                      </p>
+                    </div>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
+                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                    </div>
                   </div>
                 )}
 
-                {/* Recommendation */}
-                <div className="rounded-xl bg-orange-50 border border-orange-100 p-4 dark:bg-orange-950/30 dark:border-orange-900/40">
-                  <div className="mb-2 flex items-center gap-1.5">
-                    <svg className="h-4 w-4 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z"/>
-                    </svg>
-                    <p className="text-xs font-bold text-orange-700 uppercase tracking-wide">AI Recommendation</p>
-                  </div>
-                  <p className="text-sm text-orange-900 leading-relaxed">{rateResult.recommendation}</p>
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>Data confidence</span>
+                  <span className="font-semibold text-gray-700 dark:text-gray-300">
+                    {rateResult.confidence >= 90
+                      ? 'Very High'
+                      : rateResult.confidence >= 70
+                      ? 'High'
+                      : rateResult.confidence >= 50
+                      ? 'Medium'
+                      : 'Low'}{' '}
+                    ({rateResult.confidence}%)
+                  </span>
                 </div>
               </div>
             )}
@@ -584,7 +575,7 @@ export default function AIPricingPage() {
                 </div>
               </div>
 
-              {!projectResult && !projectLoading && (
+              {!estimateResult && !estimateLoading && (
                 <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
                   <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">How it works</p>
                   <ul className="space-y-1.5">
@@ -606,94 +597,70 @@ export default function AIPricingPage() {
 
               <button
                 type="button"
-                onClick={handleProjectEstimate}
-                disabled={projectLoading || !projectDesc.trim()}
+                onClick={handleEstimateProject}
+                disabled={estimateLoading || !projectDesc || projectDesc.trim().length < 10}
                 className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
               >
-                {projectLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Estimating project value...
-                  </span>
+                {estimateLoading ? (
+                  <svg className="h-5 w-5 animate-spin mx-auto" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
                 ) : 'Estimate Project Value'}
               </button>
-              {!projectDesc.trim() && !projectLoading && (
+              {!projectDesc.trim() && !estimateLoading && (
                 <p className="mt-2 text-center text-xs text-gray-400 dark:text-gray-500">
                   Enter a project description above to unlock
                 </p>
               )}
             </div>
 
-            {/* Project Results */}
-            {projectLoading && <div className="mt-6 border-t border-gray-100 dark:border-gray-700 pt-6"><RateResultSkeleton /></div>}
+            {estimateError && (
+              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+                {estimateError}
+              </div>
+            )}
 
-            {projectResult && !projectLoading && (
-              <div className="mt-6 border-t border-gray-100 dark:border-gray-700 pt-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">Project Estimate</h3>
-                  <ConfidencePill score={projectResult.confidence} />
+            {estimateResult && (
+              <div className="mt-6 space-y-4">
+                <div className="rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 p-5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-orange-100">
+                    Recommended Price
+                  </p>
+                  <p className="mt-1 text-4xl font-black text-white">
+                    ${Number(estimateResult.recommendedPrice ?? 0).toLocaleString()}
+                  </p>
+                  <p className="mt-1 text-sm text-orange-200">
+                    Range: ${Number(estimateResult.minEstimate ?? 0).toLocaleString()} – ${Number(estimateResult.maxEstimate ?? 0).toLocaleString()}
+                  </p>
                 </div>
 
-                {/* Price range */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-3 text-center">
-                    <p className="text-xs text-gray-400 font-medium dark:text-gray-500">Conservative</p>
-                    <p className="mt-1 text-lg font-black text-gray-600 dark:text-gray-300">{formatCurrency(projectResult.low)}</p>
+                {estimateResult.rationale && (
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                      How we calculated this
+                    </p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {estimateResult.rationale}
+                    </p>
                   </div>
-                  <div className="rounded-xl bg-orange-50 border-2 border-orange-200 p-3 text-center">
-                    <p className="text-xs text-orange-600 font-bold">Recommended</p>
-                    <p className="mt-1 text-lg font-black text-orange-700">{formatCurrency(projectResult.recommended)}</p>
-                  </div>
-                  <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-3 text-center">
-                    <p className="text-xs text-gray-400 font-medium dark:text-gray-500">Premium</p>
-                    <p className="mt-1 text-lg font-black text-gray-600 dark:text-gray-300">{formatCurrency(projectResult.high)}</p>
-                  </div>
-                </div>
+                )}
 
-                {/* Hour breakdown */}
-                <div className="rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-                  <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide dark:text-gray-400">Suggested Breakdown</p>
-                  </div>
-                  <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
-                    {projectResult.breakdown.map(item => (
-                      <div key={item.label} className="flex items-center justify-between px-4 py-2.5">
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{item.label}</span>
-                        <div className="flex items-center gap-3 text-right">
-                          <span className="text-xs text-gray-400 dark:text-gray-500">{item.hours}h × ${item.rate}</span>
-                          <span className="text-sm font-bold text-gray-900 w-20 text-right dark:text-white">{formatCurrency(item.hours * item.rate)}</span>
-                        </div>
+                {estimateResult.breakdown && estimateResult.breakdown.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      Breakdown
+                    </p>
+                    {estimateResult.breakdown.map((item, i) => (
+                      <div key={i} className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-700 px-3 py-2.5">
+                        <p className="text-sm text-gray-700 dark:text-gray-300">{item.task}</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">
+                          ${Number(item.amount ?? 0).toLocaleString()}
+                        </p>
                       </div>
                     ))}
-                    <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 px-4 py-2.5">
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">Total Hours</span>
-                      <span className="text-sm font-black text-orange-600">
-                        {projectResult.breakdown.reduce((s, i) => s + i.hours, 0)}h
-                      </span>
-                    </div>
                   </div>
-                </div>
-
-                {/* Reasoning */}
-                <div className="rounded-xl bg-orange-50 border border-orange-100 p-4">
-                  <div className="mb-3 flex items-center gap-1.5">
-                    <svg className="h-4 w-4 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z"/>
-                    </svg>
-                    <p className="text-xs font-bold text-orange-700 uppercase tracking-wide">Pricing Intelligence</p>
-                  </div>
-                  <ul className="space-y-2">
-                    {projectResult.reasoning.map((r, i) => (
-                      <li key={i} className="flex gap-2 text-sm text-orange-900 leading-relaxed">
-                        <span className="mt-0.5 shrink-0 text-orange-400">→</span>
-                        {r}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                )}
               </div>
             )}
           </CardBody>
@@ -715,28 +682,43 @@ export default function AIPricingPage() {
           </span>
         </div>
 
-        <div className="relative grid grid-cols-1 gap-4 md:grid-cols-2 rounded-2xl">
-          {STATIC_INSIGHTS.map(insight => (
-            <Card key={insight.id} className="hover:shadow-md transition-shadow duration-200">
-              <CardBody padding="lg">
-                <div className="flex gap-4">
-                  <InsightIcon type={insight.type} />
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-start justify-between gap-2">
-                      <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-snug">{insight.title}</h3>
+        <div className={`relative grid grid-cols-1 gap-4 md:grid-cols-2 rounded-2xl ${!isPro && !insightsLoading ? 'min-h-[320px]' : ''}`}>
+          {insightsLoading ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-28 animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800" />
+              ))}
+            </div>
+          ) : (
+            <>
+              {isPro && insights.length > 0 && insights.map(insight => (
+                <Card key={insight.id} className="hover:shadow-md transition-shadow duration-200">
+                  <CardBody padding="lg">
+                    <div className="flex gap-4">
+                      <InsightIcon type={['warning', 'opportunity', 'positive', 'tip'].includes(insight.type) ? insight.type as InsightCard['type'] : 'tip'} />
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-start justify-between gap-2">
+                          <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-snug">{insight.title}</h3>
+                          {insight.impact && (
+                            <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+                              {insight.impact}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{insight.description}</p>
+                      </div>
                     </div>
-                    <p className="mb-2 text-lg font-black text-gray-900 dark:text-white">{insight.metric}</p>
-                    <p className="mb-3 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{insight.body}</p>
-                    <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 dark:bg-gray-800 dark:border-gray-700">
-                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5 dark:text-gray-500">Recommended Action</p>
-                      <p className="text-xs font-semibold text-gray-700 leading-relaxed dark:text-gray-200">{insight.action}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          ))}
-          {IS_FREE_TIER && (
+                  </CardBody>
+                </Card>
+              ))}
+              {isPro && insights.length === 0 && !insightsError && (
+                <p className="text-center text-sm text-gray-400 dark:text-gray-500 py-8 col-span-full">
+                  No insights yet — add more invoices and expenses to unlock personalized analysis.
+                </p>
+              )}
+            </>
+          )}
+          {!isPro && !insightsLoading && (
             <div
               className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-2xl bg-gray-900/60 backdrop-blur-sm"
               aria-hidden

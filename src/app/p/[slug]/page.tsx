@@ -1,17 +1,48 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import {
-  MOCK_PORTFOLIO,
-  MOCK_PUBLIC_PROFILE,
-  type PortfolioItem,
-} from '@/lib/mock-portfolio';
 import Modal, {
   ModalHeader,
   ModalBody,
 } from '@/components/UI/Modal';
+
+interface PublicProfile {
+  name: string | null;
+  title: string;
+  bio: string | null;
+  avatar: string | null;
+  location: string | null;
+  isAvailable: boolean;
+  email: string;
+  linkedinUrl: string | null;
+  twitterUrl: string | null;
+  githubUrl: string | null;
+  slug: string | null;
+  totalViews: number;
+  totalProjects: number;
+}
+
+interface PortfolioItem {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  category: string;
+  imageUrl: string | null;
+  images: string[] | null;
+  projectDate: string;
+  client: string | null;
+  technologies: string[] | null;
+  liveUrl: string | null;
+  githubUrl: string | null;
+  caseStudy: string | null;
+  testimonial: string | null;
+  isPublished: boolean;
+  order: number;
+  views: number;
+}
 
 function formatMonthYear(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -81,11 +112,74 @@ export default function PublicPortfolioPage() {
   const params = useParams();
   const slug = params.slug as string;
 
+  const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [caseStudyItem, setCaseStudyItem] = useState<PortfolioItem | null>(null);
   const [showContactModal, setShowContactModal] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('ALL');
 
-  if (slug !== MOCK_PUBLIC_PROFILE.slug) {
+  useEffect(() => {
+    if (!slug) return;
+    setPageLoading(true);
+    fetch(`http://localhost:8000/p/${slug}`, {
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          setNotFound(true);
+          return;
+        }
+        const json = await res.json();
+        const data = json?.data ?? json;
+        setProfile(data?.profile ?? null);
+        setPortfolioItems(
+          Array.isArray(data?.portfolio) ? data.portfolio : [],
+        );
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setPageLoading(false));
+  }, [slug]);
+
+  const publishedProjects = portfolioItems;
+  const categories = useMemo(() => {
+    const cats = new Set(publishedProjects.map((p) => p.category));
+    return ['ALL', ...Array.from(cats).sort()];
+  }, [publishedProjects]);
+
+  const filteredProjects = useMemo(() => {
+    if (activeCategory === 'ALL') return publishedProjects;
+    return publishedProjects.filter((p) => p.category === activeCategory);
+  }, [publishedProjects, activeCategory]);
+
+  if (pageLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <svg
+          className="h-8 w-8 animate-spin text-orange-600"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
+        </svg>
+      </div>
+    );
+  }
+
+  if (notFound || !profile) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4">
         <h1 className="text-xl font-bold text-gray-900">Portfolio not found</h1>
@@ -101,17 +195,6 @@ export default function PublicPortfolioPage() {
       </div>
     );
   }
-
-  const publishedProjects = MOCK_PORTFOLIO.filter((p) => p.isPublished);
-  const categories = useMemo(() => {
-    const cats = new Set(publishedProjects.map((p) => p.category));
-    return ['ALL', ...Array.from(cats).sort()];
-  }, [publishedProjects]);
-
-  const filteredProjects = useMemo(() => {
-    if (activeCategory === 'ALL') return publishedProjects;
-    return publishedProjects.filter((p) => p.category === activeCategory);
-  }, [publishedProjects, activeCategory]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -134,13 +217,21 @@ export default function PublicPortfolioPage() {
       {/* Profile Section */}
       <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
         <div className="flex flex-col items-center text-center">
-          <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-orange-100 text-2xl font-bold text-orange-700">
-            {getInitials(MOCK_PUBLIC_PROFILE.name)}
-          </div>
+          {profile.avatar ? (
+            <img
+              src={profile.avatar}
+              alt=""
+              className="mb-4 h-20 w-20 rounded-full object-cover"
+            />
+          ) : (
+            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-orange-100 text-2xl font-bold text-orange-700">
+              {getInitials(profile.name ?? 'Freelancer')}
+            </div>
+          )}
           <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-            {MOCK_PUBLIC_PROFILE.name}
+            {profile.name ?? 'Freelancer'}
           </h1>
-          <p className="mt-1 text-gray-600">{MOCK_PUBLIC_PROFILE.title}</p>
+          <p className="mt-1 text-gray-600">{profile.title}</p>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
             <span className="flex items-center gap-1.5 text-sm text-gray-500">
               <svg
@@ -162,28 +253,28 @@ export default function PublicPortfolioPage() {
                   d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                 />
               </svg>
-              {MOCK_PUBLIC_PROFILE.location}
+              {profile.location ?? ''}
             </span>
             <span className="text-gray-400">•</span>
             <span
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
-                MOCK_PUBLIC_PROFILE.isAvailable
+                profile.isAvailable
                   ? 'bg-green-100 text-green-700'
                   : 'bg-gray-100 text-gray-500'
               }`}
             >
-              {MOCK_PUBLIC_PROFILE.isAvailable && (
+              {profile.isAvailable && (
                 <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
               )}
-              {MOCK_PUBLIC_PROFILE.isAvailable
+              {profile.isAvailable
                 ? 'Available for work'
                 : 'Not available'}
             </span>
           </div>
-          <p className="mt-6 max-w-2xl text-gray-600">{MOCK_PUBLIC_PROFILE.bio}</p>
+          <p className="mt-6 max-w-2xl text-gray-600">{profile.bio ?? ''}</p>
           <div className="mt-6 flex items-center gap-2">
             <a
-              href={MOCK_PUBLIC_PROFILE.linkedinUrl}
+              href={profile.linkedinUrl ?? '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50"
@@ -194,7 +285,7 @@ export default function PublicPortfolioPage() {
               </svg>
             </a>
             <a
-              href={MOCK_PUBLIC_PROFILE.twitterUrl}
+              href={profile.twitterUrl ?? '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50"
@@ -205,7 +296,7 @@ export default function PublicPortfolioPage() {
               </svg>
             </a>
             <a
-              href={MOCK_PUBLIC_PROFILE.githubUrl}
+              href={profile.githubUrl ?? '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50"
@@ -216,7 +307,7 @@ export default function PublicPortfolioPage() {
               </svg>
             </a>
             <a
-              href={`mailto:${MOCK_PUBLIC_PROFILE.email}`}
+              href={`mailto:${profile.email}`}
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50"
               aria-label="Email"
             >
@@ -238,17 +329,13 @@ export default function PublicPortfolioPage() {
           {/* Stats */}
           <div className="mt-8 flex items-center gap-6 border-t border-gray-200 pt-8">
             <span className="text-sm text-gray-500">
-              <span className="font-bold text-gray-900">{MOCK_PUBLIC_PROFILE.totalProjects}</span>{' '}
+              <span className="font-bold text-gray-900">{publishedProjects.length}</span>{' '}
               Projects
             </span>
             <span className="text-gray-300">|</span>
             <span className="text-sm text-gray-500">
-              <span className="font-bold text-gray-900">{MOCK_PUBLIC_PROFILE.totalViews}</span>{' '}
+              <span className="font-bold text-gray-900">{profile.totalViews}</span>{' '}
               Total Views
-            </span>
-            <span className="text-gray-300">|</span>
-            <span className="text-sm text-gray-500">
-              <span className="font-bold text-gray-900">6</span> Years Exp
             </span>
           </div>
         </div>
@@ -322,7 +409,7 @@ export default function PublicPortfolioPage() {
                     {item.description}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {item.technologies.slice(0, 4).map((tech) => (
+                    {(item.technologies ?? []).slice(0, 4).map((tech) => (
                       <span
                         key={tech}
                         className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
@@ -448,7 +535,7 @@ export default function PublicPortfolioPage() {
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
-                {caseStudyItem.technologies.map((tech) => (
+                {(caseStudyItem.technologies ?? []).map((tech) => (
                   <span
                     key={tech}
                     className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600"
@@ -503,10 +590,10 @@ export default function PublicPortfolioPage() {
             Reach out via email to discuss your project:
           </p>
           <p className="mt-2 font-medium text-gray-900">
-            {MOCK_PUBLIC_PROFILE.email}
+            {profile.email}
           </p>
           <a
-            href={`mailto:${MOCK_PUBLIC_PROFILE.email}`}
+            href={`mailto:${profile.email}`}
             className="mt-4 flex w-full items-center justify-center rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-700"
           >
             Send Email

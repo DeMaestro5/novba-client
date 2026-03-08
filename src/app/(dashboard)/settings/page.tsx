@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/UI/Button';
 import { useAuthStore } from '@/store/authStore';
@@ -12,6 +12,7 @@ import Badge from '@/components/UI/Badge';
 import Toggle from '@/components/UI/Toggle';
 import Modal, { ModalHeader, ModalBody, ModalFooter } from '@/components/UI/Modal';
 import { useToast } from '@/components/UI/Toast';
+import api, { getErrorMessage } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -167,7 +168,7 @@ type SectionProps = {
 
 // ─── Profile section ──────────────────────────────────────────────────────────
 
-function ProfileSection({ settings, update, showToast, saveProfile }: Pick<SectionProps, 'settings' | 'update' | 'showToast' | 'saveProfile'>) {
+function ProfileSection({ settings, update, showToast, saveProfile, loading }: Pick<SectionProps, 'settings' | 'update' | 'showToast' | 'saveProfile'> & { loading?: boolean }) {
   return (
     <div className="space-y-6">
       <Card>
@@ -236,14 +237,14 @@ function ProfileSection({ settings, update, showToast, saveProfile }: Pick<Secti
           </div>
         </CardBody>
       </Card>
-      <SaveRow onSave={saveProfile} />
+      <SaveRow onSave={saveProfile} loading={loading} />
     </div>
   );
 }
 
 // ─── Business section ─────────────────────────────────────────────────────────
 
-function BusinessSection({ settings, update, showToast, saveBusiness }: Pick<SectionProps, 'settings' | 'update' | 'showToast' | 'saveBusiness'>) {
+function BusinessSection({ settings, update, showToast, saveBusiness, loading }: Pick<SectionProps, 'settings' | 'update' | 'showToast' | 'saveBusiness'> & { loading?: boolean }) {
   return (
     <div className="space-y-6">
       <Card>
@@ -358,14 +359,14 @@ function BusinessSection({ settings, update, showToast, saveBusiness }: Pick<Sec
           </div>
         </CardBody>
       </Card>
-      <SaveRow onSave={saveBusiness} />
+      <SaveRow onSave={saveBusiness} loading={loading} />
     </div>
   );
 }
 
 // ─── Invoice defaults section ────────────────────────────────────────────────
 
-function InvoiceDefaultsSection({ settings, update, saveInvoiceDefaults }: Pick<SectionProps, 'settings' | 'update' | 'saveInvoiceDefaults'>) {
+function InvoiceDefaultsSection({ settings, update, saveInvoiceDefaults, loading }: Pick<SectionProps, 'settings' | 'update' | 'saveInvoiceDefaults'> & { loading?: boolean }) {
   return (
     <div className="space-y-6">
       <Card>
@@ -471,7 +472,7 @@ function InvoiceDefaultsSection({ settings, update, saveInvoiceDefaults }: Pick<
           </div>
         </CardBody>
       </Card>
-      <SaveRow onSave={saveInvoiceDefaults} />
+      <SaveRow onSave={saveInvoiceDefaults} loading={loading} />
     </div>
   );
 }
@@ -668,21 +669,76 @@ function PaymentsSection({ settings, update, showToast, connectStripe, setDiscon
 export default function SettingsPage() {
   const router = useRouter();
   const { showToast } = useToast();
+  const [pageLoading, setPageLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [settings, setSettings] = useState({ ...mockSettings });
   const [portfolioForm, setPortfolioForm] = useState({
-    portfolioSlug: 'stephen-okafor',
-    portfolioTitle: 'UI/UX Designer & Full-Stack Developer',
-    portfolioBio: 'I help startups and scale-ups turn complex problems into products people actually use. 6 years building digital products across fintech, e-commerce, and SaaS.',
-    portfolioLocation: 'Lagos, Nigeria',
+    portfolioSlug: '',
+    portfolioTitle: '',
+    portfolioBio: '',
+    portfolioLocation: '',
     isAvailable: true,
-    linkedinUrl: 'https://linkedin.com/in/stephen-okafor',
-    twitterUrl: 'https://twitter.com/stephenokafor',
-    githubUrl: 'https://github.com/stephenokafor',
+    linkedinUrl: '',
+    twitterUrl: '',
+    githubUrl: '',
   });
   const [disconnectModal, setDisconnectModal] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingBusiness, setIsSavingBusiness] = useState(false);
+  const [isSavingInvoice, setIsSavingInvoice] = useState(false);
   const [isSavingPortfolio, setIsSavingPortfolio] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    api
+      .get('/profile')
+      .then((res) => {
+        const u = res.data?.data?.user;
+        if (!u) return;
+        setSettings((prev) => ({
+          ...prev,
+          name: u.name ?? '',
+          email: u.email ?? '',
+          profilePicUrl: u.profilePicUrl ?? '',
+          timezone: u.timezone ?? 'America/New_York',
+          dateFormat: u.dateFormat ?? 'MM/DD/YYYY',
+          language: u.language ?? 'en',
+          businessName: u.businessName ?? '',
+          businessAddress: u.businessAddress ?? '',
+          businessCity: u.businessCity ?? '',
+          businessState: u.businessState ?? '',
+          businessZipCode: u.businessZipCode ?? '',
+          businessCountry: u.businessCountry ?? 'United States',
+          businessPhone: u.businessPhone ?? '',
+          businessEmail: u.businessEmail ?? '',
+          businessWebsite: u.businessWebsite ?? '',
+          taxId: u.taxId ?? '',
+          defaultCurrency: u.defaultCurrency ?? 'USD',
+          defaultPaymentTerms: u.defaultPaymentTerms ?? 'NET_30',
+          defaultPaymentTermsCustom: u.defaultPaymentTermsCustom ?? '',
+          defaultInvoiceNotes: u.defaultInvoiceNotes ?? '',
+          defaultInvoiceTerms: u.defaultInvoiceTerms ?? '',
+          defaultTaxRate: u.defaultTaxRate ?? 0,
+          invoiceNumberPrefix: u.invoiceNumberPrefix ?? 'INV',
+          nextInvoiceNumber: u.nextInvoiceNumber ?? 1,
+          stripeConnected: !!u.stripeAccountId,
+          stripeAccountStatus: u.stripeAccountStatus ?? null,
+          stripeChargesEnabled: u.stripeChargesEnabled ?? false,
+        }));
+        setPortfolioForm({
+          portfolioSlug: u.portfolioSlug ?? '',
+          portfolioTitle: u.portfolioTitle ?? '',
+          portfolioBio: u.portfolioBio ?? '',
+          portfolioLocation: u.portfolioLocation ?? '',
+          isAvailable: u.isAvailable ?? true,
+          linkedinUrl: u.linkedinUrl ?? '',
+          twitterUrl: u.twitterUrl ?? '',
+          githubUrl: u.githubUrl ?? '',
+        });
+      })
+      .catch(() => {})
+      .finally(() => setPageLoading(false));
+  }, []);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -694,80 +750,121 @@ export default function SettingsPage() {
   };
 
   // ── Profile save ────────────────────────────────────────────────────────────
-  const saveProfile = () => {
-    const payload = {
-      name: settings.name.trim(),
-      email: settings.email.trim(),
-      profilePicUrl: settings.profilePicUrl || undefined,
-      timezone: settings.timezone,
-      dateFormat: settings.dateFormat,
-      language: settings.language,
-    };
-    console.log('=== PUT /api/v1/settings/profile ===');
-    console.log(JSON.stringify(payload, null, 2));
-    showToast('Profile saved', 'success');
+  const saveProfile = async () => {
+    setIsSavingProfile(true);
+    try {
+      await api.put('/profile', {
+        name: settings.name.trim(),
+        timezone: settings.timezone,
+        dateFormat: settings.dateFormat,
+        language: settings.language,
+      });
+      showToast('Profile saved', 'success');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   // ── Business save ───────────────────────────────────────────────────────────
-  const saveBusiness = () => {
-    const payload = {
-      businessName: settings.businessName || undefined,
-      businessAddress: settings.businessAddress || undefined,
-      businessCity: settings.businessCity || undefined,
-      businessState: settings.businessState || undefined,
-      businessZipCode: settings.businessZipCode || undefined,
-      businessCountry: settings.businessCountry || undefined,
-      businessPhone: settings.businessPhone || undefined,
-      businessEmail: settings.businessEmail || undefined,
-      businessWebsite: settings.businessWebsite || undefined,
-      taxId: settings.taxId || undefined,
-    };
-    console.log('=== PUT /api/v1/settings/business ===');
-    console.log(JSON.stringify(payload, null, 2));
-    showToast('Business settings saved', 'success');
+  const saveBusiness = async () => {
+    setIsSavingBusiness(true);
+    try {
+      await api.put('/profile', {
+        businessName: settings.businessName || undefined,
+        businessAddress: settings.businessAddress || undefined,
+        businessCity: settings.businessCity || undefined,
+        businessState: settings.businessState || undefined,
+        businessZipCode: settings.businessZipCode || undefined,
+        businessCountry: settings.businessCountry || undefined,
+        businessPhone: settings.businessPhone || undefined,
+        businessEmail: settings.businessEmail || undefined,
+        businessWebsite: settings.businessWebsite || undefined,
+        taxId: settings.taxId || undefined,
+      });
+      showToast('Business settings saved', 'success');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    } finally {
+      setIsSavingBusiness(false);
+    }
   };
 
   // ── Portfolio profile save ───────────────────────────────────────────────────
-  const savePortfolioProfile = () => {
+  const savePortfolioProfile = async () => {
+    if (portfolioForm.portfolioSlug && portfolioForm.portfolioSlug.length < 3) {
+      showToast('Portfolio URL must be at least 3 characters', 'error');
+      return;
+    }
     setIsSavingPortfolio(true);
-    setTimeout(() => {
-      console.log('Portfolio profile save:', portfolioForm);
-      showToast('Portfolio profile saved successfully', 'success');
+    try {
+      await api.put('/profile', {
+        portfolioSlug: portfolioForm.portfolioSlug.trim() || undefined,
+        portfolioTitle: portfolioForm.portfolioTitle.trim() || undefined,
+        portfolioBio: portfolioForm.portfolioBio.trim() || undefined,
+        portfolioLocation: portfolioForm.portfolioLocation.trim() || undefined,
+        isAvailable: portfolioForm.isAvailable,
+        linkedinUrl: portfolioForm.linkedinUrl.trim() || undefined,
+        twitterUrl: portfolioForm.twitterUrl.trim() || undefined,
+        githubUrl: portfolioForm.githubUrl.trim() || undefined,
+      });
+      showToast('Portfolio profile saved', 'success');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    } finally {
       setIsSavingPortfolio(false);
-    }, 1000);
+    }
   };
 
   // ── Invoice defaults save ───────────────────────────────────────────────────
-  const saveInvoiceDefaults = () => {
-    const payload = {
-      defaultCurrency: settings.defaultCurrency,
-      defaultPaymentTerms: settings.defaultPaymentTerms,
-      ...(settings.defaultPaymentTerms === 'CUSTOM' && {
-        defaultPaymentTermsCustom: settings.defaultPaymentTermsCustom,
-      }),
-      defaultInvoiceNotes: settings.defaultInvoiceNotes || undefined,
-      defaultInvoiceTerms: settings.defaultInvoiceTerms || undefined,
-      defaultTaxRate: settings.defaultTaxRate,
-      invoiceNumberPrefix: settings.invoiceNumberPrefix,
-      nextInvoiceNumber: settings.nextInvoiceNumber,
-    };
-    console.log('=== PUT /api/v1/settings/invoice-defaults ===');
-    console.log(JSON.stringify(payload, null, 2));
-    showToast('Invoice defaults saved', 'success');
+  const saveInvoiceDefaults = async () => {
+    setIsSavingInvoice(true);
+    try {
+      await api.put('/profile', {
+        defaultCurrency: settings.defaultCurrency,
+        defaultPaymentTerms: settings.defaultPaymentTerms,
+        ...(settings.defaultPaymentTerms === 'CUSTOM' && {
+          defaultPaymentTermsCustom: settings.defaultPaymentTermsCustom,
+        }),
+        defaultInvoiceNotes: settings.defaultInvoiceNotes || undefined,
+        defaultInvoiceTerms: settings.defaultInvoiceTerms || undefined,
+        defaultTaxRate: settings.defaultTaxRate,
+        invoiceNumberPrefix: settings.invoiceNumberPrefix,
+        nextInvoiceNumber: settings.nextInvoiceNumber,
+      });
+      showToast('Invoice defaults saved', 'success');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    } finally {
+      setIsSavingInvoice(false);
+    }
   };
 
   // ── Stripe connect ──────────────────────────────────────────────────────────
-  const connectStripe = () => {
-    console.log('=== GET /api/v1/settings/stripe/connect-url ===');
-    showToast('Redirecting to Stripe...', 'info');
-    // In real app: fetch connect URL and redirect
+  const connectStripe = async () => {
+    try {
+      const res = await api.get('/settings/stripe/connect-url');
+      const url = res.data?.data?.url;
+      if (url) {
+        window.location.href = url;
+      } else {
+        showToast('Could not get Stripe connect URL', 'error');
+      }
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    }
   };
 
-  const disconnectStripe = () => {
-    console.log('=== POST /api/v1/settings/stripe/disconnect ===');
-    update({ stripeConnected: false, stripeAccountStatus: null, stripeChargesEnabled: false });
-    showToast('Stripe account disconnected', 'success');
-    setDisconnectModal(false);
+  const disconnectStripe = async () => {
+    try {
+      await api.post('/settings/stripe/disconnect');
+      update({ stripeConnected: false, stripeAccountStatus: null, stripeChargesEnabled: false });
+      showToast('Stripe account disconnected', 'success');
+      setDisconnectModal(false);
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    }
   };
 
   // ─── TAB ICONS ─────────────────────────────────────────────────────────────
@@ -822,6 +919,21 @@ export default function SettingsPage() {
 
   // ─── RENDER ────────────────────────────────────────────────────────────────
 
+  if (pageLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <svg
+          className="h-8 w-8 animate-spin text-orange-600"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
       {/* Page header */}
@@ -875,7 +987,7 @@ export default function SettingsPage() {
         {/* Right content */}
         <main className="min-w-0 flex-1">
           {activeTab === 'profile' && (
-            <ProfileSection settings={settings} update={update} showToast={showToast} saveProfile={saveProfile} />
+            <ProfileSection settings={settings} update={update} showToast={showToast} saveProfile={saveProfile} loading={isSavingProfile} />
           )}
           {activeTab === 'portfolio-profile' && (
             <div className="space-y-6">
@@ -1073,10 +1185,10 @@ export default function SettingsPage() {
             </div>
           )}
           {activeTab === 'business' && (
-            <BusinessSection settings={settings} update={update} showToast={showToast} saveBusiness={saveBusiness} />
+            <BusinessSection settings={settings} update={update} showToast={showToast} saveBusiness={saveBusiness} loading={isSavingBusiness} />
           )}
           {activeTab === 'invoice' && (
-            <InvoiceDefaultsSection settings={settings} update={update} saveInvoiceDefaults={saveInvoiceDefaults} />
+            <InvoiceDefaultsSection settings={settings} update={update} saveInvoiceDefaults={saveInvoiceDefaults} loading={isSavingInvoice} />
           )}
           {activeTab === 'payments' && (
             <PaymentsSection settings={settings} update={update} showToast={showToast} connectStripe={connectStripe} setDisconnectModal={setDisconnectModal} />
