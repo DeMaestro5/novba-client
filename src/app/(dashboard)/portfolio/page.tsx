@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/UI/Button';
 import Card, { CardBody } from '@/components/UI/Card';
@@ -15,23 +15,31 @@ import Modal, {
   ModalBody,
   ModalFooter,
 } from '@/components/UI/Modal';
-import EmptyState from '@/components/UI/EmptyState';
+import EmptyPageState from '@/components/EmptyPageState';
 import { useToast } from '@/components/UI/Toast';
-import UpgradeModal from '@/components/UI/UpgradeModal';
-import {
-  MOCK_PORTFOLIO,
-  MOCK_PUBLIC_PROFILE,
-  type PortfolioItem,
-} from '@/lib/mock-portfolio';
+import api, { getErrorMessage } from '@/lib/api';
 
-const MOCK_USAGE = {
-  invoices: { used: 10, limit: 10 },
-  clients: { used: 3, limit: 3 },
-  proposals: { used: 5, limit: 5 },
-  projects: { used: 3, limit: 3 },
-  portfolio: { used: 3, limit: 3 },
-};
-const IS_FREE_TIER = true;
+interface PortfolioItem {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  category: string;
+  imageUrl: string | null;
+  images: string[] | null;
+  projectDate: string;
+  client: string | null;
+  technologies: string[] | null;
+  liveUrl: string | null;
+  githubUrl: string | null;
+  caseStudy: string | null;
+  testimonial: string | null;
+  isPublished: boolean;
+  order: number;
+  views: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 function formatMonthYear(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -146,12 +154,44 @@ function getCategoryIcon(category: string): React.ReactNode {
 export default function PortfolioPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const [items, setItems] = useState<PortfolioItem[]>(MOCK_PORTFOLIO);
+  const [items, setItems] = useState<PortfolioItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<
     'ALL' | 'PUBLISHED' | 'DRAFTS'
   >('ALL');
   const [deleteTarget, setDeleteTarget] = useState<PortfolioItem | null>(null);
-  const [upgradeModal, setUpgradeModal] = useState(false);
+  const [portfolioSlug, setPortfolioSlug] = useState<string | null>(null);
+
+  const fetchPortfolio = useCallback(async () => {
+    setLoading(true);
+    setFetchError(false);
+    try {
+      const res = await api.get('/portfolio');
+      const data = res.data?.data;
+      setItems(data?.portfolio ?? data ?? []);
+    } catch {
+      setFetchError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPortfolio();
+  }, [fetchPortfolio]);
+
+  useEffect(() => {
+    api
+      .get('/profile')
+      .then((res) => {
+        const slug = res.data?.data?.user?.portfolioSlug ?? null;
+        setPortfolioSlug(slug);
+      })
+      .catch(() => {});
+  }, []);
 
   const publishedCount = useMemo(
     () => items.filter((i) => i.isPublished).length,
@@ -161,7 +201,6 @@ export default function PortfolioPage() {
     () => items.reduce((s, i) => s + i.views, 0),
     [items],
   );
-  const profileVisits = 1240;
 
   const filtered = useMemo(() => {
     if (activeFilter === 'PUBLISHED') return items.filter((i) => i.isPublished);
@@ -170,22 +209,26 @@ export default function PortfolioPage() {
   }, [items, activeFilter]);
 
   const copyShareLink = () => {
-    navigator.clipboard.writeText(`novba.app/p/${MOCK_PUBLIC_PROFILE.slug}`);
+    navigator.clipboard.writeText(`novba.app/p/${portfolioSlug}`);
     showToast('Link copied to clipboard', 'success');
   };
 
-  const togglePublish = (item: PortfolioItem) => {
-    setItems((prev) =>
-      prev.map((p) =>
-        p.id === item.id ? { ...p, isPublished: !p.isPublished } : p,
-      ),
-    );
-    showToast(
-      item.isPublished
-        ? 'Project unpublished'
-        : 'Project published — now visible on your portfolio',
-      'success',
-    );
+  const handleTogglePublish = async (item: PortfolioItem) => {
+    setTogglingId(item.id);
+    try {
+      await api.patch(`/portfolio/${item.id}/publish`, {
+        isPublished: !item.isPublished,
+      });
+      showToast(
+        item.isPublished ? 'Project unpublished' : 'Project published',
+        'success',
+      );
+      fetchPortfolio();
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    } finally {
+      setTogglingId(null);
+    }
   };
 
   const copyPublicLink = (item: PortfolioItem) => {
@@ -193,11 +236,18 @@ export default function PortfolioPage() {
     showToast('Link copied to clipboard', 'success');
   };
 
-  const handleDelete = () => {
-    if (!deleteTarget) return;
-    setItems((prev) => prev.filter((p) => p.id !== deleteTarget.id));
-    showToast('Project deleted', 'success');
-    setDeleteTarget(null);
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await api.delete(`/portfolio/${id}`);
+      showToast('Project deleted', 'success');
+      setDeleteTarget(null);
+      fetchPortfolio();
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -213,26 +263,19 @@ export default function PortfolioPage() {
           </p>
         </div>
         <div className='flex flex-wrap items-center gap-2'>
-          <Button
-            variant='outline'
-            onClick={copyShareLink}
-            className='border-gray-300'
-          >
-            Share Portfolio
-          </Button>
+          {items.length > 0 && portfolioSlug && (
+            <Button
+              variant='outline'
+              onClick={copyShareLink}
+              className='border-gray-300'
+            >
+              Share Portfolio
+            </Button>
+          )}
           <Button
             variant='primary'
             className='bg-orange-600 hover:bg-orange-700'
-            onClick={() => {
-              if (
-                IS_FREE_TIER &&
-                MOCK_USAGE.portfolio.used >= MOCK_USAGE.portfolio.limit
-              ) {
-                setUpgradeModal(true);
-              } else {
-                router.push('/portfolio/new');
-              }
-            }}
+            onClick={() => router.push('/portfolio/new')}
           >
             <svg
               className='mr-2 h-4 w-4'
@@ -252,226 +295,202 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className='mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4'>
-        <div className='rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:bg-gray-900 dark:border-gray-700'>
-          <div className='flex items-center justify-between'>
-            <p className='text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400'>
-              Total Projects
-            </p>
-            <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-900/30'>
-              <svg
-                className='h-4 w-4 text-orange-600'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'
-                />
-              </svg>
+      {!loading && items.length > 0 && (
+        <>
+          {/* Stats row */}
+          <div className='mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3'>
+            <div className='rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:bg-gray-900 dark:border-gray-700'>
+              <div className='flex items-center justify-between'>
+                <p className='text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400'>
+                  Total Projects
+                </p>
+                <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-900/30'>
+                  <svg
+                    className='h-4 w-4 text-orange-600'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'
+                    />
+                  </svg>
+                </div>
+              </div>
+              <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
+                {items.length}
+              </p>
+              <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
+                all time
+              </p>
+            </div>
+
+            <div className='rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:bg-gray-900 dark:border-gray-700'>
+              <div className='flex items-center justify-between'>
+                <p className='text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400'>
+                  Published
+                </p>
+                <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-green-50 dark:bg-green-900/30'>
+                  <svg
+                    className='h-4 w-4 text-green-600'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+                    />
+                  </svg>
+                </div>
+              </div>
+              <p className='mt-3 text-3xl font-bold text-green-600'>
+                {publishedCount}
+              </p>
+              <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
+                live on portfolio
+              </p>
+            </div>
+
+            <div className='rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:bg-gray-900 dark:border-gray-700'>
+              <div className='flex items-center justify-between'>
+                <p className='text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400'>
+                  Total Views
+                </p>
+                <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/30'>
+                  <svg
+                    className='h-4 w-4 text-blue-600'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
+                    />
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
+                    />
+                  </svg>
+                </div>
+              </div>
+              <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
+                {totalViews}
+              </p>
+              <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
+                across all projects
+              </p>
             </div>
           </div>
-          <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
-            {items.length}
-          </p>
-          <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
-            all time
-          </p>
-        </div>
 
-        <div className='rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:bg-gray-900 dark:border-gray-700'>
-          <div className='flex items-center justify-between'>
-            <p className='text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400'>
-              Published
-            </p>
-            <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-green-50 dark:bg-green-900/30'>
-              <svg
-                className='h-4 w-4 text-green-600'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
-                />
-              </svg>
+          {/* Public portfolio link banner */}
+          {publishedCount >= 1 && portfolioSlug && (
+            <div className='mb-6 flex flex-col gap-3 rounded-xl bg-orange-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:bg-orange-950/30 dark:border dark:border-orange-900/30'>
+              <div className='flex items-center gap-2'>
+                <span className='font-medium text-gray-900 dark:text-white'>
+                  Public portfolio:
+                </span>
+                <code className='rounded bg-white px-2 py-1 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-300'>
+                  novba.app/p/{portfolioSlug}
+                </code>
+              </div>
+              <div className='flex items-center gap-2'>
+                <Button variant='outline' size='sm' onClick={copyShareLink}>
+                  Copy Link
+                </Button>
+                <a
+                  href={`/p/${portfolioSlug}`}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-sm font-medium text-orange-600 hover:text-orange-700'
+                >
+                  Preview →
+                </a>
+              </div>
             </div>
-          </div>
-          <p className='mt-3 text-3xl font-bold text-green-600'>
-            {publishedCount}
-          </p>
-          <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
-            live on portfolio
-          </p>
-        </div>
+          )}
 
-        <div className='rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:bg-gray-900 dark:border-gray-700'>
-          <div className='flex items-center justify-between'>
-            <p className='text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400'>
-              Total Views
-            </p>
-            <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/30'>
-              <svg
-                className='h-4 w-4 text-blue-600'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
-                />
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
-                />
-              </svg>
-            </div>
+          {/* Filter tabs */}
+          <div className='mb-6 flex flex-wrap gap-2'>
+            {(['ALL', 'PUBLISHED', 'DRAFTS'] as const).map((tab) => {
+              const count =
+                tab === 'ALL'
+                  ? items.length
+                  : tab === 'PUBLISHED'
+                    ? publishedCount
+                    : items.length - publishedCount;
+              return (
+                <button
+                  key={tab}
+                  type='button'
+                  onClick={() => setActiveFilter(tab)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                    activeFilter === tab
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {tab === 'PUBLISHED'
+                    ? 'Published'
+                    : tab === 'DRAFTS'
+                      ? 'Drafts'
+                      : 'All'}{' '}
+                  <span
+                    className={`ml-1 rounded-full px-1.5 py-0.5 text-xs ${
+                      activeFilter === tab
+                        ? 'bg-white/20'
+                        : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
-            {totalViews}
-          </p>
-          <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
-            across all projects
-          </p>
-        </div>
-
-        <div className='rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:bg-gray-900 dark:border-gray-700'>
-          <div className='flex items-center justify-between'>
-            <p className='text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400'>
-              Profile Visits
-            </p>
-            <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-900/30'>
-              <svg
-                className='h-4 w-4 text-purple-600'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'
-                />
-              </svg>
-            </div>
-          </div>
-          <p className='mt-3 text-3xl font-bold text-gray-900 dark:text-white'>
-            {profileVisits.toLocaleString()}
-          </p>
-          <p className='mt-1 text-xs text-gray-400 dark:text-gray-500'>
-            this month
-          </p>
-        </div>
-      </div>
-
-      {/* Public portfolio link banner */}
-      {publishedCount >= 1 && (
-        <div className='mb-6 flex flex-col gap-3 rounded-xl bg-orange-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:bg-orange-950/30 dark:border dark:border-orange-900/30'>
-          <div className='flex items-center gap-2'>
-            <span className='font-medium text-gray-900 dark:text-white'>
-              Public portfolio:
-            </span>
-            <code className='rounded bg-white px-2 py-1 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-300'>
-              novba.app/p/{MOCK_PUBLIC_PROFILE.slug}
-            </code>
-          </div>
-          <div className='flex items-center gap-2'>
-            <Button variant='outline' size='sm' onClick={copyShareLink}>
-              Copy Link
-            </Button>
-            <a
-              href={`/p/${MOCK_PUBLIC_PROFILE.slug}`}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-sm font-medium text-orange-600 hover:text-orange-700'
-            >
-              Preview →
-            </a>
-          </div>
-        </div>
+        </>
       )}
 
-      {/* Filter tabs */}
-      <div className='mb-6 flex flex-wrap gap-2'>
-        {(['ALL', 'PUBLISHED', 'DRAFTS'] as const).map((tab) => {
-          const count =
-            tab === 'ALL'
-              ? items.length
-              : tab === 'PUBLISHED'
-                ? publishedCount
-                : items.length - publishedCount;
-          return (
-            <button
-              key={tab}
-              type='button'
-              onClick={() => setActiveFilter(tab)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                activeFilter === tab
-                  ? 'bg-orange-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
-              }`}
-            >
-              {tab === 'PUBLISHED'
-                ? 'Published'
-                : tab === 'DRAFTS'
-                  ? 'Drafts'
-                  : 'All'}{' '}
-              <span
-                className={`ml-1 rounded-full px-1.5 py-0.5 text-xs ${
-                  activeFilter === tab
-                    ? 'bg-white/20'
-                    : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-                }`}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Empty state: no projects at all */}
-      {items.length === 0 ? (
-        <Card>
-          <CardBody padding='lg'>
-            <EmptyState
-              icon={
-                <svg
-                  className='h-8 w-8 text-orange-600'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z'
-                  />
-                </svg>
-              }
-              title='Your portfolio is empty'
-              description='Add your best work to attract clients and showcase your skills. A complete portfolio increases your chances of winning new projects.'
-              primaryAction={{
-                label: 'Add Your First Project',
-                onClick: () => router.push('/portfolio/new'),
-              }}
+      {/* Loading / error / content */}
+      {loading ? (
+        <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className='h-64 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800'
             />
-          </CardBody>
-        </Card>
+          ))}
+        </div>
+      ) : fetchError ? (
+        <div className='flex flex-col items-center justify-center py-24 text-center'>
+          <p className='text-sm font-semibold text-gray-900 dark:text-white'>
+            Failed to load portfolio
+          </p>
+          <button
+            type='button'
+            onClick={fetchPortfolio}
+            className='mt-3 text-sm font-medium text-orange-600 hover:text-orange-700'
+          >
+            Try again
+          </button>
+        </div>
+      ) : !loading && !fetchError && items.length === 0 ? (
+        <EmptyPageState
+          title='Your portfolio is empty'
+          description='Add your best work to attract clients and showcase your skills. A complete portfolio increases your chances of winning new projects.'
+          ctaLabel='Add Your First Project'
+          ctaHref='/portfolio/new'
+        />
       ) : filtered.length === 0 ? (
         /* Empty state: filtered, no matches */
         <Card>
@@ -581,7 +600,7 @@ export default function PortfolioPage() {
 
                 {/* Tech tags */}
                 <div className='flex flex-wrap gap-1.5'>
-                  {item.technologies.slice(0, 3).map((tech) => (
+                  {(item.technologies ?? []).slice(0, 3).map((tech) => (
                     <span
                       key={tech}
                       className='rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400'
@@ -589,9 +608,9 @@ export default function PortfolioPage() {
                       {tech}
                     </span>
                   ))}
-                  {item.technologies.length > 3 && (
+                  {(item.technologies ?? []).length > 3 && (
                     <span className='rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-500'>
-                      +{item.technologies.length - 3}
+                      +{(item.technologies ?? []).length - 3}
                     </span>
                   )}
                 </div>
@@ -646,9 +665,7 @@ export default function PortfolioPage() {
                     >
                       Edit
                     </button>
-                    <DropdownMenu
-                      trigger={<TableActionsTrigger />}
-                    >
+                    <DropdownMenu trigger={<TableActionsTrigger />}>
                       <DropdownMenuItem
                         onClick={() =>
                           router.push(`/portfolio/${item.id}/edit`)
@@ -656,7 +673,9 @@ export default function PortfolioPage() {
                       >
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => togglePublish(item)}>
+                      <DropdownMenuItem
+                        onClick={() => handleTogglePublish(item)}
+                      >
                         {item.isPublished ? 'Unpublish' : 'Publish'}
                       </DropdownMenuItem>
                       {item.isPublished && (
@@ -702,20 +721,13 @@ export default function PortfolioPage() {
           </Button>
           <button
             type='button'
-            onClick={handleDelete}
+            onClick={() => deleteTarget && handleDelete(deleteTarget.id)}
             className='rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700'
           >
             Delete
           </button>
         </ModalFooter>
       </Modal>
-      <UpgradeModal
-        isOpen={upgradeModal}
-        onClose={() => setUpgradeModal(false)}
-        feature='portfolio items'
-        used={MOCK_USAGE.portfolio.used}
-        limit={MOCK_USAGE.portfolio.limit}
-      />
     </div>
   );
 }

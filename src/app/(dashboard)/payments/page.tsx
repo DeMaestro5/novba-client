@@ -185,8 +185,8 @@ export default function PaymentsPage() {
               </svg>
             }
             badge="Payments"
-            headline={'Your payment history\nlives here'}
-            subtext="Payments are recorded when you mark an invoice as paid. Send your first invoice to get started."
+            headline="No payments yet"
+            subtext="Payments are recorded when you mark an invoice as paid."
             benefits={[
               {
                 icon: (

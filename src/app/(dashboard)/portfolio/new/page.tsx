@@ -6,6 +6,7 @@ import Link from 'next/link';
 import PortfolioForm from '@/components/PortfolioForm';
 import { useToast } from '@/components/UI/Toast';
 import type { PortfolioFormData } from '@/components/PortfolioForm';
+import api, { getErrorMessage } from '@/lib/api';
 
 export default function NewPortfolioPage() {
   const router = useRouter();
@@ -14,10 +15,32 @@ export default function NewPortfolioPage() {
 
   const handleSave = async (data: PortfolioFormData) => {
     setIsSaving(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    showToast('Project added to your portfolio 🎉', 'success');
-    setIsSaving(false);
-    router.push('/portfolio');
+    try {
+      const payload = {
+        title: data.title?.trim(),
+        slug: data.slug?.trim(),
+        description: data.description?.trim(),
+        category: data.category?.trim(),
+        imageUrl: data.imageUrl?.trim() || undefined,
+        projectDate: data.projectDate
+          ? new Date(data.projectDate).toISOString()
+          : new Date().toISOString(),
+        client: data.client?.trim() || undefined,
+        technologies: data.technologies?.filter(Boolean) ?? undefined,
+        liveUrl: data.liveUrl?.trim() || undefined,
+        githubUrl: data.githubUrl?.trim() || undefined,
+        caseStudy: data.caseStudy?.trim() || undefined,
+        testimonial: data.testimonial?.trim() || undefined,
+        isPublished: data.isPublished ?? true,
+      };
+      await api.post('/portfolio', payload);
+      showToast('Project added to your portfolio 🎉', 'success');
+      router.push('/portfolio');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
