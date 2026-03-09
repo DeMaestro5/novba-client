@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Button from '@/components/UI/Button';
 import { useToast } from '@/components/UI/Toast';
+import api, { getErrorMessage } from '@/lib/api';
 
 // ─── Plan / pricing data (single source of truth — from spec) ─────────────────
 
@@ -84,15 +85,6 @@ const PLANS = {
   },
 } as const;
 
-// Mock usage for FREE tier (replace with API later)
-const DEFAULT_USAGE = {
-  clients: 2,
-  invoicesUsed: 7,
-  proposalsUsed: 3,
-  projects: 2,
-  portfolioItems: 1,
-};
-
 // ─── Feature comparison table rows (from spec) ─────────────────────────────────
 
 const COMPARISON_CORE = [
@@ -145,6 +137,18 @@ function XIcon({ className = '' }: { className?: string }) {
 
 // ─── Usage pill (for slim banner) ───────────────────────────────────────────────
 
+/** Normalize API value that may be a number or { used, limit, percentage } */
+function toUsedNumber(
+  value: number | { used?: number; limit?: number; percentage?: number } | undefined
+): number {
+  if (value == null) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'object' && typeof (value as { used?: number }).used === 'number') {
+    return (value as { used: number }).used;
+  }
+  return 0;
+}
+
 function UsagePill({
   used,
   limit,
@@ -154,7 +158,9 @@ function UsagePill({
   limit: number;
   label: string;
 }) {
-  const pct = limit === 0 ? 0 : (used / limit) * 100;
+  const usedNum = typeof used === 'number' ? used : toUsedNumber(used);
+  const limitNum = typeof limit === 'number' ? limit : (limit as { limit?: number })?.limit ?? 0;
+  const pct = limitNum === 0 ? 0 : (usedNum / limitNum) * 100;
   const pillColor =
     pct >= 100
       ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
@@ -165,43 +171,104 @@ function UsagePill({
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${pillColor}`}
     >
-      {used}/{limit} {label}
+      {usedNum}/{limitNum} {label}
     </span>
   );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+const DEFAULT_USAGE = {
+  clients: 0,
+  invoices: 0,
+  proposals: 0,
+  projects: 0,
+  portfolioItems: 0,
+};
+
+type UsageState = typeof DEFAULT_USAGE & {
+  monthly?: { invoices?: number; proposals?: number };
+};
+
 export default function SubscriptionPage() {
   const { showToast } = useToast();
   const plansRef = useRef<HTMLDivElement>(null);
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
-  const [currentTier, setCurrentTier] = useState<Tier>('FREE');
-  const [usage] = useState(DEFAULT_USAGE);
-  const [checkoutLoading, setCheckoutLoading] = useState<Tier | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [usage, setUsage] = useState<UsageState>(DEFAULT_USAGE);
+  const [planLimits, setPlanLimits] = useState({
+    clients: 3,
+    invoices: 10,
+    proposals: 5,
+    projects: 3,
+    portfolioItems: 3,
+  });
+  const [currentPlan, setCurrentPlan] = useState('FREE');
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false);
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly');
   const [comparisonOpen, setComparisonOpen] = useState(false);
-  const nextBillingDate = 'Jan 1, 2027';
+  const [nextBillingDate, setNextBillingDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await api.get('/subscription/usage');
+        const data = res.data?.data;
+        if (!mounted) return;
+        if (data?.usage) setUsage(data.usage);
+        if (data?.tierLimits) {
+          setPlanLimits({
+            clients: data.tierLimits.clients ?? 3,
+            invoices: data.tierLimits.monthlyInvoices ?? 10,
+            proposals: data.tierLimits.monthlyProposals ?? 5,
+            projects: data.tierLimits.projects ?? 3,
+            portfolioItems: data.tierLimits.portfolioItems ?? 3,
+          });
+        }
+        setCurrentPlan(data?.tier || 'FREE');
+        setCancelAtPeriodEnd(data?.cancelAtPeriodEnd ?? false);
+        if (data?.nextBillingDate) setNextBillingDate(data.nextBillingDate);
+      } catch (err) {
+        if (mounted) showToast(getErrorMessage(err), 'error');
+      } finally {
+        if (mounted) setPageLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [showToast]);
 
   const scrollToPlans = () => plansRef.current?.scrollIntoView({ behavior: 'smooth' });
 
-  const startCheckout = async (tier: Tier) => {
-    if (tier === 'FREE') return;
-    setCheckoutLoading(tier);
+  const handleUpgrade = async (tier: 'PRO' | 'STUDIO') => {
     try {
-      const res = await fetch('/api/v1/subscription/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier }),
+      setCheckoutLoading(tier);
+      const res = await api.post('/subscription/checkout', {
+        tier,
+        interval: billingInterval,
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.message || 'Checkout failed');
-      const url = data?.data?.checkoutUrl ?? data?.checkoutUrl;
+      const url = res.data?.data?.checkoutUrl || res.data?.data?.url;
       if (url) window.location.href = url;
-      else throw new Error('No checkout URL');
-    } catch {
-      showToast('Failed to start checkout', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setCheckoutLoading(null);
+    }
+  };
+
+  const handleManageBilling = async () => {
+    try {
+      setPortalLoading(true);
+      const res = await api.post('/subscription/portal');
+      const url = res.data?.data?.url;
+      if (url) window.location.href = url;
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    } finally {
+      setPortalLoading(false);
     }
   };
 
@@ -217,6 +284,21 @@ export default function SubscriptionPage() {
     }
     return val;
   };
+
+  if (pageLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <svg
+          className="h-8 w-8 animate-spin text-orange-600"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1100px] p-6 lg:p-8">
@@ -239,10 +321,10 @@ export default function SubscriptionPage() {
             <button
               type="button"
               role="tab"
-              aria-selected={billingPeriod === 'monthly'}
-              onClick={() => setBillingPeriod('monthly')}
+              aria-selected={billingInterval === 'monthly'}
+              onClick={() => setBillingInterval('monthly')}
               className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
-                billingPeriod === 'monthly'
+                billingInterval === 'monthly'
                   ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
@@ -252,10 +334,10 @@ export default function SubscriptionPage() {
             <button
               type="button"
               role="tab"
-              aria-selected={billingPeriod === 'annual'}
-              onClick={() => setBillingPeriod('annual')}
+              aria-selected={billingInterval === 'annual'}
+              onClick={() => setBillingInterval('annual')}
               className={`relative px-5 py-2.5 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${
-                billingPeriod === 'annual'
+                billingInterval === 'annual'
                   ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
@@ -273,7 +355,7 @@ export default function SubscriptionPage() {
       <div
         className="mb-8 rounded-xl border border-orange-900/30 bg-orange-950/20 dark:bg-orange-950/20 dark:border-orange-900/30 px-5 py-3 flex flex-wrap items-center justify-between gap-3"
       >
-        {currentTier === 'FREE' && (
+        {currentPlan === 'FREE' && (
           <>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm text-gray-700 dark:text-gray-300">
@@ -281,20 +363,28 @@ export default function SubscriptionPage() {
               </span>
               <span className="text-gray-400 dark:text-gray-500">·</span>
               <UsagePill
-                used={usage.invoicesUsed}
-                limit={freeLimits.invoicesPerMonth}
+                used={toUsedNumber(usage.monthly?.invoices ?? usage.invoices)}
+                limit={planLimits.invoices}
                 label="invoices"
               />
-              <UsagePill used={usage.clients} limit={freeLimits.clients} label="clients" />
-              <UsagePill used={usage.projects} limit={freeLimits.projects} label="projects" />
               <UsagePill
-                used={usage.proposalsUsed}
-                limit={freeLimits.proposalsPerMonth}
+                used={toUsedNumber(usage.clients)}
+                limit={planLimits.clients}
+                label="clients"
+              />
+              <UsagePill
+                used={toUsedNumber(usage.projects)}
+                limit={planLimits.projects}
+                label="projects"
+              />
+              <UsagePill
+                used={toUsedNumber(usage.monthly?.proposals ?? usage.proposals)}
+                limit={planLimits.proposals}
                 label="proposals"
               />
               <UsagePill
-                used={usage.portfolioItems}
-                limit={freeLimits.portfolioItems}
+                used={toUsedNumber(usage.portfolioItems)}
+                limit={planLimits.portfolioItems}
                 label="portfolio"
               />
             </div>
@@ -307,21 +397,22 @@ export default function SubscriptionPage() {
             </button>
           </>
         )}
-        {(currentTier === 'PRO' || currentTier === 'STUDIO') && (
+        {(currentPlan === 'PRO' || currentPlan === 'STUDIO') && (
           <div className="flex flex-wrap items-center gap-2 w-full justify-between">
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              <strong className="text-gray-900 dark:text-white">{PLANS[currentTier].name} Plan</strong>
+              <strong className="text-gray-900 dark:text-white">{PLANS[currentPlan as Tier].name} Plan</strong>
               {' · '}
               <span className="text-green-600 dark:text-green-400">Active</span>
-              {' · '}
-              Renews {nextBillingDate}
+              {nextBillingDate && !cancelAtPeriodEnd && ` · Renews ${nextBillingDate}`}
+              {cancelAtPeriodEnd && ' · Cancels at period end'}
             </span>
             <button
               type="button"
-              onClick={() => {}}
-              className="text-sm font-medium text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors shrink-0"
+              onClick={handleManageBilling}
+              disabled={portalLoading}
+              className="text-sm font-medium text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors shrink-0 disabled:opacity-50"
             >
-              Manage Billing →
+              {portalLoading ? 'Loading…' : 'Manage Billing →'}
             </button>
           </div>
         )}
@@ -334,13 +425,26 @@ export default function SubscriptionPage() {
       >
         {(['FREE', 'PRO', 'STUDIO'] as const).map((tier) => {
           const plan = PLANS[tier];
-          const isCurrent = currentTier === tier;
+          const isCurrent = currentPlan === tier;
           const isDowngrade =
-            (tier === 'FREE' && currentTier !== 'FREE') ||
-            (tier === 'PRO' && currentTier === 'STUDIO');
+            (tier === 'FREE' && currentPlan !== 'FREE') ||
+            (tier === 'PRO' && currentPlan === 'STUDIO');
+          const isAnnual = billingInterval === 'annual';
           const price =
-            billingPeriod === 'annual' ? plan.priceAnnual : plan.priceMonthly;
-          const period = billingPeriod === 'annual' ? '/mo billed annually' : '/mo';
+            tier === 'FREE'
+              ? 0
+              : isAnnual
+                ? tier === 'PRO'
+                  ? 22
+                  : 74
+                : plan.priceMonthly;
+          const period = isAnnual && tier !== 'FREE'
+            ? tier === 'PRO'
+              ? '/mo (billed $264/yr)'
+              : '/mo (billed $888/yr)'
+            : isAnnual
+              ? '/mo billed annually'
+              : '/mo';
           const isPro = tier === 'PRO';
 
           return (
@@ -402,13 +506,14 @@ export default function SubscriptionPage() {
                     >
                       {period}
                     </span>
-                    {billingPeriod === 'annual' && tier !== 'FREE' && (
-                      <p
-                        className={`mt-1 text-sm ${
-                          isPro ? 'text-green-400' : 'text-green-600 dark:text-green-400'
-                        }`}
-                      >
-                        Save ${(plan.priceMonthly - plan.priceAnnual) * 12}/year
+                    {isAnnual && tier === 'PRO' && (
+                      <p className={`mt-1 text-sm ${isPro ? 'text-green-400' : 'text-green-600 dark:text-green-400'}`}>
+                        Save $84/year
+                      </p>
+                    )}
+                    {isAnnual && tier === 'STUDIO' && (
+                      <p className={`mt-1 text-sm ${isPro ? 'text-green-400' : 'text-green-600 dark:text-green-400'}`}>
+                        Save $300/year
                       </p>
                     )}
                   </div>
@@ -467,12 +572,17 @@ export default function SubscriptionPage() {
                   />
 
                   <div className="pt-4">
-                    {isCurrent && (
+                    {isCurrent && tier === 'FREE' && (
                       <div className="py-2.5 px-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-center text-sm font-medium text-gray-600 dark:text-gray-400">
                         Current Plan
                       </div>
                     )}
-                    {!isCurrent && tier === 'FREE' && (
+                    {isCurrent && (tier === 'PRO' || tier === 'STUDIO') && (
+                      <div className="py-2.5 px-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-center text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        Current Plan
+                      </div>
+                    )}
+                    {tier === 'FREE' && !isCurrent && (
                       <div className="py-2.5 px-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-center text-sm font-medium text-gray-600 dark:text-gray-400">
                         Always Free
                       </div>
@@ -487,10 +597,11 @@ export default function SubscriptionPage() {
                         variant="primary"
                         fullWidth
                         className="rounded-xl py-3 font-bold bg-orange-500 hover:bg-orange-600 shadow-[0_0_0_1px_rgba(234,88,12,0.3),0_4px_14px_-2px_rgba(234,88,12,0.4)] border-0"
-                        isLoading={checkoutLoading === tier}
-                        onClick={() => startCheckout(tier)}
+                        isLoading={checkoutLoading === 'PRO'}
+                        disabled={currentPlan === 'PRO'}
+                        onClick={() => handleUpgrade('PRO')}
                       >
-                        Start Free Trial →
+                        Upgrade to Pro
                       </Button>
                     )}
                     {!isCurrent && !isDowngrade && tier === 'STUDIO' && (
@@ -498,10 +609,22 @@ export default function SubscriptionPage() {
                         variant="primary"
                         fullWidth
                         className="rounded-xl py-3 bg-violet-600 hover:bg-violet-700 border-0"
-                        isLoading={checkoutLoading === tier}
-                        onClick={() => startCheckout(tier)}
+                        isLoading={checkoutLoading === 'STUDIO'}
+                        disabled={currentPlan === 'STUDIO'}
+                        onClick={() => handleUpgrade('STUDIO')}
                       >
-                        Start Free Trial →
+                        Upgrade to Studio
+                      </Button>
+                    )}
+                    {isCurrent && (tier === 'PRO' || tier === 'STUDIO') && (
+                      <Button
+                        variant="outline"
+                        fullWidth
+                        className="rounded-xl"
+                        isLoading={portalLoading}
+                        onClick={handleManageBilling}
+                      >
+                        Manage Billing
                       </Button>
                     )}
                   </div>
@@ -622,21 +745,25 @@ export default function SubscriptionPage() {
 
       {/* Section 5 — Trust bar (single slim row) */}
       <div className="mb-8 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-8 py-4">
-        <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 text-sm text-gray-600 dark:text-gray-400">
-          <span className="inline-flex items-center gap-2">
-            <span aria-hidden>🔒</span>
-            No hidden fees
-          </span>
-          <span className="hidden sm:inline text-gray-300 dark:text-gray-600">|</span>
-          <span className="inline-flex items-center gap-2">
-            <span aria-hidden>🔄</span>
-            14-day free trial
-          </span>
-          <span className="hidden sm:inline text-gray-300 dark:text-gray-600">|</span>
-          <span className="inline-flex items-center gap-2">
-            <span aria-hidden>⚡</span>
-            Cancel anytime
-          </span>
+        <div className="flex items-center justify-center gap-8 mt-8 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>No hidden fees</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>
+            </svg>
+            <span>14-day free trial</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>Cancel anytime</span>
+          </div>
         </div>
       </div>
     </div>

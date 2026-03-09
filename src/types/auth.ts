@@ -26,7 +26,7 @@ export interface RegisterData {
 }
 
 export interface AuthActions {
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   initializeAuth: () => Promise<void>;
