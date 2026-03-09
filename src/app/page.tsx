@@ -1252,12 +1252,12 @@ export default function LandingPage() {
               Contact
             </a>
             <span className='text-white/20'>·</span>
-            <a href='#' className='transition-colors hover:text-white/60'>
+            <Link href='/privacy' className='transition-colors hover:text-white/60'>
               Privacy
-            </a>
-            <a href='#' className='transition-colors hover:text-white/60'>
+            </Link>
+            <Link href='/terms' className='transition-colors hover:text-white/60'>
               Terms
-            </a>
+            </Link>
           </div>
           <p className='text-sm text-white/30'>
             © 2026 Novba. Built for freelancers.

@@ -235,7 +235,10 @@ function StepWelcome({
         className='font-black text-gray-900 mb-3 leading-tight'
         style={{ fontSize: 'clamp(26px, 4vw, 34px)' }}
       >
-        Welcome{userFirstName ? `, ${userFirstName}` : ''} to Novba
+        Welcome to Novba,
+        {userFirstName && (
+          <span className='block text-orange-600'>{userFirstName}</span>
+        )}
       </motion.h2>
 
       <motion.p

@@ -152,7 +152,7 @@ export function getErrorMessage(error: unknown): string {
 // --- Auth API ---
 
 export const authApi = {
-  login(email: string, password: string) {
+  login(email: string, password: string, rememberMe?: boolean) {
     return api.post<{
       success: boolean;
       data: {
@@ -160,7 +160,7 @@ export const authApi = {
         accessToken: string;
         refreshToken: string;
       };
-    }>('/login', { email, password });
+    }>('/login', { email, password, rememberMe: rememberMe ?? false });
   },
 
   register(data: {

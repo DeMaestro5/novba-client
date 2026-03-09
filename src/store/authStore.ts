@@ -108,11 +108,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     return initializingPromise;
   },
 
-  login: async (email: string, password: string) => {
+  login: async (email: string, password: string, rememberMe?: boolean) => {
     console.log('[login] attempting login for:', email);
     set({ isLoading: true, error: null });
     try {
-      const res = await authApi.login(email, password);
+      const res = await authApi.login(email, password, rememberMe ?? false);
       console.log(
         '[login] raw response data:',
         JSON.stringify(res.data, null, 2),
@@ -136,6 +136,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isLoading: false,
         error: null,
       });
+      // Fetch profile so we have onboardingCompleted for redirect (credentials flow).
+      try {
+        const profileRes = await authApi.me();
+        const profileUser = profileRes.data.data.user as User;
+        set({ user: profileUser });
+      } catch {
+        // Keep user from login response if profile fetch fails
+      }
       console.log(
         '[login] store updated — isAuthenticated: true, isInitialized: true',
       );
