@@ -1,10 +1,17 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export default function AiPricingPage() {
   const [workType, setWorkType] = useState('');
   const formRef = useRef<HTMLDivElement>(null);
+
+  // Mark AI Pricing as visited for the dashboard checklist
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('novba_ai_pricing_visited', '1');
+    }
+  }, []);
 
   const scrollToForm = () => {
     formRef.current?.scrollIntoView({ behavior: 'smooth' });

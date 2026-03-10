@@ -20,6 +20,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useDashboard } from '@/hooks/useDashboard';
 import { NewUserDashboard } from '@/components/NewUserDashboard';
 import { ActivationDashboard } from '@/components/ActivationDashboard';
+import { GettingStartedChecklist } from '@/components/GettingStartedChecklist';
 
 type Period = 'week' | 'month' | 'quarter' | 'year';
 
@@ -333,6 +334,12 @@ export default function DashboardPage() {
         <ActivationDashboard firstName={firstName} />
       ) : (
         <>
+          {/* ===== GET STARTED CHECKLIST ===== */}
+          <GettingStartedChecklist
+            totalClients={overview?.counts?.totalClients ?? 0}
+            totalInvoices={overview?.counts?.totalInvoices ?? 0}
+          />
+
           {/* ===== STAT CARDS ===== */}
           <div className='mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'>
             {/* Total Revenue */}
@@ -574,8 +581,59 @@ export default function DashboardPage() {
               {isLoading ? (
                 <Skeleton className='h-[260px] w-full' />
               ) : chartData.length === 0 ? (
-                <div className='flex h-[260px] items-center justify-center text-sm text-gray-400'>
-                  No data for this period
+                <div className='relative h-[260px] w-full overflow-hidden'>
+                  {/* Ghost chart — blurred preview */}
+                  <div className='absolute inset-0 opacity-30 blur-[2px] pointer-events-none select-none'>
+                    <ResponsiveContainer width='100%' height={260}>
+                      <AreaChart
+                        data={[
+                          { period: 'Week 1', income: 800, expenses: 300 },
+                          { period: 'Week 2', income: 1400, expenses: 500 },
+                          { period: 'Week 3', income: 1100, expenses: 400 },
+                          { period: 'Week 4', income: 2200, expenses: 600 },
+                          { period: 'Week 5', income: 1800, expenses: 450 },
+                          { period: 'Week 6', income: 3100, expenses: 700 },
+                          { period: 'Week 7', income: 2700, expenses: 550 },
+                          { period: 'Week 8', income: 4200, expenses: 800 },
+                        ]}
+                        margin={{ top: 5, right: 10, left: -10, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id='ghostIncomeGradient' x1='0' y1='0' x2='0' y2='1'>
+                            <stop offset='5%' stopColor='#ea580c' stopOpacity={0.15} />
+                            <stop offset='95%' stopColor='#ea580c' stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id='ghostExpenseGradient' x1='0' y1='0' x2='0' y2='1'>
+                            <stop offset='5%' stopColor='#6b7280' stopOpacity={0.1} />
+                            <stop offset='95%' stopColor='#6b7280' stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray='3 3' stroke={chartColors.grid} />
+                        <XAxis dataKey='period' tick={{ fontSize: 12, fill: chartColors.axis }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 12, fill: chartColors.axis }} axisLine={false} tickLine={false} tickFormatter={(v) => '$' + (v / 1000).toFixed(0) + 'k'} />
+                        <Area type='monotone' dataKey='income' stroke='#ea580c' strokeWidth={2.5} fill='url(#ghostIncomeGradient)' dot={false} />
+                        <Area type='monotone' dataKey='expenses' stroke='#9ca3af' strokeWidth={2} fill='url(#ghostExpenseGradient)' dot={false} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {/* Overlay */}
+                  <div className='absolute inset-0 flex flex-col items-center justify-center gap-3'>
+                    <div className='flex h-10 w-10 items-center justify-center rounded-2xl bg-orange-50 dark:bg-orange-950/40'>
+                      <svg className='h-5 w-5 text-orange-500' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' />
+                      </svg>
+                    </div>
+                    <div className='text-center'>
+                      <p className='text-sm font-semibold text-gray-800 dark:text-white'>Your revenue chart lives here</p>
+                      <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>Income and expenses will plot here once an invoice is paid</p>
+                    </div>
+                    <Link
+                      href='/invoices'
+                      className='rounded-lg border border-orange-200 dark:border-orange-800 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/40 transition-colors'
+                    >
+                      View invoices →
+                    </Link>
+                  </div>
                 </div>
               ) : (
                 <ResponsiveContainer width='100%' height={260}>
@@ -839,9 +897,40 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : !clientRevenue?.clients?.length ? (
-                <p className='text-sm text-gray-400 text-center py-8'>
-                  No client revenue data yet
-                </p>
+                <div className='space-y-4'>
+                  {/* Ghost client rows using real activity data as fallback */}
+                  {recentActivity.slice(0, 3).map((activity, index) => (
+                    <div key={activity.id}>
+                      <div className='mb-1.5 flex items-center justify-between'>
+                        <div className='flex items-center gap-2'>
+                          <span className='flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-300'>
+                            {index + 1}
+                          </span>
+                          <span className='text-sm font-medium text-gray-900 dark:text-white'>
+                            {activity.clientName}
+                          </span>
+                        </div>
+                        <span className='rounded-full bg-yellow-50 dark:bg-yellow-950/30 px-2 py-0.5 text-xs font-semibold text-yellow-600 dark:text-yellow-400'>
+                          pending
+                        </span>
+                      </div>
+                      <div className='h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700'>
+                        <div
+                          className='h-1.5 rounded-full bg-orange-200 dark:bg-orange-900/50 transition-all duration-500'
+                          style={{ width: `${100 - index * 25}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  {recentActivity.length === 0 && (
+                    <p className='text-sm text-gray-400 dark:text-gray-500 text-center py-6'>
+                      No client revenue data yet
+                    </p>
+                  )}
+                  <p className='text-xs text-gray-400 dark:text-gray-500 pt-2 border-t border-gray-100 dark:border-gray-800'>
+                    Revenue tracked after first payment is collected
+                  </p>
+                </div>
               ) : (
                 <>
                   <div className='space-y-4'>

@@ -16,7 +16,7 @@ import api, { getErrorMessage } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Tab = 'profile' | 'portfolio-profile' | 'business' | 'invoice' | 'payments';
+type Tab = 'profile' | 'portfolio-profile' | 'business' | 'invoice' | 'payments' | 'reminders';
 
 // ─── Mock initial data ─────────────────────────────────────────────────────────
 
@@ -664,6 +664,231 @@ function PaymentsSection({ settings, update, showToast, connectStripe, setDiscon
   );
 }
 
+// ─── Reminders section ────────────────────────────────────────────────────────
+
+type ReminderForm = {
+  enabled: boolean;
+  beforeDueDays: number[];
+  afterDueDays: number[];
+};
+
+const BEFORE_PRESET_OPTIONS = [1, 2, 3, 5, 7, 14, 30];
+const AFTER_PRESET_OPTIONS = [1, 2, 3, 5, 7, 14, 30];
+
+function DayChip({
+  day,
+  active,
+  onToggle,
+}: {
+  day: number;
+  active: boolean;
+  onToggle: (day: number) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(day)}
+      className={`rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-all ${
+        active
+          ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/40 text-orange-600'
+          : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:border-gray-300'
+      }`}
+    >
+      {day}d
+    </button>
+  );
+}
+
+function RemindersSection({
+  form,
+  setForm,
+  onSave,
+  loading,
+}: {
+  form: ReminderForm;
+  setForm: React.Dispatch<React.SetStateAction<ReminderForm>>;
+  onSave: () => void;
+  loading: boolean;
+}) {
+  const toggleBefore = (day: number) => {
+    setForm((prev) => ({
+      ...prev,
+      beforeDueDays: prev.beforeDueDays.includes(day)
+        ? prev.beforeDueDays.filter((d) => d !== day)
+        : [...prev.beforeDueDays, day].sort((a, b) => a - b),
+    }));
+  };
+
+  const toggleAfter = (day: number) => {
+    setForm((prev) => ({
+      ...prev,
+      afterDueDays: prev.afterDueDays.includes(day)
+        ? prev.afterDueDays.filter((d) => d !== day)
+        : [...prev.afterDueDays, day].sort((a, b) => a - b),
+    }));
+  };
+
+  const allDays = [
+    ...form.beforeDueDays.map((d) => ({ label: `${d}d before due`, type: 'before' as const, day: d })),
+    { label: 'Due date', type: 'due' as const, day: 0 },
+    ...form.afterDueDays.map((d) => ({ label: `${d}d overdue`, type: 'after' as const, day: d })),
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Master toggle */}
+      <Card>
+        <CardHeader
+          title="Automatic payment reminders"
+          subtitle="Novba will automatically email your clients about upcoming and overdue invoices"
+        />
+        <CardBody>
+          <div className="flex items-center justify-between rounded-xl border-2 border-gray-200 dark:border-gray-600 p-4">
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                {form.enabled ? 'Reminders enabled' : 'Reminders disabled'}
+              </p>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                {form.enabled
+                  ? 'Clients will be notified automatically based on your schedule below'
+                  : 'No reminder emails will be sent to clients'}
+              </p>
+            </div>
+            <Toggle
+              checked={form.enabled}
+              onChange={(checked) => setForm((prev) => ({ ...prev, enabled: checked }))}
+            />
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Schedule config — only shown when enabled */}
+      {form.enabled && (
+        <>
+          {/* Before due */}
+          <Card>
+            <CardHeader
+              title="Before due date"
+              subtitle="Send a reminder X days before the invoice is due — gives clients advance notice"
+            />
+            <CardBody>
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {BEFORE_PRESET_OPTIONS.map((day) => (
+                    <DayChip
+                      key={day}
+                      day={day}
+                      active={form.beforeDueDays.includes(day)}
+                      onToggle={toggleBefore}
+                    />
+                  ))}
+                </div>
+                {form.beforeDueDays.length === 0 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    No pre-due reminders selected — select at least one day above.
+                  </p>
+                )}
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Select one or more. Multiple selections send reminders at each interval.
+                </p>
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* After due (overdue) */}
+          <Card>
+            <CardHeader
+              title="After due date (overdue)"
+              subtitle="Send follow-up reminders when an invoice hasn't been paid — increasing urgency over time"
+            />
+            <CardBody>
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {AFTER_PRESET_OPTIONS.map((day) => (
+                    <DayChip
+                      key={day}
+                      day={day}
+                      active={form.afterDueDays.includes(day)}
+                      onToggle={toggleAfter}
+                    />
+                  ))}
+                </div>
+                {form.afterDueDays.length === 0 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    No overdue reminders selected — select at least one day above.
+                  </p>
+                )}
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Reminders are only sent to invoices with status SENT or OVERDUE.
+                  An invoice is never reminded more than once per day.
+                </p>
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* Schedule preview */}
+          <Card>
+            <CardHeader
+              title="Schedule preview"
+              subtitle="How the reminder timeline looks for a single invoice"
+            />
+            <CardBody>
+              <div className="flex items-start gap-0">
+                {allDays.map((item, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center">
+                    {/* dot + line */}
+                    <div className="flex items-center w-full">
+                      {i > 0 && (
+                        <div className={`flex-1 h-0.5 ${item.type === 'after' ? 'bg-red-200 dark:bg-red-900/40' : 'bg-orange-200 dark:bg-orange-900/40'}`} />
+                      )}
+                      <div
+                        className={`h-3 w-3 rounded-full shrink-0 ${
+                          item.type === 'due'
+                            ? 'bg-gray-900 dark:bg-white ring-4 ring-gray-200 dark:ring-gray-700'
+                            : item.type === 'before'
+                            ? 'bg-orange-500 ring-4 ring-orange-100 dark:ring-orange-950/40'
+                            : 'bg-red-500 ring-4 ring-red-100 dark:ring-red-950/40'
+                        }`}
+                      />
+                      {i < allDays.length - 1 && (
+                        <div className={`flex-1 h-0.5 ${allDays[i + 1]?.type === 'after' ? 'bg-red-200 dark:bg-red-900/40' : 'bg-orange-200 dark:bg-orange-900/40'}`} />
+                      )}
+                    </div>
+                    {/* label */}
+                    <p
+                      className={`mt-2 text-center text-xs font-medium leading-tight px-1 ${
+                        item.type === 'due'
+                          ? 'text-gray-900 dark:text-white'
+                          : item.type === 'before'
+                          ? 'text-orange-600'
+                          : 'text-red-600'
+                      }`}
+                    >
+                      {item.label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+        </>
+      )}
+
+      {/* Info note */}
+      <div className="flex gap-3 rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-950/20 px-4 py-3">
+        <svg className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p className="text-sm text-blue-700 dark:text-blue-300">
+          Reminders run automatically every day at 08:00 UTC. Only invoices with a client email address are eligible. Clients will never receive more than one reminder per day per invoice.
+        </p>
+      </div>
+
+      <SaveRow onSave={onSave} loading={loading} />
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
@@ -688,6 +913,12 @@ export default function SettingsPage() {
   const [isSavingInvoice, setIsSavingInvoice] = useState(false);
   const [isSavingPortfolio, setIsSavingPortfolio] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [reminderForm, setReminderForm] = useState<ReminderForm>({
+    enabled: true,
+    beforeDueDays: [3, 7],
+    afterDueDays: [1, 7, 14],
+  });
+  const [isSavingReminders, setIsSavingReminders] = useState(false);
 
   useEffect(() => {
     api
@@ -737,8 +968,41 @@ export default function SettingsPage() {
         });
       })
       .catch(() => {})
-      .finally(() => setPageLoading(false));
+      .finally(() => {
+        // Fetch reminder settings after profile loads
+        api
+          .get('/settings/reminders')
+          .then((res) => {
+            const r = res.data?.data?.reminders;
+            if (r) {
+              setReminderForm({
+                enabled: r.enabled ?? true,
+                beforeDueDays: r.beforeDueDays ?? [3, 7],
+                afterDueDays: r.afterDueDays ?? [1, 7, 14],
+              });
+            }
+          })
+          .catch(() => {});
+        setPageLoading(false);
+      });
   }, []);
+
+  // ── Reminders save ──────────────────────────────────────────────────────────
+  const saveReminders = async () => {
+    setIsSavingReminders(true);
+    try {
+      await api.put('/settings/reminders', {
+        enabled: reminderForm.enabled,
+        beforeDueDays: reminderForm.beforeDueDays,
+        afterDueDays: reminderForm.afterDueDays,
+      });
+      showToast('Reminder settings saved', 'success');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    } finally {
+      setIsSavingReminders(false);
+    }
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -912,6 +1176,15 @@ export default function SettingsPage() {
       icon: (
         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg>
+      ),
+    },
+    {
+      id: 'reminders',
+      label: 'Reminders',
+      icon: (
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
       ),
     },
@@ -1192,6 +1465,14 @@ export default function SettingsPage() {
           )}
           {activeTab === 'payments' && (
             <PaymentsSection settings={settings} update={update} showToast={showToast} connectStripe={connectStripe} setDisconnectModal={setDisconnectModal} />
+          )}
+          {activeTab === 'reminders' && (
+            <RemindersSection
+              form={reminderForm}
+              setForm={setReminderForm}
+              onSave={saveReminders}
+              loading={isSavingReminders}
+            />
           )}
         </main>
       </div>
