@@ -13,7 +13,6 @@ import { useToast } from '@/components/UI/Toast';
 import ProposalLineItems, { type LineItem } from '@/components/ProposalLineItems';
 import ProposalPreview from '@/components/ProposalPreview';
 import api from '@/lib/api';
-import { useAuthStore } from '@/store/authStore';
 
 const CURRENCY_OPTIONS = [
   { value: 'USD', label: 'USD — US Dollar' },
@@ -36,8 +35,9 @@ type ClientOption = { id: string; companyName: string; contactName: string | nul
 export default function NewProposalPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const user = useAuthStore((s) => s.user);
   const [showPreview, setShowPreview] = useState(true);
+  const [businessName, setBusinessName] = useState('');
+  const [businessEmail, setBusinessEmail] = useState('');
 
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
@@ -67,6 +67,16 @@ export default function NewProposalPage() {
     };
     fetchClients();
   }, [showToast]);
+
+  useEffect(() => {
+    api
+      .get('/settings/profile')
+      .then((res) => {
+        setBusinessName(res.data?.data?.settings?.business?.businessName ?? '');
+        setBusinessEmail(res.data?.data?.settings?.profile?.email ?? '');
+      })
+      .catch(() => {});
+  }, []);
 
   const CLIENT_OPTIONS = clients.map((c) => ({ value: c.id, label: c.companyName }));
   const update = (patch: Partial<typeof form>) => setForm((prev) => ({ ...prev, ...patch }));
@@ -298,8 +308,8 @@ export default function NewProposalPage() {
                 title={form.title}
                 clientName={selectedClient?.companyName || ''}
                 clientContact={selectedClient?.contactName || undefined}
-                businessName={user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email : 'Your Business'}
-                businessEmail={user?.email || undefined}
+                businessName={businessName}
+                businessEmail={businessEmail}
                 scope={form.scope}
                 terms={form.terms}
                 currency={form.currency}
