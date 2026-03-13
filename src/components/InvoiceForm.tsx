@@ -182,7 +182,13 @@ export default function InvoiceForm({
   const handleSaveDraft = () => {
     if (!validate()) return;
     if (onSave) {
-      void Promise.resolve(onSave(formData, 'draft'));
+      void Promise.resolve(onSave({
+        ...formData,
+        lineItems: formData.lineItems.map((item) => ({
+          ...item,
+          amount: item.quantity * item.rate,
+        })),
+      }, 'draft'));
       return;
     }
     showToast('Invoice saved as draft', 'success');
@@ -192,7 +198,13 @@ export default function InvoiceForm({
   const handleSaveAndSend = () => {
     if (!validate()) return;
     if (onSave) {
-      void Promise.resolve(onSave(formData, 'send'));
+      void Promise.resolve(onSave({
+        ...formData,
+        lineItems: formData.lineItems.map((item) => ({
+          ...item,
+          amount: item.quantity * item.rate,
+        })),
+      }, 'send'));
       return;
     }
     showToast('Invoice sent successfully 🎉', 'success');

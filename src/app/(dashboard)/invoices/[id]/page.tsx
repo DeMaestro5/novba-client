@@ -15,6 +15,7 @@ import DropdownMenu, {
   DropdownMenuDivider,
 } from '@/components/UI/DropdownMenu';
 import Modal, { ModalHeader, ModalBody, ModalFooter } from '@/components/UI/Modal';
+import DatePicker from '@/components/UI/DatePicker';
 import { useToast } from '@/components/UI/Toast';
 
 type DetailErrorState = 'not_found' | 'forbidden' | 'server_error' | 'retrying';
@@ -83,6 +84,11 @@ export default function InvoiceDetailPage() {
   const [errorState, setErrorState] = useState<DetailErrorState | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState<Date>(
+    new Date(Date.now() + 24 * 60 * 60 * 1000),
+  );
+  const [scheduleTime, setScheduleTime] = useState('09:00');
   const id = params?.id as string;
   const searchParams = useSearchParams();
   const retryCountRef = useRef(0);
@@ -259,6 +265,46 @@ export default function InvoiceDetailPage() {
     }
   };
 
+  const handleSchedule = async () => {
+    setActionLoading('schedule');
+    try {
+      const [hours, minutes] = scheduleTime.split(':').map(Number);
+      const sendAt = new Date(scheduleDate);
+      sendAt.setHours(hours, minutes, 0, 0);
+
+      if (sendAt <= new Date()) {
+        showToast('Scheduled time must be in the future', 'error');
+        return;
+      }
+
+      await api.post(`/invoices/${id}/schedule`, {
+        scheduledSendAt: sendAt.toISOString(),
+      });
+      showToast('Invoice scheduled successfully', 'success');
+      setShowScheduleModal(false);
+      fetchInvoice();
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      showToast(ax?.response?.data?.message || 'Failed to schedule invoice', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCancelSchedule = async () => {
+    setActionLoading('cancel-schedule');
+    try {
+      await api.delete(`/invoices/${id}/schedule`);
+      showToast('Scheduled send cancelled', 'success');
+      fetchInvoice();
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      showToast(ax?.response?.data?.message || 'Failed to cancel schedule', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   if (isLoading || errorState === 'retrying') {
     return (
       <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
@@ -373,6 +419,42 @@ export default function InvoiceDetailPage() {
         </Link>
       </nav>
 
+      {invoice.scheduledSendAt && (
+        <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-5 py-3.5">
+          <div className="flex items-center gap-3">
+            <svg className="h-5 w-5 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+              Scheduled to send on{' '}
+              <span className="font-bold">
+                {new Date(invoice.scheduledSendAt).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </span>{' '}
+              at{' '}
+              <span className="font-bold">
+                {new Date(invoice.scheduledSendAt).toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleCancelSchedule}
+            disabled={actionLoading === 'cancel-schedule'}
+            className="shrink-0 rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition-colors disabled:opacity-50"
+          >
+            {actionLoading === 'cancel-schedule' ? 'Cancelling...' : 'Cancel Schedule'}
+          </button>
+        </div>
+      )}
+
       <Card className="mb-6">
         <CardBody padding="lg">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -417,7 +499,11 @@ export default function InvoiceDetailPage() {
                   <DropdownMenuItem onClick={handleSend}>
                     Send Now
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {}}>Schedule</DropdownMenuItem>
+                  {invoice.status === 'DRAFT' && (
+                    <DropdownMenuItem onClick={() => setShowScheduleModal(true)}>
+                      Schedule
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={handlePaymentLink}>
                     Copy Link
                   </DropdownMenuItem>
@@ -740,6 +826,69 @@ export default function InvoiceDetailPage() {
           )}
         </div>
       </div>
+
+      <Modal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        size="sm"
+      >
+        <ModalHeader
+          title="Schedule Invoice"
+          onClose={() => setShowScheduleModal(false)}
+        />
+        <ModalBody>
+          <div className="space-y-5 py-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Choose when this invoice should be automatically sent to{' '}
+              <span className="font-semibold text-gray-700 dark:text-gray-300">
+                {invoice.client?.companyName}
+              </span>
+              . It will remain as a draft until then.
+            </p>
+
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Send date
+              </label>
+              <DatePicker
+                label=""
+                value={scheduleDate}
+                onChange={(date) => setScheduleDate(date ?? new Date())}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Send time
+              </label>
+              <input
+                type="time"
+                value={scheduleTime}
+                onChange={(e) => setScheduleTime(e.target.value)}
+                className="w-full rounded-lg border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+              />
+            </div>
+
+            <div className="rounded-xl border border-orange-100 dark:border-orange-900/40 bg-orange-50 dark:bg-orange-950/20 px-4 py-3">
+              <p className="text-xs text-orange-700 dark:text-orange-400">
+                <span className="font-semibold">Note:</span> The invoice PDF will be generated and emailed automatically at the scheduled time. You can cancel the schedule any time before it fires.
+              </p>
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setShowScheduleModal(false)}>
+            Cancel
+          </Button>
+          <button
+            onClick={handleSchedule}
+            disabled={!!actionLoading}
+            className="rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {actionLoading === 'schedule' ? 'Scheduling...' : 'Confirm Schedule'}
+          </button>
+        </ModalFooter>
+      </Modal>
 
       <Modal
         isOpen={showDeleteModal}

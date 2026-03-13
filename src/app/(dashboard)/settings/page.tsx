@@ -922,49 +922,53 @@ export default function SettingsPage() {
 
   useEffect(() => {
     api
-      .get('/profile')
+      .get('/settings/profile')
       .then((res) => {
-        const u = res.data?.data?.user;
-        if (!u) return;
+        const s = res.data?.data?.settings;
+        if (!s) return;
+        const profile = s.profile ?? {};
+        const business = s.business ?? {};
+        const inv = s.invoiceDefaults ?? {};
+        const stripe = s.stripe ?? {};
         setSettings((prev) => ({
           ...prev,
-          name: u.name ?? '',
-          email: u.email ?? '',
-          profilePicUrl: u.profilePicUrl ?? '',
-          timezone: u.timezone ?? 'America/New_York',
-          dateFormat: u.dateFormat ?? 'MM/DD/YYYY',
-          language: u.language ?? 'en',
-          businessName: u.businessName ?? '',
-          businessAddress: u.businessAddress ?? '',
-          businessCity: u.businessCity ?? '',
-          businessState: u.businessState ?? '',
-          businessZipCode: u.businessZipCode ?? '',
-          businessCountry: u.businessCountry ?? 'United States',
-          businessPhone: u.businessPhone ?? '',
-          businessEmail: u.businessEmail ?? '',
-          businessWebsite: u.businessWebsite ?? '',
-          taxId: u.taxId ?? '',
-          defaultCurrency: u.defaultCurrency ?? 'USD',
-          defaultPaymentTerms: u.defaultPaymentTerms ?? 'NET_30',
-          defaultPaymentTermsCustom: u.defaultPaymentTermsCustom ?? '',
-          defaultInvoiceNotes: u.defaultInvoiceNotes ?? '',
-          defaultInvoiceTerms: u.defaultInvoiceTerms ?? '',
-          defaultTaxRate: u.defaultTaxRate ?? 0,
-          invoiceNumberPrefix: u.invoiceNumberPrefix ?? 'INV',
-          nextInvoiceNumber: u.nextInvoiceNumber ?? 1,
-          stripeConnected: !!u.stripeAccountId,
-          stripeAccountStatus: u.stripeAccountStatus ?? null,
-          stripeChargesEnabled: u.stripeChargesEnabled ?? false,
+          name: profile.name ?? '',
+          email: profile.email ?? '',
+          profilePicUrl: profile.profilePicUrl ?? '',
+          timezone: profile.timezone ?? 'America/New_York',
+          dateFormat: profile.dateFormat ?? 'MM/DD/YYYY',
+          language: profile.language ?? 'en',
+          businessName: business.businessName ?? '',
+          businessAddress: business.businessAddress ?? '',
+          businessCity: business.businessCity ?? '',
+          businessState: business.businessState ?? '',
+          businessZipCode: business.businessZipCode ?? '',
+          businessCountry: business.businessCountry ?? 'United States',
+          businessPhone: business.businessPhone ?? '',
+          businessEmail: business.businessEmail ?? '',
+          businessWebsite: business.businessWebsite ?? '',
+          taxId: business.taxId ?? '',
+          defaultCurrency: inv.defaultCurrency ?? 'USD',
+          defaultPaymentTerms: inv.defaultPaymentTerms ?? 'NET_30',
+          defaultPaymentTermsCustom: inv.defaultPaymentTermsCustom ?? '',
+          defaultInvoiceNotes: inv.defaultInvoiceNotes ?? '',
+          defaultInvoiceTerms: inv.defaultInvoiceTerms ?? '',
+          defaultTaxRate: inv.defaultTaxRate ?? 0,
+          invoiceNumberPrefix: inv.invoiceNumberPrefix ?? 'INV',
+          nextInvoiceNumber: inv.nextInvoiceNumber ?? 1,
+          stripeConnected: stripe.isConnected ?? false,
+          stripeAccountStatus: stripe.stripeAccountStatus ?? null,
+          stripeChargesEnabled: stripe.stripeChargesEnabled ?? false,
         }));
         setPortfolioForm({
-          portfolioSlug: u.portfolioSlug ?? '',
-          portfolioTitle: u.portfolioTitle ?? '',
-          portfolioBio: u.portfolioBio ?? '',
-          portfolioLocation: u.portfolioLocation ?? '',
-          isAvailable: u.isAvailable ?? true,
-          linkedinUrl: u.linkedinUrl ?? '',
-          twitterUrl: u.twitterUrl ?? '',
-          githubUrl: u.githubUrl ?? '',
+          portfolioSlug: profile.portfolioSlug ?? '',
+          portfolioTitle: profile.portfolioTitle ?? '',
+          portfolioBio: profile.portfolioBio ?? '',
+          portfolioLocation: profile.portfolioLocation ?? '',
+          isAvailable: profile.isAvailable ?? true,
+          linkedinUrl: profile.linkedinUrl ?? '',
+          twitterUrl: profile.twitterUrl ?? '',
+          githubUrl: profile.githubUrl ?? '',
         });
       })
       .catch(() => {})
@@ -1017,7 +1021,7 @@ export default function SettingsPage() {
   const saveProfile = async () => {
     setIsSavingProfile(true);
     try {
-      await api.put('/profile', {
+      await api.put('/settings/profile', {
         name: settings.name.trim(),
         timezone: settings.timezone,
         dateFormat: settings.dateFormat,
@@ -1035,7 +1039,7 @@ export default function SettingsPage() {
   const saveBusiness = async () => {
     setIsSavingBusiness(true);
     try {
-      await api.put('/profile', {
+      await api.put('/settings/business', {
         businessName: settings.businessName || undefined,
         businessAddress: settings.businessAddress || undefined,
         businessCity: settings.businessCity || undefined,
@@ -1063,7 +1067,7 @@ export default function SettingsPage() {
     }
     setIsSavingPortfolio(true);
     try {
-      await api.put('/profile', {
+      await api.put('/settings/profile', {
         portfolioSlug: portfolioForm.portfolioSlug.trim() || undefined,
         portfolioTitle: portfolioForm.portfolioTitle.trim() || undefined,
         portfolioBio: portfolioForm.portfolioBio.trim() || undefined,
@@ -1085,7 +1089,7 @@ export default function SettingsPage() {
   const saveInvoiceDefaults = async () => {
     setIsSavingInvoice(true);
     try {
-      await api.put('/profile', {
+      await api.put('/settings/invoice-defaults', {
         defaultCurrency: settings.defaultCurrency,
         defaultPaymentTerms: settings.defaultPaymentTerms,
         ...(settings.defaultPaymentTerms === 'CUSTOM' && {

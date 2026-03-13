@@ -72,6 +72,7 @@ export interface ApiInvoice {
   pdfUrl: string | null;
   sentAt: string | null;
   paidAt: string | null;
+  scheduledSendAt?: string | null;
   lastReminderSentAt: string | null;
   reminderCount: number;
   createdAt: string;
